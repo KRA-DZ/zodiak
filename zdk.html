@@ -2166,13 +2166,16 @@
         
         .cal-grid {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            grid-template-columns: repeat(7, minmax(0, 1fr));
             gap: 7px;
             margin-top: 12px
         }
         
         .cal-day {
-            aspect-ratio: 1;
+            min-width: 0;
+            min-height: 70px;
+            padding: 6px 2px;
+            overflow-wrap: anywhere;
             border: 1px solid var(--line);
             border-radius: 11px;
             background: #0b0e2c;
@@ -2187,6 +2190,12 @@
             transition: .15s
         }
         
+        @media(max-width:520px) {
+            .cal-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+        }
+
         .cal-day .cd-n {
             font-family: 'Cormorant Garamond', serif;
             font-size: 1.05rem;
@@ -6279,6 +6288,7 @@
                 b.style.gridTemplateRows = 'repeat(' + G.cfg.rows + ',1fr)';
                 if (G.cfg.darks) b.classList.add('dark-lvl');
                 else b.classList.remove('dark-lvl');
+                b.classList.remove('faded', 'reveal-flash');
                 b.innerHTML = '';
                 G.deck.forEach(function(cd, i) {
                     var gr = cd.grp,
@@ -6327,6 +6337,15 @@
             }
             window.addEventListener('resize', layoutBoard);
 
+            // Отложенные действия принадлежат конкретной попытке уровня.
+            function levelTimeout(callback, delay) {
+                var game = G;
+                return setTimeout(function() {
+                    if (!game || G !== game || game.dead || game.finished) return;
+                    callback();
+                }, delay);
+            }
+
             function beginPreview() {
                 if (!G || G.dead || G.finished) return;
                 var cells = Array.prototype.slice.call(document.getElementById('board').children),
@@ -6348,8 +6367,8 @@
                     delay: .12
                 });
                 cells.forEach(function(c, k) {
-                    setTimeout(function() {
-                        if (G && !G.dead) c.classList.add('peek');
+                    levelTimeout(function() {
+                        if (!done) c.classList.add('peek');
                     }, k * 16);
                 });
                 var done = false,
@@ -6385,7 +6404,7 @@
                         dur: .4,
                         vol: .06
                     });
-                    G._pvT2 = setTimeout(function() {
+                    G._pvT2 = levelTimeout(function() {
                         if (!G || G.dead || G.finished) return;
                         G.preview = false;
                         G.busy = false;
@@ -6395,12 +6414,12 @@
                         });
                     }, 520);
                 }
-                G._pvT1 = setTimeout(finishPreview, flipMs + holdMs);
+                G._pvT1 = levelTimeout(finishPreview, flipMs + holdMs);
                 banner.addEventListener('click', function() {
                     if (G && !G.dead && !G.finished && G.preview) finishPreview();
                 });
                 if (G.cfg.darks) {
-                    setTimeout(function() {
+                    levelTimeout(function() {
                         if (!G || G.dead || G.finished) return;
                         document.getElementById('board').classList.add('faded');
                     }, 900);
@@ -6450,14 +6469,14 @@
                         delay: .18
                     });
                     cells.forEach(function(c, k) {
-                        setTimeout(function() {
+                        levelTimeout(function() {
                             if (!G || G.sid !== s || G.dead) return;
                             if (c.classList.contains('cleared') || c.classList.contains('gcleared')) return;
                             c.classList.add('peek');
                         }, k * 12);
                     });
                     var total = 2000 + cells.length * 12;
-                    setTimeout(function() {
+                    levelTimeout(function() {
                         if (!G || G.sid !== s || G.dead) return;
                         cells.forEach(function(c) {
                             c.classList.remove('peek');
@@ -6488,7 +6507,7 @@
                     c = document.getElementById('gCombo');
                 c.className = 'combo' + (tier ? ' t' + tier : '');
                 c.classList.add('bump');
-                setTimeout(function() {
+                levelTimeout(function() {
                     c.classList.remove('bump');
                 }, 220);
                 document.getElementById('gCV').innerHTML = '\u00D7' + Math.max(tier, 1);
@@ -6553,7 +6572,7 @@
                 cell.classList.add('open');
                 if (gr.type === 'dark') {
                     clearTimeout(cd._dk);
-                    cd._dk = setTimeout(function() {
+                    cd._dk = levelTimeout(function() {
                         if (cell.isConnected && cell.classList.contains('open')) cell.classList.add('faded');
                     }, 1000);
                 }
@@ -6579,7 +6598,7 @@
                         return G.deck[ci].grp === gr;
                     });
                 if (win) {
-                    setTimeout(function() {
+                    levelTimeout(function() {
                         if (!G || G.sid !== s || G.dead) return;
                         gr.done = true;
                         G.cleared++;
@@ -6594,14 +6613,14 @@
                             G.lastComet = performance.now();
                         }
                         sel.forEach(function(ci, kk) {
-                            setTimeout(function() {
+                            levelTimeout(function() {
                                 var c = cellEl(ci);
                                 if (!c) return;
                                 clearTimeout(G.deck[ci]._dk);
                                 c.classList.add('cleared');
                             }, kk * 70);
                         });
-                        setTimeout(function() {
+                        levelTimeout(function() {
                             if (!G) return;
                             floatLabel(sel.length === 3 ? '\u00B7 триада! \u00B7' : '\u00B7 пара \u00B7', 'fl-gold');
                             if (G.streak >= 2) floatLabel('Серия \u00D7' + Math.min(G.streak, 5) + '!', 'fl-combo');
@@ -6610,7 +6629,7 @@
                         renderCombo();
                         updateHintUI();
                         if (G.cleared >= G.needed) {
-                            setTimeout(function() {
+                            levelTimeout(function() {
                                 if (G && !G.finished) finishWin();
                             }, 750);
                         } else G.busy = false;
@@ -6628,17 +6647,17 @@
                     renderCombo();
                     renderTimer();
                     /* короткий кулдаун: доска разблокируется рано, пара остаётся видна до MISS_VIEW_MS */
-                    setTimeout(function() {
+                    levelTimeout(function() {
                         if (!G || G.sid !== s || G.dead) return;
                         G.busy = false;
                         updateHintUI();
                     }, MISS_COOLDOWN_MS);
                     /* возврат пары рубашкой по истечении времени показа */
-                    setTimeout(function() {
+                    levelTimeout(function() {
                         if (!G || G.sid !== s || G.dead) return;
                         sel.forEach(function(ci) {
                             var c = cellEl(ci);
-                            if (!c) return;
+                            if (!c || G.deck[ci].grp.done || c.classList.contains('gcleared')) return;
                             clearTimeout(G.deck[ci]._dk);
                             c.classList.remove('open', 'bad', 'wrongshake', 'faded');
                         });
@@ -6708,7 +6727,7 @@
                             [pool[2], pool[3]]
                         ], startDur, function() {
                             k++;
-                            setTimeout(step, 70);
+                            levelTimeout(step, 70);
                         });
                     } else {
                         var i = Math.floor(Math.random() * alive.length),
@@ -6718,12 +6737,12 @@
                         } while (j === i);
                         animateSwap(alive[i], alive[j], startDur, function() {
                             k++;
-                            setTimeout(step, 70);
+                            levelTimeout(step, 70);
                         });
                     }
                     startDur = Math.max(230, startDur - 26);
                 }
-                setTimeout(step, 60);
+                levelTimeout(step, 60);
             }
 
             function dualSwap(pairs, dur, cb) {
@@ -6790,7 +6809,7 @@
                     vol: .02,
                     type: 'triangle'
                 });
-                setTimeout(function() {
+                levelTimeout(function() {
                     ea.style.transition = 'none';
                     eb.style.transition = 'none';
                     ea.style.transform = '';
@@ -6881,7 +6900,7 @@
                     delay: .12
                 });
                 cells.forEach(function(c, k) {
-                    setTimeout(function() {
+                    levelTimeout(function() {
                         if (!G || G.dead || G.sid !== s) return;
                         c.classList.add('peek');
                     }, k * 14);
@@ -6894,7 +6913,7 @@
                             ci = q;
                             break;
                         }
-                    setTimeout(function() {
+                    levelTimeout(function() {
                         if (!G || G.dead || G.sid !== s) return;
                         var c = cellEl(ci);
                         if (c) c.classList.add('target');
@@ -6906,7 +6925,7 @@
                 });
                 var hold = Math.min(2800, 1500 + cells.length * 22),
                     showMs = 400 + G.oracle.targets.length * 700 + hold;
-                setTimeout(function() {
+                levelTimeout(function() {
                     if (!G || G.dead || G.sid !== s) return;
                     cells.forEach(function(c) {
                         c.classList.remove('peek', 'target');
@@ -6920,7 +6939,7 @@
                     G.deck.forEach(function(cd, ci) {
                         if (!cd.grp.done) alive.push(ci);
                     });
-                    setTimeout(function() {
+                    levelTimeout(function() {
                         if (!G || G.dead || G.sid !== s) return;
                         banner.textContent = 'Оракул тасует судьбу\u2026';
                         runShuffle(alive, sc.swaps, !!sc.dual, sc.dur, function() {
@@ -6953,7 +6972,7 @@
                     vol: .05,
                     delay: .15
                 });
-                setTimeout(function() {
+                levelTimeout(function() {
                     if (!G || G.dead || G.sid !== s || G.finished) return;
                     removeOracleUI();
                     buildOracleStage(G.oracle.stage + 1);
@@ -6987,14 +7006,14 @@
                         BG.comet();
                         G.lastComet = performance.now();
                     }
-                    setTimeout(function() {
+                    levelTimeout(function() {
                         var c = cellEl(i);
                         if (c) {
                             clearTimeout(cd._dk);
                             c.classList.add('gcleared');
                         }
                     }, 420);
-                    setTimeout(function() {
+                    levelTimeout(function() {
                         if (!G) return;
                         floatLabel('\u00B7 ' + ZM.SYMS[G.oracle.signSym].n + ' \u00B7', 'fl-gold');
                         if (G.streak >= 2) floatLabel('Серия \u00D7' + Math.min(G.streak, 5) + '!', 'fl-combo');
@@ -7004,10 +7023,10 @@
                     updateHintUI();
                     if (G.oracle.foundCount >= G.oracle.need) {
                         if (G.oracle.stage < G.oracle.stages.length - 1) {
-                            setTimeout(nextOracleStage, 900);
+                            levelTimeout(nextOracleStage, 900);
                         } else {
                             removeOracleUI();
-                            setTimeout(function() {
+                            levelTimeout(function() {
                                 if (G && !G.finished) finishWin();
                             }, 800);
                         }
@@ -7022,7 +7041,7 @@
                     cell.classList.add('bad', 'wrongshake');
                     floatLabel('мимо', 'fl-bad');
                     renderCombo();
-                    setTimeout(function() {
+                    levelTimeout(function() {
                         if (!G || G.dead) return;
                         cell.classList.remove('open', 'bad', 'wrongshake');
                     }, MISS_VIEW_MS);
@@ -7057,7 +7076,7 @@
                         var c = cellEl(ci);
                         if (!c) return;
                         c.classList.add('hinted');
-                        setTimeout(function() {
+                        levelTimeout(function() {
                             c.classList.remove('hinted');
                         }, 2600);
                     });
@@ -7076,7 +7095,7 @@
                     var c = cellEl(ci);
                     if (!c) return;
                     c.classList.add('hinted');
-                    setTimeout(function() {
+                    levelTimeout(function() {
                         c.classList.remove('hinted');
                     }, 2600);
                 });
@@ -7120,7 +7139,7 @@
                     document.body.classList.add('peeking');
                     if (c) c.classList.add('open');
                     updateHintUI();
-                    setTimeout(function() {
+                    levelTimeout(function() {
                         document.body.classList.remove('peeking');
                         if (!G || G.dead) return;
                         if (c) c.classList.remove('open');
@@ -7158,11 +7177,11 @@
                         if (cd.grp !== gr) return;
                         var c = cellEl(ci);
                         if (!c) return;
-                        setTimeout(function() {
+                        levelTimeout(function() {
                             if (!G || G.sid !== s || G.dead) return;
                             c.classList.add('open');
                         }, base);
-                        setTimeout(function() {
+                        levelTimeout(function() {
                             if (!G || G.sid !== s || G.dead) return;
                             clearTimeout(G.deck[ci]._dk);
                             c.classList.add('gcleared');
@@ -7170,7 +7189,7 @@
                         wave = base + 820;
                     });
                 });
-                setTimeout(function() {
+                levelTimeout(function() {
                     document.body.classList.remove('peeking');
                     if (!G || G.sid !== s || G.dead) return;
                     chosen.forEach(function(gr) {
@@ -7231,14 +7250,16 @@
                         if (cd.grp !== gr) return;
                         var c = cellEl(ci);
                         if (!c) return;
-                        setTimeout(function() {
+                        levelTimeout(function() {
                             c.classList.add('open');
                         }, kk * 280);
-                        setTimeout(function() {
+                        levelTimeout(function() {
                             c.classList.add('cleared');
                         }, kk * 280 + 400);
                     });
                 });
+                ZM.save.stats.matchesTotal += 2;
+                ZM.persist();
                 AE.tone(880, {
                     dur: .8,
                     vol: .08
@@ -7247,7 +7268,7 @@
                 ZM.toast('Астро-карта стёрла две пары с неба', {
                     ic: 'i-map'
                 });
-                if (G.cleared >= G.needed) setTimeout(function() {
+                if (G.cleared >= G.needed) levelTimeout(function() {
                     if (G && !G.finished) finishWin();
                 }, 850);
                 else lockUntil(700);
@@ -7256,7 +7277,7 @@
             function lockUntil(ms) {
                 G.busy = true;
                 var s = G.sid;
-                setTimeout(function() {
+                levelTimeout(function() {
                     if (!G || G.sid !== s || G.dead || G.finished) return;
                     G.busy = false;
                     updateHintUI();
@@ -7293,6 +7314,9 @@
                     G.running = false;
                     G.preview = false;
                 }
+                document.body.classList.remove('peeking');
+                document.getElementById('board').classList.remove('faded', 'reveal-flash');
+                removeOracleUI();
                 SEL = [];
                 G = null;
             }
