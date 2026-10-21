@@ -3089,6 +3089,7 @@
 
 <body>
     <script src="journey.js"></script>
+    <script src="save-files.js"></script>
     <script src="match3.js"></script>
     <script>
         (function() {
@@ -3180,16 +3181,15 @@
 
     <section class="screen" id="s_hub">
         <div class="topbar">
-            <span class="logo"><span class="lwheel" id="logWheel"></span>Созвездие памяти</span>
+            <span class="logo"><span class="lwheel" id="logWheel"></span><span class="brand-full">Созвездие памяти</span><span class="brand-short">Созвездие</span></span>
             <span class="dustchip" title="Звёздная пыль"><svg><use href="#i-star"/></svg><span id="dustTop">0</span></span>
-            <button class="iconbtn muteBtn" id="btnVol" title="Звук"><svg><use href="#i-vol"/></svg><span class="il">Звук</span></button>
+
             <button class="iconbtn" id="btnCalendar" title="Ежедневные награды"><svg><use href="#i-gift"/></svg><span class="il">Дар</span><span class="dot" id="calDot" style="display:none"></span></button>
-            <button class="iconbtn" id="btnProfile" title="Сменить знак"><svg><use href="#i-user"/></svg><span class="il">Знак</span></button>
-            <button class="iconbtn" id="btnShop" title="Лавка"><svg><use href="#i-bag"/></svg><span class="il">Лавка</span></button>
-            <button class="iconbtn" id="btnAch" title="Трофеи"><svg><use href="#i-trophy"/></svg><span class="il">Трофеи</span></button>
-            <button class="iconbtn" id="btnDaily" title="Ежедневный прогноз" style="display:none"><svg><use href="#i-clock"/></svg><span class="il">Прогноз</span></button>
+            <button class="iconbtn" id="btnHubMenu" title="Настройки и разделы" aria-label="Ещё: настройки и разделы" aria-controls="hubTools" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="il">Ещё</span></button>
+            <nav id="hubTools" class="hub-tools" hidden aria-label="Дополнительные разделы"><button class="iconbtn muteBtn" id="btnVol" title="Звук"><svg><use href="#i-vol"/></svg><span class="il">Звук</span></button><button class="iconbtn" id="btnProfile" title="Сменить знак"><svg><use href="#i-user"/></svg><span class="il">Знак</span></button><button class="iconbtn" id="btnShop" title="Лавка"><svg><use href="#i-bag"/></svg><span class="il">Лавка</span></button><button class="iconbtn" id="btnAch" title="Трофеи"><svg><use href="#i-trophy"/></svg><span class="il">Трофеи</span></button><button class="iconbtn" id="btnDaily" title="Ежедневный прогноз" style="display:none"><svg><use href="#i-clock"/></svg><span class="il">Прогноз</span></button></nav>
+
         </div>
-        <div class="hub-wrap">
+<div class="hub-wrap">
             <div class="hub-hero">
                 <div class="hero-panel">
                     <div style="display:flex;gap:15px;align-items:center">
@@ -3273,6 +3273,7 @@
                 <div class="pairs"><b id="gPV">0/6</b><span id="gPLabel">групп</span></div>
             </div>
         </div>
+        <section id="missionPanel" class="mission-panel" hidden aria-label="Цель уровня"><div class="mission-heading"><span class="mission-emblem" aria-hidden="true">✦</span><div><span class="eyebrow">ЦЕЛЬ РАСКЛАДА</span><h2 id="missionTitle"></h2></div><b id="missionCount"></b></div><progress id="missionProgress" max="1" value="0" aria-label="Прогресс цели"></progress><span id="missionHint"></span></section>
         <p id="gameGuide" class="game-guide" role="status" aria-live="polite"></p>
         <div class="board-zone">
             <div class="board" id="board"></div>
@@ -3343,12 +3344,17 @@
                 opt = opt || {};
                 ZM.modalForceClose();
                 var r = document.getElementById('modalRoot');
-                r.innerHTML = '<div class="modal ' + (opt.cls || '') + '">' + html + '</div>';
+                r.innerHTML = '<div class="modal ' + (opt.cls || '') + '" role="dialog" aria-modal="true" tabindex="-1">' + html + '</div>';
+                var dialogHeading = r.querySelector('h2');
+                if (dialogHeading) { dialogHeading.id = 'dialogTitle'; r.firstElementChild.setAttribute('aria-labelledby', 'dialogTitle'); }
                 r.classList.add('show');
                 _modal = {
                     onClose: opt.onClose || null,
-                    persistent: !!opt.persistent
+                    persistent: !!opt.persistent,
+                    previousFocus: document.activeElement
                 };
+                var firstControl = r.querySelector('button:not(:disabled),[tabindex="0"]') || r.firstElementChild;
+                firstControl.focus({ preventScroll: true });
                 ZM.qa('#modalRoot [data-close]').forEach(function(b) {
                     b.addEventListener('click', function() {
                         ZM.modalClose();
@@ -3366,11 +3372,26 @@
                     r.innerHTML = '';
                 }
                 var cb = _modal && _modal.onClose;
+                var previousFocus = _modal && _modal.previousFocus;
                 _modal = null;
+                if (previousFocus && previousFocus.isConnected) {
+                    var restoreFocus = previousFocus.closest('#hubTools') ? document.getElementById('btnHubMenu') : previousFocus;
+                    restoreFocus.focus({ preventScroll: true });
+                }
                 if (cb) cb();
             };
             document.getElementById('modalRoot').addEventListener('click', function(e) {
                 if (e.target === this && _modal && !_modal.persistent) ZM.modalClose();
+            });
+            document.addEventListener('keydown', function(e) {
+                if (!_modal) return;
+                if (e.key === 'Escape' && !_modal.persistent) { e.preventDefault(); ZM.modalClose(); return; }
+                if (e.key !== 'Tab') return;
+                var controls = ZM.qa('#modalRoot button:not(:disabled),#modalRoot input:not([type=file]),#modalRoot [tabindex="0"]').filter(function(el) { return el.getClientRects().length > 0; });
+                if (!controls.length) { e.preventDefault(); return; }
+                var first = controls[0], last = controls[controls.length - 1];
+                if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+                else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
             });
             ZM.GLYPHS = [];
             for (var gi = 0; gi < 12; gi++) ZM.GLYPHS.push(String.fromCharCode(0x2648 + gi) + '\uFE0E');
@@ -4448,7 +4469,7 @@
                 },
                 tone: function(f, o) {
                     o = o || {};
-                    if (!this.ctx || !this.on) return;
+                    if (!this.ctx || !this.on || document.hidden) return;
                     try {
                         var t = this.ctx.currentTime + (o.delay || 0),
                             osc = this.ctx.createOscillator(),
@@ -5042,6 +5063,11 @@
                 loop: function(ts) {
                     var self = this;
                     if (this.dead || !this.c) return;
+                    if (document.hidden || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || ts - (this._lastPaint || 0) < 32) {
+                        requestAnimationFrame(function(t2) { self.loop(t2); });
+                        return;
+                    }
+                    this._lastPaint = ts;
                     try {
                         var c = this.c,
                             W = this.cv.width,
@@ -5172,6 +5198,14 @@
             };
             BG.init();
             BG.loadImages();
+            document.addEventListener('visibilitychange', function() {
+                if (document.hidden) {
+                    Music.pause();
+                    if (AE.ctx && AE.ctx.state === 'running') AE.ctx.suspend().catch(function() {});
+                } else if (AE.on && AE.ctx) {
+                    AE.ctx.resume().then(function() { Music.ensure(); }).catch(function() {});
+                }
+            });
 
             function wheelSVG(detail) {
                 var R = 48,
@@ -5268,16 +5302,20 @@
                 startLevel(sign * ZM.PER_SIGN, { cfg: Journey.endlessConfig(round), endless: round });
             }
 
-            function startPractice() {
+            function startPractice(type) {
+                type = typeof type === 'string' ? type : 'score';
                 ZM.modalForceClose();
                 var sign = ZM.save.sign == null ? 0 : ZM.save.sign;
-                startLevel(sign * ZM.PER_SIGN + 7, { practice: true });
+                var cfg = Journey.alchemyConfig(sign, type === 'seals' ? 1 : 0);
+                if (type === 'collect') { cfg.goal = { type: 'collect', symbol: sign % 6 }; cfg.target = 16; cfg.moves = 24; }
+                else if (type === 'score') { delete cfg.goal; cfg.target = 70; cfg.moves = 20; }
+                startLevel(sign * ZM.PER_SIGN + 7, { practice: true, cfg: cfg });
             }
 
             function finishPractice() {
                 ZM.addDust(10); AE.complete();
                 ZM.modalOpen('<h2>Алхимия удалась</h2><div class="msub">Созвездия сложились в вашу пользу.</div><div class="reward-line">+10 ★ · победа засчитана в ритуал дня</div><div class="m-actions"><button class="btn primary" id="practiceAgain">Новый расклад</button><button class="btn" id="practiceHome">К атласу</button></div>', { persistent: true });
-                document.getElementById('practiceAgain').addEventListener('click', startPractice);
+                document.getElementById('practiceAgain').addEventListener('click', chooseAlchemy);
                 document.getElementById('practiceHome').addEventListener('click', function() { ZM.modalForceClose(); killLevel(); enterHub(false); });
             }
 
@@ -5301,7 +5339,7 @@
                 G.finished = true; G.running = false;
                 clearInterval(G._tick);
                 var idx = G.idx, options = G.endless ? { endless: G.endless, cfg: G.cfg } : G.practice ? { practice: true, cfg: G.cfg } : {};
-                ZM.modalOpen('<h2>Звёзды ждут нового расклада</h2><div class="msub">Ходы закончились: собрано ' + G.cleared + ' из ' + G.needed + ' символов. Пройденные этапы и награды сохранены.</div>' +
+                ZM.modalOpen('<h2>Звёзды ждут нового расклада</h2><div class="msub">Ходы закончились: собрано ' + G.cleared + ' из ' + G.needed + ' целей. Пройденные этапы и награды сохранены.</div>' +
                     '<div class="m-actions"><button class="btn primary" id="alchemyRetry">Попробовать снова</button><button class="btn" id="alchemyHome">К атласу</button></div>', { persistent: true });
                 document.getElementById('alchemyRetry').addEventListener('click', function() { ZM.modalForceClose(); startLevel(idx, options); });
                 document.getElementById('alchemyHome').addEventListener('click', function() { ZM.modalForceClose(); killLevel(); enterHub(false); });
@@ -5323,6 +5361,77 @@
                 return String(text).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
             }
 
+            function importJourney(input) {
+                var file = input.files && input.files[0], errorBox = document.getElementById('importError');
+                if (!file) return;
+                if (file.size > 1024 * 1024) { errorBox.textContent = 'Выберите копию размером не больше 1 МБ.'; return; }
+                file.text().then(function(text) {
+                    if (!input.isConnected) return;
+                    var imported = SaveFiles.parse(text);
+                    previewImport(imported);
+                }).catch(function(error) {
+                    if (input.isConnected && errorBox) errorBox.textContent = error.message || 'Не удалось прочитать файл.';
+                }).finally(function() { input.value = ''; });
+            }
+
+            function previewImport(imported) {
+                var stars = imported.lvStars.reduce(function(a, b) { return a + b; }, 0);
+                var sign = imported.sign == null ? 'Знак ещё не выбран' : ZM.SIGNS[imported.sign].name;
+                ZM.modalOpen('<h2>Восстановить путешествие?</h2><div class="msub">Проверьте выбранную копию перед восстановлением.</div>' +
+                    '<div class="import-preview"><b>' + sign + '</b><span>' + stars + ' звёзд · ' + imported.dust + ' пыли</span><span>Посланий в книге: ' + (imported.journal || []).length + '</span></div>' +
+                    '<p class="journey-note">Текущий прогресс будет заменён. Его резервная копия останется в этом браузере. Перед восстановлением также можно скачать её файлом.</p>' +
+                    '<p id="restoreError" role="alert"></p><div class="m-actions"><button class="btn" id="exportBeforeImport">Скачать текущую копию</button><button class="btn" data-close>Отмена</button><button class="btn primary" id="confirmImport">Восстановить</button></div>', { persistent: true });
+                document.getElementById('exportBeforeImport').addEventListener('click', exportJourney);
+                document.getElementById('confirmImport').addEventListener('click', function() {
+                    try {
+                        localStorage.setItem('zodiacMemory.beforeImport', JSON.stringify(ZM.save));
+                        localStorage.setItem('zodiacMemory.v3', JSON.stringify(imported));
+                    } catch (e) {
+                        document.getElementById('restoreError').textContent = 'Браузер не смог сохранить данные. Текущее путешествие не заменено. Проверьте свободное место и повторите.';
+                        return;
+                    }
+                    killLevel(); location.reload();
+                });
+            }
+
+
+            function exportJourney() {
+                var url = URL.createObjectURL(new Blob([JSON.stringify({ format: 'zodiac-memory', version: 1, save: ZM.save }, null, 2)], { type: 'application/json' }));
+                var a = document.createElement('a'); a.href = url; a.download = 'zodiac-memory-' + ZM.todayISO() + '.json';
+                a.click(); setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+            }
+
+            function chooseAlchemy() {
+                var names = [
+                    ['score', 'Звёздный поток', 'Собирайте линии любых символов. Каскады помогут достичь цели.'],
+                    ['collect', 'Светило судьбы', 'Охотьтесь за одним светилом. Другие линии открывают путь.'],
+                    ['seals', 'Лунные печати', 'Собирайте линии на отмеченных клетках, чтобы снять все печати.']
+                ];
+                ZM.modalOpen('<h2>Зал алхимии</h2><div class="msub">Выберите настроение сегодняшнего расклада.</div><div class="alchemy-choices">' + names.map(function(m) {
+                    return '<button class="journey-card" data-alchemy="' + m[0] + '"><span class="mode-glyph">' + (m[0] === 'seals' ? '☾' : m[0] === 'collect' ? '♀' : '✦') + '</span><b>' + m[1] + '</b><span>' + m[2] + '</span></button>';
+                }).join('') + '</div><p class="journey-note">10 пыли за победу · один бесплатный намёк · без ограничения времени</p><div class="m-actions"><button class="btn" data-close>Назад</button></div>');
+                ZM.qa('[data-alchemy]').forEach(function(b) { b.addEventListener('click', function() { startPractice(b.getAttribute('data-alchemy')); }); });
+            }
+
+            function alchemyGoal(cfg) {
+                var names = ['Солнце', 'Луна', 'Венера', 'Юпитер', 'Звезда', 'Меркурий'];
+                if (cfg.goal && cfg.goal.type === 'collect') return 'Соберите ' + cfg.target + ' символов «' + names[cfg.goal.symbol] + '»';
+                if (cfg.goal && cfg.goal.type === 'seals') return 'Снимите все лунные печати';
+                return 'Соберите ' + cfg.target + ' символов';
+            }
+
+            function updateMission() {
+                if (!G) return;
+                var panel = document.getElementById('missionPanel');
+                panel.hidden = !G.cfg.match3;
+                if (!G.cfg.match3) return;
+                document.getElementById('missionTitle').textContent = alchemyGoal(G.cfg);
+                document.getElementById('missionCount').textContent = Math.min(G.cleared, G.needed) + ' / ' + G.needed;
+                var progress = document.getElementById('missionProgress');
+                progress.max = G.needed; progress.value = Math.min(G.cleared, G.needed);
+                document.getElementById('missionHint').textContent = G.cfg.goal && G.cfg.goal.type === 'seals' ? 'Линия снимает печать только на своей клетке' : G.cfg.goal && G.cfg.goal.type === 'collect' ? 'В цель идут только выбранные символы' : 'Комбинация 4+ дарит дополнительный ход';
+            }
+
             function openJournal(category) {
                 var entries = ZM.save.journal.slice().reverse().filter(function(p) { return !category || p.cat === category; });
                 var filters = '<div class="journal-filters"><button class="btn" data-journal="">Все</button>' + Object.keys(PRED_META).map(function(c) {
@@ -5333,12 +5442,17 @@
                         var sg = ZM.SIGNS[p.sign], meta = PRED_META[p.cat];
                         return '<article class="journal-entry"><span class="eyebrow">' + escapeHTML(p.day) + ' · ' + (sg ? sg.name : '') + ' · ' + (meta ? meta.name : '') + '</span><p>' + escapeHTML(p.text) + '</p></article>';
                     }).join('') : '<p class="journey-note">Книга пока молчит. Завершайте испытания, собирайте пыль и раскрывайте карты в столе гадалки.</p>') + '</div>' +
-                    '<div class="m-actions"><button class="btn" id="exportJourney">Сохранить копию прогресса</button><button class="btn primary" data-close>Закрыть книгу</button></div>');
-                document.getElementById('exportJourney').addEventListener('click', function() {
-                    var url = URL.createObjectURL(new Blob([JSON.stringify({ format: 'zodiac-memory', version: 1, save: ZM.save }, null, 2)], { type: 'application/json' }));
-                    var a = document.createElement('a'); a.href = url; a.download = 'zodiac-memory-' + ZM.todayISO() + '.json';
-                    a.click(); setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+                    '<details class="save-tools"><summary>Перенести или сохранить путешествие</summary><div class="m-actions"><button class="btn" id="exportJourney">Скачать копию</button><button class="btn" id="importJourney">Загрузить копию</button><button class="btn" id="undoImport" hidden>Вернуть прежний прогресс</button></div><input type="file" id="importFile" accept="application/json,.json" hidden><p id="importError" role="alert"></p></details><div class="m-actions"><button class="btn primary" data-close>Закрыть книгу</button></div>');
+                document.getElementById('exportJourney').addEventListener('click', exportJourney);
+                try { document.getElementById('undoImport').hidden = !localStorage.getItem('zodiacMemory.beforeImport'); } catch (e) {}
+                document.getElementById('undoImport').addEventListener('click', function() {
+                    try {
+                        var backup = JSON.parse(localStorage.getItem('zodiacMemory.beforeImport'));
+                        previewImport(SaveFiles.parse(JSON.stringify({ format: 'zodiac-memory', version: 1, save: backup })));
+                    } catch (e) { document.getElementById('importError').textContent = 'Не удалось прочитать прежнюю копию. Текущий прогресс сохранён.'; }
                 });
+                document.getElementById('importJourney').addEventListener('click', function() { document.getElementById('importFile').click(); });
+                document.getElementById('importFile').addEventListener('change', function() { importJourney(this); });
                 ZM.qa('[data-journal]').forEach(function(b) { b.addEventListener('click', function() { openJournal(b.getAttribute('data-journal')); }); });
             }
 
@@ -5346,9 +5460,9 @@
                 ZM.modalOpen('<h2>Три пути к предсказанию</h2><div class="guide-list">' +
                     '<article><b>01 · Созвездие памяти</b><p>Запомните карты и открывайте одинаковые пары. Триады состоят из трёх карт; обманки не имеют пары. Подсказка помогает один раз бесплатно.</p></article>' +
                     '<article><b>02 · Оракул</b><p>Запомните отмеченные карты. После тасовки найдите все нужные знаки. Каждый этап меняет расклад.</p></article>' +
-                    '<article><b>03 · Алхимия звёзд</b><p>Выберите два соседних символа и обменяйте их местами. Линии от трёх символов исчезают, четыре и больше дают дополнительный ход. Неудачный обмен не тратит ход.</p></article>' +
+                    '<article><b>03 · Алхимия звёзд</b><p>Выберите два соседних символа и обменяйте их местами. Линии от трёх символов исчезают, четыре и больше дают дополнительный ход. Неудачный обмен не тратит ход. Можно выбирать символы нажатием или свайпом. В особых раскладах собирайте нужное светило либо снимайте лунные печати.</p></article>' +
                     '<article><b>Награды и возвращения</b><p>Первое прохождение уровня: 25 пыли, повторное: 10. Предсказание стоит 50 пыли или одну печать Оракула. Три победы за день дают 50 пыли и печать. В бесконечном небе каждый третий этап тоже приносит печать.</p></article>' +
-                    '<article><b>Ваше личное небо</b><p>Прогресс хранится в этом браузере. Очистка данных сайта удаляет сохранение. Экспорт в книге позволяет сохранить резервную копию путешествия.</p></article>' +
+                    '<article><b>Ваше личное небо</b><p>Прогресс хранится в этом браузере. Очистка данных сайта удаляет сохранение. В книге можно скачать копию и восстановить её в другом браузере. Перед заменой прогресса вы увидите подтверждение.</p></article>' +
                     '</div><div class="m-actions"><button class="btn primary" data-close>Путь понятен</button></div>');
             }
 
@@ -5876,7 +5990,7 @@
                     var taken = ZM.save.calTaken.indexOf(r.d) >= 0,
                         isToday = (r.d === cur && !taken),
                         cls = 'cal-day' + (taken ? ' taken' : '') + (isToday ? ' today' : '') + (isToday && !claimedToday ? ' claimable' : '') + (r.skin ? ' bonus' : '');
-                    html += '<div class="' + cls + '"' + (isToday && !claimedToday ? ' data-claim="' + r.d + '" title="Забрать награду"' : '') +
+                    html += '<div class="' + cls + '"' + (isToday && !claimedToday ? ' data-claim="' + r.d + '" role="button" tabindex="0" title="Забрать награду"' : '') +
                         '><span class="cd-n">' + r.d + '</span><span class="cd-r">' + rewardText(r) + '</span></div>';
                 });
                 html += '</div><div class="m-actions"><button class="btn" data-close>Закрыть</button></div>';
@@ -5884,6 +5998,7 @@
                     persistent: true
                 });
                 ZM.qa('#modalRoot [data-claim]').forEach(function(el) {
+                    el.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); } });
                     el.addEventListener('click', function() {
                         var d = +el.getAttribute('data-claim');
                         if (ZM.save.calLast === ZM.todayISO() || ZM.save.calTaken.indexOf(d) >= 0) return;
@@ -6313,6 +6428,8 @@
                 sess++;
                 BG.setPhase(Math.min(3, Math.floor(l / 3)));
                 document.getElementById('board').classList.remove('match3-board');
+                document.getElementById('s_game').classList.toggle('is-alchemy', !!cfg.match3);
+                document.getElementById('missionPanel').hidden = !cfg.match3;
                 document.getElementById('gameGuide').textContent = cfg.oracle ? 'Запомните отмеченные карты, следите за тасовкой, затем найдите их.' : 'Открывайте одинаковые карты. Триады требуют трёх совпадений.';
                 applySkin();
                 var symPool = [];
@@ -6348,13 +6465,13 @@
                     ZM.showScreen('game');
                     var game = G;
                     game.match3 = Match3.mount(document.getElementById('board'), {
-                        target: cfg.target, moves: cfg.moves,
+                        target: cfg.target, moves: cfg.moves, goal: cfg.goal,
                         active: function() { return G === game && !game.dead && !game.finished; },
                         update: function(state) {
                             game.cleared = state.score;
                             game.moves = state.moves;
                             document.getElementById('gameGuide').textContent = state.message;
-                            renderPairs(); renderTimer(); updateHintUI();
+                            renderPairs(); renderTimer(); updateHintUI(); updateMission();
                         },
                         match: function(count, chain) { game.streak = chain; AE.match(chain); renderCombo(); },
                         win: finishWin,
@@ -6502,6 +6619,7 @@
                     bs += '<svg class="' + (stars >= n ? 'lit' : '') + '" viewBox="0 0 24 24"><use href="#i-star"/></svg>';
                 });
                 document.getElementById('gBestStars').innerHTML = bs;
+                updateMission();
                 var b = document.getElementById('board');
                 b.style.gridTemplateColumns = 'repeat(' + G.cfg.cols + ',1fr)';
                 b.style.gridTemplateRows = 'repeat(' + G.cfg.rows + ',1fr)';
@@ -7776,11 +7894,28 @@
             document.getElementById('btnVol').addEventListener('click', function() {
                 AE.toggle();
             });
+            function closeHubMenu() {
+                document.getElementById('hubTools').hidden = true;
+                document.getElementById('btnHubMenu').setAttribute('aria-expanded', 'false');
+            }
+            document.getElementById('btnHubMenu').addEventListener('click', function() {
+                var tools = document.getElementById('hubTools');
+                tools.hidden = !tools.hidden;
+                this.setAttribute('aria-expanded', String(!tools.hidden));
+            });
+            document.getElementById('hubTools').addEventListener('click', function(e) {
+                if (e.target.closest('button')) document.getElementById('btnHubMenu').focus({ preventScroll: true });
+            }, true);
+            document.getElementById('hubTools').addEventListener('click', function(e) { if (e.target.closest('button')) closeHubMenu(); });
+            document.addEventListener('click', function(e) { if (!e.target.closest('#hubTools,#btnHubMenu')) closeHubMenu(); });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && !document.getElementById('hubTools').hidden) { closeHubMenu(); document.getElementById('btnHubMenu').focus(); }
+            });
             document.getElementById('btnContinue').addEventListener('click', function() {
                 var sign = ZM.save.sign == null ? 0 : ZM.save.sign;
                 startLevel(sign * ZM.PER_SIGN + Math.min(ZM.PER_SIGN, ZM.save.lvOpen[sign]) - 1);
             });
-            document.getElementById('btnAlchemy').addEventListener('click', startPractice);
+            document.getElementById('btnAlchemy').addEventListener('click', chooseAlchemy);
             document.getElementById('btnEndless').addEventListener('click', startEndless);
             document.getElementById('btnJournal').addEventListener('click', function() { openJournal(); });
             document.getElementById('btnGuide').addEventListener('click', openGuide);

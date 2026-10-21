@@ -64,3 +64,86 @@ test('108 campaign configs and endless difficulty stay within supported sizes', 
         else if(!c.match3) assert.ok(c.rows*c.cols>=c.pairs*2);
     }
 });
+
+const Saves = require('../save-files.js');
+const packet = () => ({format:'zodiac-memory',version:1,save:{
+    sign:0,dust:120,inv:{hint:2,freeze:1,map:0},
+    lvStars:new Array(108).fill(0),lvOpen:new Array(12).fill(1),
+    journeyVersion:1,skins:{classic:true},skin:'classic',
+    stats:{fast:[],matchesTotal:1},calTaken:[1],calLast:'2026-10-22',
+    journal:[{day:'2026-10-22',sign:0,cat:'love',text:'Звёзды оставляют место для встречи.'}]
+}});
+
+test('fall plan maps each surviving tile to its original location without duplicates',()=>{
+    const board=Array.from({length:36},(_,i)=>i);
+    const p=M.collapsePlan(board,[0,12,24],()=>.5);
+    assert.deepEqual([0,6,12,18,24,30].map(i=>p.origins[i]),[null,null,null,6,18,30]);
+    const origins=p.origins.filter(i=>i!=null);
+    assert.equal(new Set(origins).size,33);
+    origins.forEach(i=>assert.ok(![0,12,24].includes(i)));
+    p.origins.forEach((from,i)=>{if(from!=null)assert.equal(p.board[i],board[from]);});
+});
+
+test('collection only counts the chosen symbol and lunar seals are removed once',()=>{
+    const board=[1,1,1,2,2,2], found=[0,1,2,3,4,5], seals=new Set([1,3,7]);
+    assert.equal(M.missionProgress({type:'collect',symbol:1},board,found,seals),3);
+    assert.equal(M.missionProgress({type:'seals'},board,found,seals),2);
+    assert.equal(M.missionProgress({type:'seals'},board,found,seals),0);
+    assert.deepEqual([...seals],[7]);
+});
+
+test('campaign and endless include three supported mission types with valid seal locations',()=>{
+    const types=new Set();
+    for(let s=0;s<12;s++)for(let v=0;v<2;v++){
+        const cfg=J.alchemyConfig(s,v);types.add(cfg.goal?.type||'score');
+        if(cfg.goal?.cells){
+            assert.equal(new Set(cfg.goal.cells).size,cfg.target);
+            assert.ok(cfg.goal.cells.every(n=>n>=0&&n<36));
+        }
+    }
+    assert.deepEqual([...types].sort(),['collect','score','seals']);
+    assert.deepEqual([3,6,9].map(n=>J.endlessConfig(n).goal?.type||'score'),['score','collect','seals']);
+});
+
+test('save parser round-trips valid progress and retains archived messages',()=>{
+    const p=packet(),s=Saves.parse(JSON.stringify(p));
+    assert.deepEqual(s,p.save);
+    const legacy=packet();delete legacy.save.journeyVersion;legacy.save.lvStars=new Array(84).fill(1);
+    assert.equal(Saves.parse(JSON.stringify(legacy)).lvStars.length,84);
+});
+
+test('save parser rejects malformed, oversized, future-version and dangerous files',()=>{
+    assert.throws(()=>Saves.parse('not-json'));
+    assert.throws(()=>Saves.parse(' '.repeat(1024*1024+1)));
+    const mutations=[
+        p=>p.version=42,
+        p=>p.save.dust=-1,
+        p=>p.save.lvStars.pop(),
+        p=>p.save.lvOpen[0]=100,
+        p=>p.save.journal[0].cat='unknown',
+        p=>p.save.calLast='2026-02-31',
+        p=>p.save.inv.hint='5',
+        p=>p.save.skins.classic='yes',
+        p=>p.save.stats.fast=[999],
+        p=>p.save.traits=['bad'],
+        p=>p.save.calTaken=[1,1],
+        p=>p.save.horoUsed={bad:'not-an-array'}
+    ];
+    for(const mutate of mutations){const p=packet();mutate(p);assert.throws(()=>Saves.parse(JSON.stringify(p)));}
+    assert.throws(()=>Saves.parse(JSON.stringify(packet()).replace('"dust":120','"__proto__":{"polluted":true},"dust":120')));
+    assert.equal({}.polluted,undefined);
+});
+
+test('mission hints choose the strongest immediate contribution to the objective',()=>{
+    for(let n=0;n<40;n++){
+        const board=M.newBoard(),goal={type:'collect',symbol:n%6};
+        const pair=M.findMove(board,goal),copy=board.slice();[copy[pair[0]],copy[pair[1]]]=[copy[pair[1]],copy[pair[0]]];
+        const score=b=>{const found=M.matches(b);return found.filter(i=>b[i]===goal.symbol).length*100+found.length;};
+        const chosen=score(copy);
+        for(let i=0;i<36;i++)for(const j of[i+1,i+6]){
+            if(!M.adjacent(i,j))continue;
+            const candidate=board.slice();[candidate[i],candidate[j]]=[candidate[j],candidate[i]];
+            if(M.matches(candidate).length)assert.ok(chosen>=score(candidate));
+        }
+    }
+});

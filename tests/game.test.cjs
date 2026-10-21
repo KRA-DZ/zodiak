@@ -53,6 +53,15 @@ async function skipPreview(page) {
     await page.clock.runFor(600);
 }
 
+async function settleAlchemy(page) {
+    for (let n=0;n<30;n++) {
+        const idle=await page.evaluate(()=>!testGame.state || testGame.state.finished || !testGame.state.match3.busy);
+        if(idle) return;
+        await page.clock.runFor(1000);
+    }
+    assert.fail('alchemy did not settle within 30 seconds');
+}
+
 test('early preview skip closes every card and allows normal play', async t => {
     const page = await game(t);
     await start(page);
@@ -244,7 +253,7 @@ test('match3 swaps, resolves cascades, awards campaign stars and cleans up on ex
         await page.evaluate(([a,b]) => {
             const gems=document.querySelectorAll('.gem'); gems[a].click();gems[b].click();
         },pair);
-        await page.clock.runFor(5000);
+        await settleAlchemy(page);
     }
     const result = await page.evaluate(() => ({ stars: ZM.save.lvStars[7], finished: testGame.state.finished }));
     assert.equal(result.finished,true);
@@ -274,6 +283,7 @@ test('invalid match3 exchange keeps moves and a hint is not spent during a casca
         return {before,after:g.match3.moves};
     });
     assert.equal(result.before,result.after);
+    await page.clock.runFor(600);
     await page.evaluate(()=>{
         const pair=Match3.findMove(testGame.state.match3.board);
         document.querySelectorAll('.gem')[pair[0]].click();document.querySelectorAll('.gem')[pair[1]].click();
@@ -378,7 +388,7 @@ test('match3 real move can win and persist stars, while exhausted moves never aw
         const pair=Match3.findMove(testGame.state.match3.board);
         document.querySelectorAll('.gem')[pair[0]].click();document.querySelectorAll('.gem')[pair[1]].click();
     });
-    await page.clock.runFor(10000);
+    await settleAlchemy(page);
     assert.ok(await page.evaluate(()=>ZM.save.lvStars[7]>0));
     const dust=await page.evaluate(()=>ZM.save.dust);
     await page.evaluate(()=>{ZM.modalForceClose();testGame.start(8,{cfg:{match3:true,rows:6,cols:6,target:10000,moves:1,par:180}});});
@@ -394,15 +404,16 @@ test('match3 real move can win and persist stars, while exhausted moves never aw
         if(!pair) pair=Match3.findMove(b);
         document.querySelectorAll('.gem')[pair[0]].click();document.querySelectorAll('.gem')[pair[1]].click();
     });
-    await page.clock.runFor(10000);
+    await settleAlchemy(page);
     // A large first cascade can legitimately grant one extra move. Finish it too.
-    for(let n=0;n<4 && !await page.evaluate(()=>testGame.state.finished);n++) {
+    for(let n=0;n<40 && !await page.evaluate(()=>testGame.state.finished);n++) {
         await page.evaluate(()=>{
             const pair=Match3.findMove(testGame.state.match3.board);
             document.querySelectorAll('.gem')[pair[0]].click();document.querySelectorAll('.gem')[pair[1]].click();
         });
-        await page.clock.runFor(10000);
+        await settleAlchemy(page);
     }
+    assert.equal(await page.locator('#alchemyRetry').count(),1);
     assert.equal(await page.evaluate(()=>ZM.save.lvStars[8]),0);
     assert.equal(await page.evaluate(()=>ZM.save.dust),dust);
 });
@@ -446,4 +457,119 @@ test('mobile predictions are readable, cost is shown and atlas art fits its colu
     assert.equal(fit.images,12);
     assert.ok(fit.left>=0 && fit.right<=390 && fit.width>300);
     assert.equal(await page.locator('#atlasTotal').count(),0);
+});
+
+test('import previews progress, can be cancelled, then restores with a backup',async t=>{
+    const page=await game(t);
+    const imported=await page.evaluate(()=>{
+        const s=JSON.parse(JSON.stringify(ZM.save));s.sign=0;s.dust=777;s.lvStars[9]=3;s.lvOpen[1]=2;
+        return {format:'zodiac-memory',version:1,save:s};
+    });
+    const file={name:'my-journey.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(imported))};
+    await page.evaluate(()=>testGame.journal());
+    await page.locator('.save-tools summary').click();
+    await page.locator('#importFile').setInputFiles(file);
+    await page.locator('#confirmImport').waitFor();
+    assert.equal(await page.evaluate(()=>ZM.save.dust),0);
+    await page.locator('#modalRoot [data-close]').click();
+    assert.equal(await page.evaluate(()=>ZM.save.dust),0);
+    await page.evaluate(()=>testGame.journal());
+    await page.locator('#importFile').setInputFiles(file);
+    await page.locator('#confirmImport').waitFor();
+    await Promise.all([page.waitForEvent('load'),page.locator('#confirmImport').click()]);
+    assert.equal(await page.evaluate(()=>ZM.save.dust),777);
+    assert.equal(await page.evaluate(()=>ZM.save.lvStars[9]),3);
+    assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('zodiacMemory.beforeImport')).dust),0);
+});
+
+test('invalid import never changes current progress',async t=>{
+    const page=await game(t);
+    await page.evaluate(()=>{ZM.save.dust=123;ZM.persist();testGame.journal();});
+    await page.locator('.save-tools summary').click();
+    await page.locator('#importFile').setInputFiles({name:'broken.json',mimeType:'application/json',buffer:Buffer.from('{"format":"wrong"}')});
+    await page.waitForFunction(()=>document.getElementById('importError').textContent.length>0);
+    assert.equal(await page.evaluate(()=>ZM.save.dust),123);
+    assert.equal(await page.locator('#confirmImport').count(),0);
+});
+
+test('alchemy shows mission types, preserves tiles on selection, and supports arrow-key focus',async t=>{
+    const page=await game(t);
+    await start(page,8);
+    assert.equal(await page.locator('.gem.sealed').count(),6);
+    assert.match(await page.locator('#missionTitle').innerText(),/печати/);
+    await page.locator('.gem').nth(0).focus();
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await page.evaluate(()=>document.activeElement.dataset.index),'1');
+    await page.keyboard.press('Enter');
+    assert.equal(await page.evaluate(()=>document.activeElement.dataset.index),'1');
+    assert.equal(await page.locator('.gem.selected').count(),1);
+    await start(page,16);
+    assert.match(await page.locator('#missionTitle').innerText(),/Луна/);
+});
+
+test('reduced motion settles gameplay and cancels all animation effects on exit',async t=>{
+    const page=await game(t);
+    await page.emulateMedia({reducedMotion:'reduce'});
+    await start(page,7);
+    await page.evaluate(()=>{
+        const pair=Match3.findMove(testGame.state.match3.board);
+        document.querySelectorAll('.gem')[pair[0]].click();document.querySelectorAll('.gem')[pair[1]].click();
+    });
+    await settleAlchemy(page);
+    assert.equal(await page.locator('.alchemy-spark,.alchemy-praise').count(),0);
+    await page.evaluate(()=>testGame.kill());
+    await page.clock.runFor(2000);
+    assert.equal(await page.locator('.resolving').count(),0);
+});
+
+test('mobile hub keeps secondary actions in a keyboard-accessible menu',async t=>{
+    const page=await game(t);
+    await page.setViewportSize({width:390,height:844});
+    await page.evaluate(()=>{document.querySelector('.zpick').click();document.getElementById('setupGo').click();});
+    await page.clock.runFor(800);
+    await page.evaluate(()=>ZM.modalForceClose());
+    assert.equal(await page.locator('#hubTools').isVisible(),false);
+    await page.locator('#btnHubMenu').click();
+    assert.equal(await page.locator('#hubTools').isVisible(),true);
+    await page.locator('#btnProfile').click();
+    assert.equal(await page.locator('#hubTools').isVisible(),false);
+    assert.equal(await page.locator('[role="dialog"]').count(),1);
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('[role="dialog"]').count(),0);
+    assert.equal(await page.evaluate(()=>document.activeElement.id),'btnHubMenu');
+    const width=await page.locator('.topbar').evaluate(el=>el.scrollWidth<=el.clientWidth);
+    assert.equal(width,true);
+});
+
+test('touch-style swipe makes one exchange and keyboard focus survives a cascade',async t=>{
+    const page=await game(t);
+    await start(page,7);
+    const pair=await page.evaluate(()=>Match3.findMove(testGame.state.match3.board));
+    const a=await page.locator('.gem').nth(pair[0]).boundingBox(),b=await page.locator('.gem').nth(pair[1]).boundingBox();
+    await page.mouse.move(a.x+a.width/2,a.y+a.height/2);
+    await page.mouse.down();await page.mouse.move(b.x+b.width/2,b.y+b.height/2,{steps:5});await page.mouse.up();
+    await settleAlchemy(page);
+    assert.ok(await page.evaluate(()=>testGame.state.cleared>0));
+    await page.evaluate(()=>testGame.start(7,{cfg:{match3:true,rows:6,cols:6,target:10000,moves:5,par:180}}));
+    await page.clock.runFor(32);
+    const keys=await page.evaluate(()=>Match3.findMove(testGame.state.match3.board));
+    await page.locator('.gem').nth(keys[0]).focus();await page.keyboard.press('Enter');
+    await page.locator('.gem').nth(keys[1]).focus();await page.keyboard.press('Enter');
+    await settleAlchemy(page);
+    assert.equal(await page.evaluate(()=>!!document.activeElement.closest('.gem')),true);
+});
+
+test('previous journey can be restored after an import',async t=>{
+    const page=await game(t);
+    await page.evaluate(()=>{
+        const previous=JSON.parse(JSON.stringify(ZM.save));previous.dust=345;
+        localStorage.setItem('zodiacMemory.beforeImport',JSON.stringify(previous));
+        ZM.save.dust=900;ZM.persist();testGame.journal();
+    });
+    await page.locator('.save-tools summary').click();await page.locator('#undoImport').click();
+    await page.locator('#confirmImport').waitFor();
+    assert.equal(await page.evaluate(()=>ZM.save.dust),900);
+    await Promise.all([page.waitForEvent('load'),page.locator('#confirmImport').click()]);
+    assert.equal(await page.evaluate(()=>ZM.save.dust),345);
+    assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('zodiacMemory.beforeImport')).dust),900);
 });

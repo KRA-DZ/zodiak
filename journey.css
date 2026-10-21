@@ -83,3 +83,77 @@
 .traits-disclosure { margin-top: 16px; }
 .traits-disclosure summary { color: var(--muted); font-size: .78rem; cursor: pointer; padding: 7px 0; }
 .traits-disclosure[open] summary { color: var(--gold); }
+/* «Живые созвездия»: мягкий обмен, объёмные фишки и заметная цель. */
+#s_game.is-alchemy .game-head { width: min(680px, 100%); display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; }
+#s_game.is-alchemy .hud-card { min-width: 0; }
+#s_game.is-alchemy .hud-r { min-width: 86px; justify-content: center; }
+#s_game.is-alchemy .hud-r .pairs, #s_game.is-alchemy .hud-r .combo, #s_game.is-alchemy #gMechs .chip.gold { display: none; }
+#s_game.is-alchemy .game-guide { max-width: 620px; font-size: .75rem; min-height: 34px; }
+.board-zone { position: relative; isolation: isolate; }
+.board.match3-board { overflow: hidden; box-shadow: 0 14px 46px #03051199, inset 0 0 35px #9f83ed10; }
+.gem { position: relative; overflow: visible; isolation: isolate; border-color: color-mix(in srgb,currentColor 55%,transparent); background: radial-gradient(ellipse at 28% 15%,#ffffff22 0,transparent 45%), linear-gradient(150deg,#37354c,#14172e 75%); box-shadow: inset 0 1px 0 #ffffff38, inset 0 -3px 7px #0006, 0 3px 7px #0005; transition: box-shadow .2s, border-color .2s, background .2s; border-radius: 18%; touch-action: none; }
+.gem::before { content: ''; position: absolute; inset: 7%; border: 1px solid currentColor; opacity: .14; border-radius: 16%; pointer-events: none; }
+.gem-facet { position: absolute; width: 54%; height: 54%; transform: rotate(45deg); border-radius: 25%; border: 1px solid currentColor; background: currentColor; opacity: .06; pointer-events: none; }
+.gem-symbol { z-index: 1; pointer-events: none; filter: drop-shadow(0 0 8px currentColor); }
+.gem.selected { transform: none; outline: 2px solid #fff1c6; outline-offset: -4px; box-shadow: 0 0 18px #eed58f66,inset 0 0 18px #caa7ff40; }
+.gem.sealed::after { content: '☾'; position: absolute; right: 5%; bottom: 0; font-size: .62rem; line-height: 1.4; color: #fff2c6; border-radius: 50%; background: #3c3155; padding: 0 4px; box-shadow: 0 0 9px #d2b9ff99; }
+.gem.sealed { background: radial-gradient(ellipse at 40% 20%,#80749b88,transparent 65%),linear-gradient(150deg,#34334e,#171830); border-style: dashed; border-color: #e3d2ff; }
+.gem.gem-hint { animation: alchemyHint 1.1s ease-in-out infinite; }
+@keyframes alchemyHint { 50% { box-shadow: inset 0 0 19px #f3df9c80,0 0 12px #f5dfa680; } }
+.mission-panel { flex-shrink: 0; width: min(620px,100%); background: linear-gradient(110deg,#24203adf,#111b32df); border: 1px solid #b29b6859; border-radius: 16px; padding: 12px 18px; margin: 2px auto 4px; }
+.mission-heading { display: flex; align-items: center; gap: 12px; }
+.mission-heading h2 { font-family: 'Manrope',sans-serif; font-size: .9rem; font-weight: 600; margin: 1px 0 3px; color: var(--gold-hi); }
+.mission-emblem { font-size: 1.8rem; color: #edd09a; }
+#missionCount { margin-left: auto; font-size: .9rem; white-space: nowrap; color: #f5e6c8; }
+#missionHint { color: var(--muted); font-size: .67rem; }
+#missionProgress { display: block; width: 100%; height: 6px; border: none; border-radius: 20px; overflow: hidden; margin: 7px 0 4px; accent-color: #d6b6ed; background: #080d25; }
+#missionProgress::-webkit-progress-bar { background: #080d25; }
+#missionProgress::-webkit-progress-value { background: linear-gradient(90deg,#9d8be0,#edcc99); transition: width .45s ease; }
+#missionProgress::-moz-progress-bar { background: linear-gradient(90deg,#9d8be0,#edcc99); }
+.alchemy-praise { position: absolute; top: 3%; left: 0; right: 0; text-align: center; font-family:'Cormorant Garamond',serif; font-size: clamp(1.3rem,4vw,1.8rem); color: #fff0c8; text-shadow: 0 0 18px #dba5ed; pointer-events: none; animation: alchemyPraise 1s ease both; z-index: 5; }
+@keyframes alchemyPraise { 0% { opacity: 0; transform: translateY(12px) scale(.95); } 20%,65% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-12px); } }
+.alchemy-spark { position:absolute; font-size:12px; pointer-events:none; font-style:normal; animation:alchemySpark .65s ease-out both; z-index:4; }
+@keyframes alchemySpark { from { transform: translate(-50%,-50%) scale(.6); opacity:0; } 20% { opacity:1; } to { transform:translate(calc(-50% + var(--spark-x)),calc(-50% + var(--spark-y))) scale(.2); opacity:0; } }
+.alchemy-choices { display:grid; gap:12px; }
+.alchemy-choices .journey-card { min-height:110px; display:grid; grid-template-columns:38px 1fr; gap:8px 12px; }
+.alchemy-choices .mode-glyph { grid-row:span 2; }
+.save-tools { border-top:1px solid var(--line); padding-top:16px; margin-top:20px; }
+.save-tools summary { cursor:pointer; color:var(--gold-hi); font-size:.85rem; }
+#importError,#restoreError { color:var(--danger); font-size:.82rem; line-height:1.6; margin-top:12px; }
+.import-preview { display:grid; gap:8px; padding:20px; border:1px solid var(--gold-dim); border-radius:14px; color:var(--gold-hi); }
+.import-preview span { color:var(--muted); font-size:.85rem; }
+@media(max-width:600px) {
+    .mission-panel { padding:9px 12px; }
+    .mission-heading h2 { font-size:.8rem; }
+    .mission-heading .eyebrow { font-size:.57rem; }
+    #s_game.is-alchemy .hud-l { padding:9px 11px; }
+    #s_game.is-alchemy .lvlname { font-size:.85rem; }
+    #s_game.is-alchemy .game-head { margin-bottom:5px; }
+    .alchemy-praise { top:0; }
+    .journey-actions { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .journey-card { display:flex; min-height:135px; gap:7px; }
+    .journey-card b { font-size:.87rem; }
+    .journey-card > span:last-child { font-size:.69rem; }
+}
+@media(prefers-reduced-motion:reduce) {
+    #bgc { display:none; }
+    body::before { content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:url('fon.png') center/cover; }
+    .alchemy-spark,.alchemy-praise { display:none; }
+    .gem.gem-hint { animation:none; outline:2px solid var(--gold); }
+}
+@media(prefers-reduced-motion:reduce) and (orientation:portrait) { body::before { background-image:url('fonvert.png'); } }
+/* Дополнительные действия доступны без постоянного ряда мелких кнопок. */
+#s_hub .topbar { position:relative; z-index:20; }
+.brand-short { display:none; }
+.hub-tools { position:absolute; right:0; top:calc(100% + 9px); display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; width:290px; max-width:95vw; padding:14px; background:#151837fa; border:1px solid var(--gold-dim); border-radius:16px; box-shadow:0 18px 45px #0009; }
+.hub-tools .iconbtn { min-height:58px; }
+@media(max-width:600px) {
+    .brand-full { display:none; }
+    .brand-short { display:inline; font-size:1.05rem; }
+    #s_hub .topbar { gap:7px; padding:9px 11px; flex-wrap:nowrap; }
+    #s_hub .topbar .dustchip { min-width:61px; padding:7px 10px; gap:5px; }
+    #s_hub .topbar > .iconbtn { min-width:44px; padding:5px 7px; }
+    #s_hub .topbar .logo { gap:6px; min-width:0; }
+    #s_hub .topbar .lwheel { width:20px; height:20px; flex-basis:20px; }
+}
+@media(max-width:350px) { .brand-short { font-size:.88rem; } }
