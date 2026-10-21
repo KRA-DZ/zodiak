@@ -78,14 +78,13 @@
     }
     function mount(host, options) {
         const symbols = ['☉', '☽', '♀', '♃', '✦', '☿'];
-        const names = ['Солнце', 'Луна', 'Венера', 'Юпитер', 'Звезда', 'Меркурий'];
+        const names = ['Солнце', 'Луна', 'Роза', 'Кристалл', 'Звезда', 'Комета'];
         const goal = options.goal || { type: 'score' };
         const seals = new Set(goal.cells || []);
-        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const reduced = window.Observatory ? Observatory.reducedMotion() : window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         let board = newBoard(), tiles = [], selected = -1, score = 0, moves = options.moves;
         let busy = false, stopped = false, pointer = null, suppressClick = false;
         const timers = new Set(), animations = new Set(), effects = new Set();
-        const duration = ms => reduced ? 20 : ms;
         const active = () => !stopped && options.active();
         function later(fn, ms) {
             const id = setTimeout(() => { timers.delete(id); if (active()) fn(); }, ms);
@@ -94,10 +93,27 @@
         }
         function animate(tile, frames, ms, delay = 0, hold = false) {
             if (reduced || !tile.animate) return;
-            const animation = tile.animate(frames, { duration: ms, delay, easing: 'cubic-bezier(.22,.68,.26,1)', fill: hold ? 'forwards' : 'backwards' });
+            const animation = tile.animate(frames, { duration: ms, delay, easing: 'cubic-bezier(.22,.68,.26,1)', fill: hold ? 'both' : 'backwards' });
             animations.add(animation);
             animation.onfinish = () => { if (!hold) animations.delete(animation); };
             return animation;
+        }
+        function waitForMotion(list, callback) {
+            const running = list.filter(Boolean);
+            if (!running.length) { later(callback, 20); return; }
+            Promise.all(running.map(a => a.finished.catch(() => {}))).then(() => { if (active()) callback(); });
+        }
+        function placeTiles() {
+            if (stopped) return;
+            const css = getComputedStyle(host), gap = parseFloat(css.columnGap) || 8;
+            const pad = parseFloat(css.paddingLeft) || 8;
+            const width = ((host.clientWidth > 50 ? host.clientWidth : 360) - pad * 2 - gap * 5) / 6;
+            const height = ((host.clientHeight > 50 ? host.clientHeight : 360) - pad * 2 - gap * 5) / 6;
+            tiles.forEach((tile, i) => {
+                tile.style.left = (pad + (i % 6) * (width + gap)) + 'px';
+                tile.style.top = (pad + Math.floor(i / 6) * (height + gap)) + 'px';
+                tile.style.width = width + 'px'; tile.style.height = height + 'px';
+            });
         }
         function notify(message) {
             options.update({ score, moves, goal, message: message || 'Обменяйте соседние символы. Линия от трёх зажжёт созвездие.' });
@@ -121,7 +137,7 @@
         function makeTile(value) {
             const tile = document.createElement('button');
             tile.className = 'gem gem-' + value;
-            tile.innerHTML = '<span class="gem-symbol">' + symbols[value] + '</span><span class="gem-facet" aria-hidden="true"></span>';
+            tile.innerHTML = '<span class="gem-symbol">' + symbols[value] + '</span><span class="gem-art" aria-hidden="true" style="--icon-x:' + (value % 3 * 50) + '%;--icon-y:' + (Math.floor(value / 3) * 100) + '%"></span>';
             tile.type = 'button';
             tile.addEventListener('click', () => {
                 if (suppressClick) { suppressClick = false; return; }
@@ -157,7 +173,7 @@
             const focus = host.contains(document.activeElement) ? +document.activeElement.dataset.index : -1;
             tiles = board.map(makeTile);
             host.replaceChildren(...tiles);
-            refresh(); notify(message);
+            host.dataset.phase = 'idle'; placeTiles(); refresh(); notify(message);
             if (focus >= 0) tiles[focus]?.focus({ preventScroll: true });
         }
         function praise(text) {
@@ -173,7 +189,7 @@
                 const tile = tiles[i], box = tile.getBoundingClientRect(), zone = host.parentNode.getBoundingClientRect();
                 for (let n = 0; n < 3; n++) {
                     const el = document.createElement('i');
-                    el.className = 'alchemy-spark'; el.textContent = '✦'; el.setAttribute('aria-hidden', 'true');
+                    el.className = 'alchemy-spark'; el.textContent = document.body.dataset.effect === 'petals' ? '❀' : '✦'; el.setAttribute('aria-hidden', 'true');
                     el.style.left = box.left - zone.left + box.width / 2 + 'px';
                     el.style.top = box.top - zone.top + box.height / 2 + 'px';
                     el.style.setProperty('--spark-x', ((n - 1) * 24) + 'px');
@@ -185,34 +201,41 @@
             });
         }
         function drop(found, callback) {
+            host.dataset.phase = 'fall';
             const focused = host.contains(document.activeElement) ? document.activeElement : null;
             const focusIndex = focused ? +focused.dataset.index : -1;
             const plan = collapsePlan(board, found), old = tiles.slice();
-            const pitch = old[6].offsetTop - old[0].offsetTop || host.clientHeight / 6;
+            const oldPositions = old.map(tile => ({ x: parseFloat(tile.style.left), y: parseFloat(tile.style.top) }));
+            const pitch = oldPositions[6].y - oldPositions[0].y;
+            const newPerColumn = Array.from({ length: 6 }, (_, col) => plan.origins.filter((from, i) => i % 6 === col && from == null).length);
             board = plan.board;
             tiles = plan.origins.map((origin, i) => origin == null ? makeTile(board[i]) : old[origin]);
             old.forEach((tile, i) => { if (found.includes(i)) tile.getAnimations().forEach(a => { a.cancel(); animations.delete(a); }); });
-            host.replaceChildren(...tiles);
-            refresh();
+            host.replaceChildren(...tiles); placeTiles(); refresh();
             if (focused) (focused.isConnected ? focused : tiles[focusIndex])?.focus({ preventScroll: true });
+            const falling = [];
             tiles.forEach((tile, i) => {
-                const origin = plan.origins[i], row = Math.floor(i / 6);
-                const from = origin == null ? -(row + 2) * pitch : (Math.floor(origin / 6) - row) * pitch;
-                if (!from) return;
-                animate(tile, [
-                    { transform: 'translateY(' + from + 'px)', opacity: origin == null ? .15 : 1 },
-                    { transform: 'translateY(3px)', opacity: 1, offset: .86 },
+                const origin = plan.origins[i];
+                // Новые фишки начинают в разных клетках над полем, а не в одной точке.
+                const from = origin == null ? -newPerColumn[i % 6] * pitch : oldPositions[origin].y - parseFloat(tile.style.top);
+                if (Math.abs(from) < .5) return;
+                falling.push(animate(tile, [
+                    { transform: 'translateY(' + from + 'px)', opacity: origin == null ? .35 : 1 },
+                    { transform: 'translateY(3px)', opacity: 1, offset: .9 },
                     { transform: 'translateY(0)', opacity: 1 }
-                ], 470, (i % 6) * 14);
+                ], 620 + Math.min(180, Math.abs(from) * .35), i % 6 * 22, true));
             });
-            later(callback, duration(560));
+            waitForMotion(falling, () => {
+                falling.forEach(a => { if (a) { a.cancel(); animations.delete(a); } });
+                callback();
+            });
         }
         function settle(chain, extraMove) {
             const found = matches(board);
             if (!found.length) {
-                if (score >= options.target) { options.win(); return; }
-                if (moves <= 0) { options.lose(); return; }
-                busy = false;
+                if (score >= options.target) { host.dataset.phase = 'complete'; options.win(); return; }
+                if (moves <= 0) { host.dataset.phase = 'failed'; options.lose(); return; }
+                busy = false; host.dataset.phase = 'idle';
                 if (!findMove(board)) {
                     board = newBoard();
                     rebuild('Небо обновило расклад. Перетасовка бесплатна.');
@@ -220,6 +243,7 @@
                 } else { refresh(); notify('Хороший ход. ' + label() + '.'); }
                 return;
             }
+            host.dataset.phase = 'clear';
             if (found.length >= 4 && !extraMove) { moves++; extraMove = true; }
             const gained = missionProgress(goal, board, found, seals);
             score += gained;
@@ -227,25 +251,25 @@
             sparkle(found);
             if (chain > 1) praise('Каскад ×' + chain);
             else if (found.length >= 4) praise('Созвездие! +1 ход');
-            found.forEach(i => animate(tiles[i], [
+            const vanishing = found.map(i => animate(tiles[i], [
                 { transform: 'scale(1)', opacity: 1 },
                 { transform: 'scale(1.13)', opacity: 1, offset: .35, filter: 'brightness(1.6)' },
                 { transform: 'scale(.55)', opacity: 0, filter: 'brightness(2)' }
             ], 260, 0, true));
             refresh();
             notify(chain > 1 ? 'Каскад ×' + chain + ' · ' + label() : (extraMove ? 'Большое созвездие: +1 ход' : 'Созвездие собрано!'));
-            later(() => drop(found, () => {
+            waitForMotion(vanishing, () => drop(found, () => {
                 // Предохранитель на аномально длинный случайный каскад.
                 if (chain >= 20) { board = newBoard(); rebuild('Новый звёздный расклад'); }
                 settle(chain + 1, extraMove);
-            }), duration(270));
+            }));
         }
         function select(i) {
             if (!active() || busy) return;
             if (selected === i) { selected = -1; refresh(); return; }
             if (selected < 0 || !adjacent(selected, i)) { selected = i; refresh(); return; }
             const a = selected;
-            selected = -1; busy = true; refresh();
+            selected = -1; busy = true; host.dataset.phase = 'swap'; refresh();
             [tiles[a], tiles[i]].forEach(tile => {
                 animations.forEach(animation => { if (animation.effect?.target === tile) { animation.cancel(); animations.delete(animation); } });
             });
@@ -257,33 +281,36 @@
             const swaps = [animate(tiles[a], frames(dx, dy), 240, 0, true), animate(tiles[i], frames(-dx, -dy), 240, 0, true)];
             const cancel = list => list.forEach(a => { if (a) { a.cancel(); animations.delete(a); } });
             notify(valid ? 'Звёзды меняются местами…' : 'Ищем созвездие…');
-            later(() => {
+            waitForMotion(swaps, () => {
                 cancel(swaps);
                 if (!valid) {
                     const returns = [animate(tiles[a], frames(dx, dy).reverse(), 220, 0, true), animate(tiles[i], frames(-dx, -dy).reverse(), 220, 0, true)];
-                    later(() => {
+                    waitForMotion(returns, () => {
                         cancel(returns);
                         [board[a], board[i]] = [board[i], board[a]];
-                        busy = false; refresh(); notify('Линия не сложилась. Ход сохранён.');
-                    }, duration(230));
+                        busy = false; host.dataset.phase = 'idle'; refresh(); notify('Линия не сложилась. Ход сохранён.');
+                    });
                     return;
                 }
                 const focus = host.contains(document.activeElement) ? document.activeElement : null;
                 [tiles[a], tiles[i]] = [tiles[i], tiles[a]];
-                host.replaceChildren(...tiles); refresh();
+                host.replaceChildren(...tiles); placeTiles(); refresh();
                 focus?.focus({ preventScroll: true });
                 settle(1, false);
-            }, duration(250));
+            });
         }
         rebuild(label() + ' за ' + moves + ' ходов. Можно нажимать или смахивать символы.');
         tiles.forEach((tile, i) => animate(tile, [{ transform: 'translateY(-18px) scale(.9)', opacity: 0 }, { transform: 'translateY(0) scale(1)', opacity: 1 }], 380, i % 6 * 20));
+        const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(placeTiles) : null;
+        resizeObserver?.observe(host);
         return {
+            layout: placeTiles,
             destroy() {
-                stopped = true; pointer = null;
+                stopped = true; pointer = null; resizeObserver?.disconnect();
                 timers.forEach(clearTimeout); timers.clear();
                 animations.forEach(a => a.cancel()); animations.clear();
                 effects.forEach(el => el.remove()); effects.clear();
-                host.classList.remove('resolving'); host.removeAttribute('aria-busy');
+                host.classList.remove('resolving'); host.removeAttribute('aria-busy'); delete host.dataset.phase;
             },
             hint() {
                 if (busy || stopped) return;

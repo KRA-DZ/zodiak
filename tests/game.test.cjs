@@ -11,8 +11,8 @@ before(async () => {
 });
 after(async () => { await browser?.close(); });
 
-async function game(t, seed) {
-    const page = await browser.newPage();
+async function game(t, seed, settings = {}) {
+    const page = await browser.newPage({ reducedMotion: 'reduce' });
     t.after(() => page.close());
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
@@ -33,12 +33,13 @@ async function game(t, seed) {
                 ZM.ready = true;`);
             return route.fulfill({ contentType: 'text/html', body: html });
         }
-        const file = path.join(root, name);
+        const file = path.resolve(root, '.' + decodeURIComponent(url.pathname));
+        if (!file.startsWith(root + path.sep)) return route.fulfill({ status: 404, body: '' });
         if (fs.existsSync(file)) return route.fulfill({ path: file });
         return route.fulfill({ status: 404, body: '' });
     });
     if (seed) await page.addInitScript(save => localStorage.setItem('zodiacMemory.v3', JSON.stringify(save)), seed);
-    await page.clock.install();
+    if (!settings.realTime) await page.clock.install();
     await page.goto('http://game.test/index.html');
     return page;
 }
@@ -382,7 +383,7 @@ test('legacy browser save retains stars, currency, calendar and today purchased 
 
 test('match3 real move can win and persist stars, while exhausted moves never award a win', async t => {
     const page=await game(t);
-    await page.evaluate(()=>testGame.start(7,{cfg:{match3:true,rows:6,cols:6,target:3,moves:1,par:180}}));
+    await page.evaluate(()=>{ZM.save.ach.cascade3=true;ZM.save.ach.cascade5=true;testGame.start(7,{cfg:{match3:true,rows:6,cols:6,target:3,moves:1,par:180}});});
     await page.clock.runFor(32);
     await page.evaluate(()=>{
         const pair=Match3.findMove(testGame.state.match3.board);
@@ -572,4 +573,156 @@ test('previous journey can be restored after an import',async t=>{
     await Promise.all([page.waitForEvent('load'),page.locator('#confirmImport').click()]);
     assert.equal(await page.evaluate(()=>ZM.save.dust),345);
     assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('zodiacMemory.beforeImport')).dust),900);
+});
+
+test('real animation keeps survivors moving downward and waits before the next cascade',async t=>{
+    const page=await game(t,undefined,{realTime:true});
+    await page.evaluate(()=>Observatory.openWardrobe());
+    await page.locator('#motionPreference').selectOption('full');
+    await page.evaluate(()=>{ZM.modalForceClose();testGame.start(7,{cfg:{match3:true,rows:6,cols:6,target:3,moves:8,par:180}});});
+    await page.waitForTimeout(650);
+    await page.evaluate(()=>{
+        const board=testGame.state.match3.board;let best=null,deep=-1;
+        for(let i=0;i<36;i++)for(const j of[i+1,i+6]){
+            if(!Match3.adjacent(i,j))continue;
+            const next=board.slice();[next[i],next[j]]=[next[j],next[i]];
+            const found=Match3.matches(next);
+            if(found.length&&Math.max(...found)>deep){deep=Math.max(...found);best=[i,j];}
+        }
+        window.oldMotionTiles=[...document.querySelectorAll('.gem')];
+        oldMotionTiles[best[0]].click();oldMotionTiles[best[1]].click();
+    });
+    await page.waitForFunction(()=>document.getElementById('board').dataset.phase==='clear');
+    await page.evaluate(()=>{window.dropPositions=new Map([...document.querySelectorAll('.gem')].map(el=>[el,parseFloat(el.style.top)]));});
+    await page.waitForFunction(()=>document.getElementById('board').dataset.phase==='fall');
+    await page.waitForTimeout(90);
+    const first=await page.evaluate(()=>{
+        window.fallingTile=[...document.querySelectorAll('.gem')].filter(el=>dropPositions.has(el)&&parseFloat(el.style.top)-dropPositions.get(el)>10).sort((a,b)=>(parseFloat(b.style.top)-dropPositions.get(b))-(parseFloat(a.style.top)-dropPositions.get(a)))[0];
+        if(!fallingTile)return null;
+        return {y:new DOMMatrixReadOnly(getComputedStyle(fallingTile).transform).m42,top:parseFloat(fallingTile.style.top),delta:parseFloat(fallingTile.style.top)-dropPositions.get(fallingTile),phase:document.getElementById('board').dataset.phase,motion:Observatory.state().motion,animations:fallingTile.getAnimations().map(a=>({state:a.playState,time:a.currentTime,frames:a.effect.getKeyframes()}))};
+    });
+    assert.ok(first,'a survivor should fall from a higher cell');
+    assert.ok(first.y < -1,'survivor must still be above its target during the fall: '+JSON.stringify(first));
+    await page.waitForTimeout(160);
+    const second=await page.evaluate(()=>({y:new DOMMatrixReadOnly(getComputedStyle(fallingTile).transform).m42,phase:document.getElementById('board').dataset.phase}));
+    assert.equal(second.phase,'fall');assert.ok(second.y>first.y,'survivor should move down continuously');
+    await page.waitForFunction(()=>testGame.state.finished,{},{timeout:30000});
+    assert.equal(await page.locator('#board').getAttribute('data-phase'),'complete');
+    await page.evaluate(()=>{ZM.modalForceClose();testGame.start(7);});
+    await page.waitForTimeout(450);
+    await page.evaluate(()=>{const pair=Match3.findMove(testGame.state.match3.board);document.querySelectorAll('.gem')[pair[0]].click();document.querySelectorAll('.gem')[pair[1]].click();});
+    await page.waitForFunction(()=>document.getElementById('board').dataset.phase==='fall');
+    await page.evaluate(()=>testGame.kill());
+    await page.waitForTimeout(900);
+    assert.equal(await page.evaluate(()=>testGame.state),null);
+    assert.equal(await page.locator('#board').getAttribute('data-phase'),null);
+});
+
+test('hero wardrobe purchases are shared, persistent and never charged twice',async t=>{
+    const page=await game(t);
+    const outcome=await page.evaluate(()=>{
+        ZM.save.dust=500;Observatory.setHero('female');
+        const bought=Observatory.buy('outfits','astral'),after=ZM.save.dust;
+        Observatory.buy('outfits','astral');Observatory.setHero('male');
+        return {bought,after,current:ZM.save.dust,hero:Observatory.state().hero,outfit:Observatory.state().outfit};
+    });
+    assert.equal(outcome.bought,true);assert.equal(outcome.after,outcome.current);
+    assert.equal(outcome.hero,'male');assert.equal(outcome.outfit,'astral');
+    await page.reload();
+    assert.equal(await page.evaluate(()=>Observatory.state().outfit),'astral');
+    assert.equal(await page.evaluate(()=>Observatory.state().hero),'male');
+    await page.evaluate(()=>Observatory.openWardrobe());
+    assert.equal(await page.locator('.figure-art').count()>0,true);
+});
+
+test('tutorial and completed book unlock cosmetic trophies exactly once',async t=>{
+    const page=await game(t);
+    await page.evaluate(()=>testGame.guide());
+    await page.locator('#tutorialDone').click();
+    assert.equal(await page.evaluate(()=>ZM.save.skins.roseglass),true);
+    const dust=await page.evaluate(()=>ZM.save.dust);
+    await page.evaluate(()=>{testGame.guide();document.getElementById('tutorialDone').click();});
+    assert.equal(await page.evaluate(()=>ZM.save.dust),dust);
+    await page.evaluate(()=>{for(let i=0;i<9;i++)ZM.save.lvStars[i]=1;Observatory.check();});
+    assert.equal(await page.evaluate(()=>Observatory.owned('outfits','moon')),true);
+    assert.equal(await page.evaluate(()=>Observatory.owned('pets','owl')),true);
+    assert.equal(await page.evaluate(()=>ZM.save.ach.first_book),true);
+});
+
+test('daily cosmetic gifts convert duplicates and equipped scenes survive save import validation',async t=>{
+    const page=await game(t);
+    const outcome=await page.evaluate(()=>{
+        Observatory.giveReward({cosmetics:[{kind:'pets',id:'cat'}]});
+        const before=ZM.save.dust;
+        Observatory.giveReward({cosmetics:[{kind:'pets',id:'cat'}]});
+        const duplicateDust=ZM.save.dust-before;
+        ZM.save.dust+=500;Observatory.buy('backgrounds','garden');Observatory.equip('pets','cat');
+        const parsed=SaveFiles.parse(JSON.stringify({format:'zodiac-memory',version:1,save:ZM.save}));
+        return {duplicateDust,scene:parsed.observatory.background,pet:parsed.observatory.pet,ach:ZM.save.ach.new_sky};
+    });
+    assert.equal(outcome.duplicateDust,25);assert.equal(outcome.scene,'garden');assert.equal(outcome.pet,'cat');assert.equal(outcome.ach,true);
+});
+
+test('daily pet gift is visible and cannot be claimed twice',async t=>{
+    const page=await game(t);
+    await page.evaluate(()=>{ZM.save.sign=0;ZM.save.calTaken=[1,2];ZM.save.calLast='2000-01-01';testGame.calendar();});
+    await page.locator('[data-claim="3"]').click();
+    assert.equal(await page.evaluate(()=>Observatory.owned('pets','cat')),true);
+    assert.equal(await page.locator('.reward-showcase .figure-art').count(),1);
+    const dust=await page.evaluate(()=>ZM.save.dust);
+    await page.evaluate(()=>testGame.calendar());
+    assert.equal(await page.locator('[data-claim]').count(),0);
+    assert.equal(await page.evaluate(()=>ZM.save.dust),dust);
+});
+
+test('locked or unaffordable cosmetics do not spend currency and legacy collector gifts are one-time',async t=>{
+    const page=await game(t);
+    const result=await page.evaluate(()=>{
+        ZM.save.dust=10;
+        const a=Observatory.buy('outfits','moon'),b=Observatory.buy('backgrounds','garden');
+        return {a,b,dust:ZM.save.dust,count:ZM.ACHDEFS.length,valid:ZM.ACHDEFS.every(d=>!d.extra||(d.extra.cosmetics||[]).every(c=>Observatory.catalog[c.kind].some(item=>item.id===c.id)))};
+    });
+    assert.deepEqual(result,{a:false,b:false,dust:10,count:22,valid:true});
+    await page.evaluate(()=>{ZM.save.ach.collector=true;Observatory.state().collectorGift=false;ZM.persist();});
+    await page.reload();
+    assert.equal(await page.evaluate(()=>Observatory.owned('pets','dragon')),true);
+    assert.equal(await page.evaluate(()=>Observatory.owned('backgrounds','garden')),true);
+    const dust=await page.evaluate(()=>ZM.save.dust);
+    await page.reload();
+    assert.equal(await page.evaluate(()=>ZM.save.dust),dust);
+});
+
+test('generated assets decode and the mobile guardian is visible above the modes',async t=>{
+    const page=await game(t);
+    await page.setViewportSize({width:390,height:844});
+    await page.locator('[data-hero="male"]').click();
+    await page.locator('#setupGo').click();await page.clock.runFor(800);
+    await page.evaluate(()=>ZM.modalForceClose());
+    assert.equal(await page.evaluate(()=>Observatory.state().hero),'male');
+    const result=await page.evaluate(async()=>{
+        const decoded=[];
+        for(const src of['assets/observatory-atlas.png','assets/alchemy-icons.png','assets/moon-garden.png']){
+            const image=new Image();image.src=src;await image.decode();decoded.push(image.naturalWidth>0);
+        }
+        const avatar=document.getElementById('observatoryHost').getBoundingClientRect();
+        const modes=document.querySelector('.journey-bar').getBoundingClientRect();
+        return {decoded,above:avatar.top<modes.top,visible:avatar.top>=0&&avatar.bottom<844};
+    });
+    assert.ok(result.decoded.every(Boolean));assert.equal(result.above,true);assert.equal(result.visible,true);
+});
+
+test('shop, all wardrobe sections and the complete trophy list open through visible controls',async t=>{
+    const page=await game(t);
+    await page.locator('#setupGo').click();await page.clock.runFor(800);
+    await page.evaluate(()=>ZM.modalForceClose());
+    await page.locator('#btnHubMenu').click();await page.locator('#btnShop').click();
+    await page.locator('#shopWardrobe').click();
+    for(const tab of['pets','backgrounds','effects','backs','outfits']){
+        await page.locator('[data-tab="'+tab+'"]').click();
+        assert.ok(await page.locator('.wardrobe-item').count()>0);
+        if(tab==='backs')assert.equal(await page.locator('.wardrobe-item').count(),10);
+    }
+    await page.keyboard.press('Escape');
+    await page.locator('#btnHubMenu').click();await page.locator('#btnAch').click();
+    assert.equal(await page.locator('.ach-row').count(),22);
 });

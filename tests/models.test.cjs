@@ -147,3 +147,26 @@ test('mission hints choose the strongest immediate contribution to the objective
         }
     }
 });
+
+const Observatory=require('../observatory.js');
+test('older saves gain a free hero wardrobe without changing existing progress',()=>{
+    const save=packet().save,stars=save.lvStars.slice(),dust=save.dust;
+    Observatory.hydrate(save);
+    assert.equal(save.dust,dust);assert.deepEqual(save.lvStars,stars);
+    assert.equal(save.observatory.outfit,'apprentice');assert.equal(save.observatory.hero,null);
+    assert.equal(save.observatory.owned.outfits.apprentice,true);
+    const once=JSON.stringify(save);Observatory.hydrate(save);assert.equal(JSON.stringify(save),once);
+    assert.deepEqual(Saves.parse(JSON.stringify({format:'zodiac-memory',version:1,save})).observatory,save.observatory);
+});
+
+test('import accepts owned cosmetics and rejects unowned equipment or unknown items',()=>{
+    const base=packet();Observatory.hydrate(base.save);
+    base.save.observatory.owned.outfits.astral=true;base.save.observatory.outfit='astral';
+    base.save.skins.moonlace=true;base.save.skin='moonlace';
+    assert.equal(Saves.parse(JSON.stringify(base)).observatory.outfit,'astral');
+    for(const mutate of[
+        s=>s.observatory.outfit='moon',s=>s.observatory.pet='dragon',
+        s=>s.observatory.motion='evil',s=>s.observatory.owned.unknown={},s=>s.observatory.owned.backgrounds.unknown=true,
+        s=>s.observatory.stats.gems=-1,s=>s.observatory.hero='unknown'
+    ]){const p=JSON.parse(JSON.stringify(base));mutate(p.save);assert.throws(()=>Saves.parse(JSON.stringify(p)));}
+});

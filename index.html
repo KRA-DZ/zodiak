@@ -3084,13 +3084,14 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="journey.css">
+    <link rel="stylesheet" href="journey.css?v=observatory-1">
+    <link rel="stylesheet" href="observatory.css?v=observatory-1">
 </head>
 
 <body>
-    <script src="journey.js"></script>
-    <script src="save-files.js"></script>
-    <script src="match3.js"></script>
+    <script src="journey.js?v=observatory-1"></script>
+    <script src="save-files.js?v=observatory-1"></script>
+    <script src="match3.js?v=observatory-1"></script>
     <script>
         (function() {
             var shown = false;
@@ -3174,6 +3175,7 @@
                 <input type="date" id="birthInput">
                 <div class="lbl">Или выберите знак вручную</div>
                 <div class="zodiac-grid" id="zGrid"></div>
+                <div id="setupHero"></div>
                 <button class="btn primary" id="setupGo">Начать путешествие</button>
             </div>
         </div>
@@ -3191,6 +3193,7 @@
         </div>
 <div class="hub-wrap">
             <div class="hub-hero">
+                <section class="hero-panel observatory-panel" id="observatoryHost" aria-label="Ваш герой и спутник"></section>
                 <div class="hero-panel">
                     <div style="display:flex;gap:15px;align-items:center">
                         <div class="hg" id="heroGlyph"></div>
@@ -3228,7 +3231,7 @@
                     <button class="journey-card" id="btnContinue"><span class="mode-glyph">✧</span><b>Продолжить путь</b><span id="continueHint"></span></button>
                     <button class="journey-card" id="btnEndless"><span class="mode-glyph">∞</span><b>Бесконечное небо</b><span id="endlessHint"></span></button>
                     <button class="journey-card" id="btnAlchemy"><span class="mode-glyph">✶</span><b>Зал алхимии</b><span>Три в ряд · свободная игра · 10 пыли за победу</span></button>
-                    <button class="journey-card" id="btnJournal"><span class="mode-glyph">☾</span><b>Книга предсказаний</b><span id="journalHint"></span></button>
+                    <button class="journey-card" id="btnJournal"><span class="mode-glyph">☾</span><b>Предсказания</b><span id="journalHint"></span></button>
                 </div>
                 <div class="ritual-row"><div id="dailyQuest"></div><div id="loginHint"></div><button class="btn" id="btnGuide">Как играть</button></div>
             </section>
@@ -3720,6 +3723,7 @@
                     return;
                 }
                 ZM.save.sign = si;
+                if (window.Observatory && !Observatory.state().hero) Observatory.setHero('female');
                 ZM.save.birth = dv || '';
                 ZM.persist();
                 if (window.__ZM_ENTER) window.__ZM_ENTER();
@@ -4415,7 +4419,9 @@
         })();
     </script>
 
-    <script src="predictions.js"></script>
+    <script src="predictions.js?v=observatory-1"></script>
+    <script src="observatory.js?v=observatory-1"></script>
+    <script>Observatory.init(window.ZM);</script>
     <script>
         /* ═══ ДВИЖОК: аудио+музыка, фон, хаб-атлас, игра ═══ */
         (function() {
@@ -4962,8 +4968,8 @@
                         im.src = src;
                         return im;
                     }
-                    this.imgL = mk('fon.png'); /* горизонтальный */
-                    this.imgP = mk('fonvert.png'); /* вертикальный */
+                    this.imgL = mk(window.Observatory ? Observatory.backgroundImage(false) : 'fon.png'); /* горизонтальный */
+                    this.imgP = mk(window.Observatory ? Observatory.backgroundImage(true) : 'fonvert.png'); /* вертикальный */
                 },
                 resize: function() {
                     if (this.dead || !this.cv) return;
@@ -5063,7 +5069,7 @@
                 loop: function(ts) {
                     var self = this;
                     if (this.dead || !this.c) return;
-                    if (document.hidden || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || ts - (this._lastPaint || 0) < 32) {
+                    if (document.hidden || (window.Observatory ? Observatory.reducedMotion() : window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || ts - (this._lastPaint || 0) < 32) {
                         requestAnimationFrame(function(t2) { self.loop(t2); });
                         return;
                     }
@@ -5270,6 +5276,7 @@
             function recordDailyWin() {
                 var q = dailyRitual();
                 q.wins = Math.min(3, q.wins + 1);
+                if (G) Observatory.record('win', { mode: G.cfg.match3 ? 'alchemy' : G.cfg.oracle ? 'oracle' : 'memory' });
                 ZM.persist();
             }
 
@@ -5326,6 +5333,7 @@
                 ZM.save.endless.round = round + 1;
                 ZM.addDust(pay);
                 AE.complete(); BG.constellation();
+                Observatory.check();
                 ZM.modalOpen('<h2>Этап ' + round + ' пройден</h2><div class="msub">Небо меняется — ваше путешествие продолжается.</div>' +
                     '<div class="reward-line">+' + pay + ' ★' + (round % 3 === 0 ? ' · +1 печать Оракула' : '') + '</div>' +
                     '<p class="journey-note">Награда уже сохранена. Можно отдохнуть и продолжить с этапа ' + (round + 1) + ' в другой раз.</p>' +
@@ -5355,6 +5363,7 @@
                 p.text = text;
                 ZM.save.journal.push({ day: ZM.todayISO(), sign: ZM.save.sign, cat: cat, text: text });
                 ZM.save.journal = ZM.save.journal.slice(-100);
+                Observatory.record('prediction');
             }
 
             function escapeHTML(text) {
@@ -5414,7 +5423,7 @@
             }
 
             function alchemyGoal(cfg) {
-                var names = ['Солнце', 'Луна', 'Венера', 'Юпитер', 'Звезда', 'Меркурий'];
+                var names = ['Солнце', 'Луна', 'Роза', 'Кристалл', 'Звезда', 'Комета'];
                 if (cfg.goal && cfg.goal.type === 'collect') return 'Соберите ' + cfg.target + ' символов «' + names[cfg.goal.symbol] + '»';
                 if (cfg.goal && cfg.goal.type === 'seals') return 'Снимите все лунные печати';
                 return 'Соберите ' + cfg.target + ' символов';
@@ -5437,12 +5446,13 @@
                 var filters = '<div class="journal-filters"><button class="btn" data-journal="">Все</button>' + Object.keys(PRED_META).map(function(c) {
                     return '<button class="btn' + (c === category ? ' primary' : '') + '" data-journal="' + c + '">' + PRED_META[c].name + '</button>';
                 }).join('') + '</div>';
-                ZM.modalOpen('<h2>Книга предсказаний</h2><div class="msub">Последние 100 открытых посланий. Ваши записи хранятся в этом браузере.</div>' + filters +
+                ZM.modalOpen('<h2>Книга предсказаний</h2><button class="btn primary" id="journalOracle">Получить предсказание</button><div class="msub">Последние 100 открытых посланий. Ваши записи хранятся в этом браузере.</div>' + filters +
                     '<div class="journal-list">' + (entries.length ? entries.map(function(p) {
                         var sg = ZM.SIGNS[p.sign], meta = PRED_META[p.cat];
                         return '<article class="journal-entry"><span class="eyebrow">' + escapeHTML(p.day) + ' · ' + (sg ? sg.name : '') + ' · ' + (meta ? meta.name : '') + '</span><p>' + escapeHTML(p.text) + '</p></article>';
                     }).join('') : '<p class="journey-note">Книга пока молчит. Завершайте испытания, собирайте пыль и раскрывайте карты в столе гадалки.</p>') + '</div>' +
                     '<details class="save-tools"><summary>Перенести или сохранить путешествие</summary><div class="m-actions"><button class="btn" id="exportJourney">Скачать копию</button><button class="btn" id="importJourney">Загрузить копию</button><button class="btn" id="undoImport" hidden>Вернуть прежний прогресс</button></div><input type="file" id="importFile" accept="application/json,.json" hidden><p id="importError" role="alert"></p></details><div class="m-actions"><button class="btn primary" data-close>Закрыть книгу</button></div>');
+                document.getElementById('journalOracle').addEventListener('click', openOracleTable);
                 document.getElementById('exportJourney').addEventListener('click', exportJourney);
                 try { document.getElementById('undoImport').hidden = !localStorage.getItem('zodiacMemory.beforeImport'); } catch (e) {}
                 document.getElementById('undoImport').addEventListener('click', function() {
@@ -5463,7 +5473,8 @@
                     '<article><b>03 · Алхимия звёзд</b><p>Выберите два соседних символа и обменяйте их местами. Линии от трёх символов исчезают, четыре и больше дают дополнительный ход. Неудачный обмен не тратит ход. Можно выбирать символы нажатием или свайпом. В особых раскладах собирайте нужное светило либо снимайте лунные печати.</p></article>' +
                     '<article><b>Награды и возвращения</b><p>Первое прохождение уровня: 25 пыли, повторное: 10. Предсказание стоит 50 пыли или одну печать Оракула. Три победы за день дают 50 пыли и печать. В бесконечном небе каждый третий этап тоже приносит печать.</p></article>' +
                     '<article><b>Ваше личное небо</b><p>Прогресс хранится в этом браузере. Очистка данных сайта удаляет сохранение. В книге можно скачать копию и восстановить её в другом браузере. Перед заменой прогресса вы увидите подтверждение.</p></article>' +
-                    '</div><div class="m-actions"><button class="btn primary" data-close>Путь понятен</button></div>');
+                    '</div><div class="m-actions"><button class="btn primary" id="tutorialDone" data-close>Обучение просмотрено</button></div>');
+                document.getElementById('tutorialDone').addEventListener('click', function() { Observatory.record('tutorial'); });
             }
 
             /* прогресс знака */
@@ -5704,11 +5715,12 @@
                     '<div class="ft-flicker ff1"></div><div class="ft-flicker ff2"></div><div class="ft-flicker ff3"></div>' +
                     '<div class="ft-strip" id="ftStrip"><span>Выберите тему · ' + ZM.save.dust + ' ★ · печатей: ' + ZM.save.omens + '</span></div>' +
                     '<div class="ft-cards">' + cardsHtml + '</div>' +
-                    '<div class="ft-actions"><button class="btn" data-close>' + ZM.ic('i-check') + ' Суждение принято</button></div>' +
+                    '<div class="ft-actions"><button class="btn" id="oracleJournal">Моя книга</button><button class="btn" data-close>' + ZM.ic('i-check') + ' Суждение принято</button></div>' +
                     '</div>', {
                         cls: 'ft-modal',
                         persistent: true
                     });
+                document.getElementById('oracleJournal').addEventListener('click', function() { openJournal(); });
                 ZM.qa('.ft-card').forEach(function(c) {
                     c.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ftCardClick(c.getAttribute('data-cat')); } });
                     c.addEventListener('click', function() {
@@ -5877,6 +5889,8 @@
                 if (ZM.save.ach[def.id]) return;
                 ZM.save.ach[def.id] = true;
                 ZM.addDust(def.reward);
+                if (def.extra) Observatory.giveReward(def.extra);
+                if (def.id === 'collector') Observatory.state().collectorGift = true;
                 if (def.id === 'collector') {
                     ZM.save.skins.celestial = true;
                     ZM.save.skin = 'celestial';
@@ -5884,7 +5898,7 @@
                 }
                 ZM.persist();
                 ZM.toast('<b>Достижение: «' + def.name + '»</b><small>+' + def.reward + ' звёздной пыли' +
-                    (def.id === 'collector' ? ' и стиль «Небесный»' : '') + '</small>', {
+                    (def.id === 'collector' ? ' и стиль «Небесный»' : '') + (def.extra ? ' · ' + Observatory.describeReward(def.extra) : '') + '</small>', {
                         cls: 'ach',
                         ic: 'i-trophy'
                     });
@@ -5940,6 +5954,7 @@
                     moss: 'Мох',
                     abyss: 'Бездна'
                 })[r.skin] + '»');
+                if (r.extra) parts.push(Observatory.describeReward(r.extra));
                 return parts.join(' · ');
             }
 
@@ -5967,14 +5982,8 @@
                             map: 'астро-карта'
                         })[k2]);
                     }
-                if (r.skin && !ZM.save.skins[r.skin]) {
-                    ZM.save.skins[r.skin] = true;
-                    lines.push('рубашка «' + ({
-                        dawn: 'Заря',
-                        moss: 'Мох',
-                        abyss: 'Бездна'
-                    })[r.skin] + '»');
-                }
+                if (r.skin) lines = lines.concat(Observatory.giveReward({ skin: r.skin }));
+                if (r.extra) lines = lines.concat(Observatory.giveReward(r.extra));
                 ZM.persist();
                 return lines;
             }
@@ -6017,12 +6026,14 @@
                         ZM.addDust(streakGift);
                         lines.push('серия входов ' + ZM.save.loginStreak + ': +' + streakGift + ' ★');
                         renderJourney();
+                        Observatory.check();
                         ZM.persist();
                         refreshCalBtn();
                         BG.comet();
                         AE.fanfare();
                         ZM.modalForceClose();
                         ZM.modalOpen('<h2>День ' + d + ' — награда ваша!</h2>' +
+                            Observatory.rewardArt(Object.assign({ skin: r.skin }, r.extra || {})) +
                             '<div class="reward-line">' + ic2(lines) + '</div>' +
                             (r.skin ? '<div class="msub">Уникальная рубашка уже в вашей лавке — наденьте её!</div>' : '') +
                             (d < 31 ? '<div class="msub">Возвращайтесь завтра: день ' + (d + 1) + ' ждёт вас.</div>' :
@@ -6203,7 +6214,7 @@
                 document.getElementById('stColl').textContent = collectedCount() + '/12';
                 document.getElementById('stAch').textContent = ZM.ACHDEFS.filter(function(d) {
                     return ZM.save.ach[d.id];
-                }).length + '/5';
+                }).length + '/' + ZM.ACHDEFS.length;
                 ZM.renderDust();
                 refreshDailyBtn();
                 renderPredictions();
@@ -6227,6 +6238,8 @@
                     }
                 }
                 buildAtlas();
+                Observatory.render();
+                Observatory.check();
                 spawnHubStars();
             }
 
@@ -6280,7 +6293,9 @@
                     celestial: '\u2648',
                     dawn: '\u2600',
                     moss: '\u2698',
-                    abyss: '\u2727'
+                    abyss: '\u2727',
+                    moonlace: '☾',
+                    roseglass: '❀'
                 };
                 var skins = '<div class="skins-row">' + ZM.SKINS.map(function(s) {
                     var owned = !!ZM.save.skins[s.id],
@@ -6291,6 +6306,7 @@
                     else if (s.id === 'dawn') sub = 'день 7 календаря';
                     else if (s.id === 'moss') sub = 'день 14 календаря';
                     else if (s.id === 'abyss') sub = 'день 28 календаря';
+                    else if (s.id === 'roseglass') sub = 'за трофей «Первый урок»';
                     else sub = (s.price == null) ? 'за трофей «Коллекционер»' : s.price + ' \u2605';
                     return '<div class="skin-card' + (eq ? ' sel' : '') + '" data-skin="' + s.id + '">' +
                         '<div class="swatch sw-' + s.id + '"><b>' + swSyms[s.id] + '</b></div>' +
@@ -6298,10 +6314,12 @@
                 }).join('') + '</div>';
                 ZM.modalOpen('<h2>Звёздная лавка</h2><div class="msub">Ваш запас: <b style="color:var(--gold-hi)">' +
                     ZM.save.dust + ' ' + ZM.STAR + '</b></div>' + rows +
+                    '<button class="btn primary" id="shopWardrobe">Герой, питомцы, фоны и эффекты</button>' +
                     '<div class="lbl">Стили рубашек карт</div>' +
                     '<div style="font-size:.78rem;color:var(--muted);margin:-6px 0 10px">Стиль меняет только рубашку карт на поле. «Заря», «Мох» и «Бездна» выдаются за дни входа в календаре даров.</div>' +
                     skins +
                     '<div class="m-actions"><button class="btn" data-close>Закрыть лавку</button></div>');
+                document.getElementById('shopWardrobe').addEventListener('click', function() { Observatory.openWardrobe(); });
                 ZM.qa('[data-buy]').forEach(function(b) {
                     b.addEventListener('click', function() {
                         var it = null;
@@ -6355,6 +6373,7 @@
                         }
                         ZM.addDust(-def.price);
                         ZM.save.skins[id] = true;
+                        Observatory.record('purchase');
                         ZM.save.skin = id;
                         ZM.persist();
                         applySkin();
@@ -6376,12 +6395,13 @@
                 };
                 var rows = ZM.ACHDEFS.map(function(d) {
                     var done = !!ZM.save.ach[d.id];
+                    if (d.progress) prog[d.id] = d.progress();
                     var p = prog[d.id] ? '<span class="pcount" style="margin-left:6px">· ' + prog[d.id] + '</span>' : '';
                     return '<div class="ach-row' + (done ? ' done' : '') + '"><span class="ai">' + ZM.ic(done ? 'i-trophy' : 'i-lock') + '</span>' +
                         '<span style="flex:1"><b>' + d.name + '</b><p>' + d.desc + p + '</p></span>' +
-                        '<span class="arw">' + ZM.ic('i-star') + d.reward + (done ? ' · выдано' : '') + '</span></div>';
+                        '<span class="arw">' + ZM.ic('i-star') + d.reward + (d.extra ? '<small>' + Observatory.describeReward(d.extra) + '</small>' : '') + (done ? ' · выдано' : '') + '</span></div>';
                 }).join('');
-                ZM.modalOpen('<h2>Трофеи</h2><div class="msub">Пять вех великого памятливого странника</div>' + rows +
+                ZM.modalOpen('<h2>Трофеи</h2><div class="msub">Память, книги, преображения и далёкие звёзды · ' + ZM.ACHDEFS.length + ' достижений</div>' + rows +
                     '<div class="m-actions"><button class="btn" data-close>Закрыть</button></div>');
             }
 
@@ -6473,7 +6493,7 @@
                             document.getElementById('gameGuide').textContent = state.message;
                             renderPairs(); renderTimer(); updateHintUI(); updateMission();
                         },
-                        match: function(count, chain) { game.streak = chain; AE.match(chain); renderCombo(); },
+                        match: function(count, chain) { game.streak = chain; Observatory.record('cascade', { count: count, chain: chain }); AE.match(chain); renderCombo(); },
                         win: finishWin,
                         lose: alchemyFail
                     });
@@ -6677,6 +6697,7 @@
                 if (G.cfg.match3) {
                     var side = Math.max(120, Math.min(zw, zh, 490));
                     b.style.width = side + 'px'; b.style.height = side + 'px';
+                    if (G.match3) G.match3.layout();
                     return;
                 }
                 b.style.width = (G.cfg.cols * cw + (G.cfg.cols - 1) * gap) + 'px';
@@ -7753,6 +7774,7 @@
                 }
                 var pay = oldStars ? 10 : 25;
                 ZM.addDust(pay);
+                Observatory.check();
                 BG.constellation();
                 AE.complete();
 
@@ -7917,7 +7939,7 @@
             });
             document.getElementById('btnAlchemy').addEventListener('click', chooseAlchemy);
             document.getElementById('btnEndless').addEventListener('click', startEndless);
-            document.getElementById('btnJournal').addEventListener('click', function() { openJournal(); });
+            document.getElementById('btnJournal').addEventListener('click', openOracleTable);
             document.getElementById('btnGuide').addEventListener('click', openGuide);
             document.getElementById('btnCalendar').addEventListener('click', openCalendar);
             document.getElementById('btnShop').addEventListener('click', openShop);
@@ -7945,6 +7967,7 @@
                 }
                 enterHub(true);
             };
+            Observatory.connect({ grantAch: grantAch, applySkin: applySkin, background: function() { BG.loadImages(); } });
             ZM.ready = true;
             if (ZM.wantEnter) window.__ZM_ENTER();
             else if (ZM.save.sign != null) window.__ZM_ENTER();

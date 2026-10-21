@@ -39,7 +39,7 @@
         for (const k of ['created','omens','loginStreak']) if (s[k] != null && !int(s[k], Number.MAX_SAFE_INTEGER)) fail();
         for (const k of ['birth','daily','predDay','calStart','calLast','loginLast']) if (s[k] != null && !date(s[k])) fail();
         for (const k of ['skins','ach']) if (s[k] != null && !flags(s[k])) fail();
-        const skins = ['classic','gold','silver','neon','celestial','dawn','moss','abyss'];
+        const skins = ['classic','gold','silver','neon','celestial','dawn','moss','abyss','moonlace','roseglass'];
         if (s.skin != null && (!skins.includes(s.skin) || !s.skins?.[s.skin])) fail();
         if (s.wheelBonus != null && typeof s.wheelBonus !== 'boolean') fail();
         if (s.calTaken != null && (!Array.isArray(s.calTaken) || s.calTaken.length > 31 || !s.calTaken.every(n => int(n,31) && n > 0) || new Set(s.calTaken).size !== s.calTaken.length)) fail();
@@ -64,7 +64,20 @@
         if (s.journal != null && (!Array.isArray(s.journal) || s.journal.length > 100 || !s.journal.every(p => object(p) && date(p.day) && p.day !== '' && int(p.sign,11) && ['love','career','fin','health'].includes(p.cat) && text(p.text)))) fail();
         if (s.endless != null && (!object(s.endless) || !int(s.endless.round, 1e7) || s.endless.round < 1 || !int(s.endless.best,1e7))) fail();
         if (s.ritual != null && (!object(s.ritual) || !date(s.ritual.day) || !int(s.ritual.wins,3) || typeof s.ritual.claimed !== 'boolean')) fail();
-        const fields = ['created','sign','birth','dust','inv','skins','skin','lvOpen','lvStars','ach','stats','horoUsed','daily','preds','predDay','predSign','wheelBonus','traits','calStart','calLast','calTaken','journeyVersion','journal','omens','endless','loginStreak','loginLast','ritual','frag','stars'];
+        if (s.observatory != null) {
+            const o=s.observatory;
+            const groups={outfits:['apprentice','astral','moon','forest'],pets:['none','cat','owl','dog','dragon'],backgrounds:['original','garden','candles'],effects:['starlight','aurora','petals','comets']};
+            if(!object(o)||o.version!==1||!(o.hero===null||['female','male'].includes(o.hero))||!['system','full','minimal'].includes(o.motion)||!object(o.owned)||!object(o.stats)||typeof o.collectorGift!=='boolean')fail();
+            if(!Object.keys(o.owned).every(kind=>Object.hasOwn(groups,kind)))fail();
+            for(const [kind,ids] of Object.entries(groups)) {
+                if(!flags(o.owned[kind])||!Object.keys(o.owned[kind]).every(id=>ids.includes(id)))fail();
+                const field={outfits:'outfit',pets:'pet',backgrounds:'background',effects:'effect'}[kind];
+                if(!ids.includes(o[field])||o.owned[kind][o[field]]!==true)fail();
+            }
+            const stats=['tutorial','wardrobeBuys','backgroundChanges','bestCascade','gems','alchemyWins','oracleWins','memoryWins','predictions'];
+            if(!Object.keys(o.stats).every(k=>stats.includes(k)&&int(o.stats[k])))fail();
+        }
+        const fields = ['created','sign','birth','dust','inv','skins','skin','lvOpen','lvStars','ach','stats','horoUsed','daily','preds','predDay','predSign','wheelBonus','traits','calStart','calLast','calTaken','journeyVersion','journal','omens','endless','loginStreak','loginLast','ritual','frag','stars','observatory'];
         const save = {};
         fields.forEach(k => { if (Object.hasOwn(s,k)) save[k] = s[k]; });
         for (const k of ['frag','stars']) if (save[k] != null && (!Array.isArray(save[k]) || save[k].length > 108 || !save[k].every(n => int(n)))) fail();
