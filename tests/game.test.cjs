@@ -21,7 +21,7 @@ async function game(t) {
         const url = new URL(route.request().url());
         if (url.hostname !== 'game.test') return route.abort();
         const name = path.basename(url.pathname);
-        if (name === 'zdk.html') {
+        if (name === 'index.html') {
             let html = fs.readFileSync(process.env.GAME_SOURCE || path.join(root, name), 'utf8');
             // Test-only access to private state; the shipped game has no debug API.
             html = html.replace('            ZM.ready = true;', `
@@ -38,7 +38,7 @@ async function game(t) {
         return route.fulfill({ status: 404, body: '' });
     });
     await page.clock.install();
-    await page.goto('http://game.test/zdk.html');
+    await page.goto('http://game.test/index.html');
     return page;
 }
 
