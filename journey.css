@@ -1,0 +1,85 @@
+/* Обновлённое путешествие: существующие изображения и ночная палитра сохранены. */
+:root { --focus: #b9dfff; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+.journey-bar { position: relative; padding: 28px; margin: 20px 0; border: 1px solid var(--gold-dim); border-radius: 20px; background: linear-gradient(120deg, rgba(30,26,62,.95), rgba(10,17,40,.96)); }
+.eyebrow { color: var(--gold); font-size: .66rem; letter-spacing: .15em; line-height: 1.7; }
+.journey-heading h2 { font-size: clamp(1.7rem, 3vw, 2.3rem); color: var(--gold-hi); margin: 6px 0; }
+.journey-heading p, .journey-note { color: var(--muted); font-size: .86rem; line-height: 1.7; }
+.journey-actions { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px; margin: 22px 0; }
+.journey-card { text-align: left; min-height: 145px; display: flex; flex-direction: column; align-items: flex-start; gap: 9px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: rgba(8,12,34,.7); transition: background .2s, border-color .2s; }
+.journey-card:hover { background: #202040; border-color: var(--gold); }
+.journey-card b { font-size: 1rem; color: var(--gold-hi); }
+.journey-card > span:last-child { color: var(--muted); font-size: .77rem; line-height: 1.5; }
+.mode-glyph { color: var(--gold); font-size: 1.8rem; line-height: 1; }
+.ritual-row { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; border-top: 1px solid var(--line); padding-top: 18px; }
+#dailyQuest { flex: 1; min-width: 180px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+#dailyQuest b { color: var(--gold-hi); font-size: .87rem; }
+#dailyQuest span, #loginHint { font-size: .75rem; color: var(--muted); line-height: 1.6; }
+#dailyQuest .ritual-done { color: var(--ok); }
+.game-guide { max-width: 750px; width: 95%; text-align: center; color: var(--muted); font-size: .78rem; line-height: 1.6; padding: 6px 10px; min-height: 38px; flex-shrink: 0; }
+.board.match3-board { gap: clamp(4px,1vw,9px); padding: 8px; border-radius: 16px; background: rgba(6,9,29,.9); border: 1px solid var(--gold-dim); }
+.gem { display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0; width: 100%; height: 100%; border: 1px solid currentColor; border-radius: 12px; font-size: clamp(1.3rem, 5vw, 2.3rem); background: radial-gradient(circle at 30% 20%, #363451, #131630 75%); transition: transform .15s, opacity .2s; text-shadow: 0 0 14px currentColor; touch-action: manipulation; }
+.gem-0 { color: #f6c970; } .gem-1 { color: #c2c6ff; } .gem-2 { color: #f39bb8; } .gem-3 { color: #b49aef; } .gem-4 { color: #85d4ba; } .gem-5 { color: #83c5f3; }
+.gem.selected { outline: 2px solid #fff1c6; outline-offset: -4px; transform: scale(.91); background: #414060; }
+.gem.gem-hint { box-shadow: inset 0 0 18px var(--gold), 0 0 10px var(--gold); }
+.gem.vanish { transform: scale(.2); opacity: 0; }
+.t-alchemy { color: #bca0ff; border-color: #624a8c; }
+.journal-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
+.journal-filters .btn { font-size: .76rem; padding: 8px 11px; }
+.journal-list, .guide-list { display: grid; gap: 12px; }
+.journal-entry, .guide-list article { padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: #0f1331; }
+.journal-entry p, .guide-list p { line-height: 1.8; font-size: .87rem; margin-top: 8px; color: var(--ink); user-select: text; -webkit-user-select: text; }
+.guide-list b { color: var(--gold-hi); }
+/* Предсказания читаются в полном размере; фон стола остаётся прежним. */
+.ft-table { aspect-ratio: auto; padding: 22px; overflow: visible; }
+.ft-strip { position: relative; top: auto; left: auto; transform: none; border-radius: 12px; max-width: none; margin-bottom: 20px; min-height: 60px; background: rgba(8,11,29,.93); }
+.ft-cards { position: relative; inset: auto; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 15px; align-items: stretch; }
+.ft-card { aspect-ratio: auto; min-height: 240px; }
+.ft-flip { position: relative; inset: auto; min-height: 240px; }
+.ft-face { padding: 20px; border-radius: 14px; }
+.ft-front { position: relative; min-height: 240px; }
+.ft-front .tx { font-size: .9rem; line-height: 1.75; user-select: text; -webkit-user-select: text; }
+.ft-card:not(.open) .ft-front { visibility: hidden; }
+.ft-actions { position: relative; left: auto; bottom: auto; transform: none; justify-content: center; margin-top: 22px; }
+.ft-front .fg2 { font-size: 1.5rem; }
+@media(max-width:600px) {
+    .journey-bar { padding: 20px 15px; }
+    .journey-actions { grid-template-columns: 1fr; gap: 10px; }
+    .journey-card { min-height: 95px; padding: 14px; display: grid; grid-template-columns: 38px 1fr; gap: 6px 10px; }
+    .journey-card .mode-glyph { grid-row: span 2; }
+    .ft-table { padding: 12px; }
+    .ft-cards { grid-template-columns: 1fr; }
+    .ft-card, .ft-flip, .ft-front { min-height: 190px; }
+    .ft-front .tx { font-size: .88rem; }
+    .ft-face { padding: 18px; }
+    .game-head { flex-shrink: 0; }
+}
+@media(prefers-reduced-motion:reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+/* Атлас и новая навигация занимают одну колонку рядом с профилем. */
+[hidden] { display: none !important; }
+#s_hub .topbar, .hub-wrap { width: min(1240px,96vw); }
+.hub-wrap { display: grid; grid-template-columns: 280px minmax(0,1fr); align-items: start; gap: 20px; }
+.hub-hero { grid-column: 1; grid-row: 1 / span 2; min-width: 0; }
+.journey-bar { grid-column: 2; grid-row: 1; margin: 0; min-width: 0; }
+.map-panel { grid-column: 2; grid-row: 2; min-width: 0; width: 100%; }
+@media(max-width:1000px) {
+    .journey-actions { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:800px) {
+    .hub-wrap { grid-template-columns: minmax(0,1fr); }
+    .journey-bar { grid-column: 1; grid-row: 1; }
+    .hub-hero { grid-column: 1; grid-row: 2; width: 100%; flex: none; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .hero-panel:first-child { grid-column: 1 / -1; }
+    .map-panel { grid-column: 1; grid-row: 3; }
+    .pred-panel { aspect-ratio: auto; min-height: 240px; }
+}
+@media(max-width:600px) {
+    .journey-actions { grid-template-columns: 1fr; }
+    .hub-hero { display: flex; }
+    .pred-panel { max-width: none; aspect-ratio: 2; min-height: 200px; }
+}
+.traits-disclosure { margin-top: 16px; }
+.traits-disclosure summary { color: var(--muted); font-size: .78rem; cursor: pointer; padding: 7px 0; }
+.traits-disclosure[open] summary { color: var(--gold); }

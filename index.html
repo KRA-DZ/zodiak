@@ -3084,9 +3084,12 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="journey.css">
 </head>
 
 <body>
+    <script src="journey.js"></script>
+    <script src="match3.js"></script>
     <script>
         (function() {
             var shown = false;
@@ -3165,7 +3168,7 @@
             </div>
             <div class="setup-main">
                 <h1>Созвездие памяти</h1>
-                <p class="sub">Медитативная игра в пары под сводом звёзд. Назовите дату рождения — небо выберет ваш знак.</p>
+                <p class="sub">Три пути под одним небом: найдите пары, проследите за картами Оракула и соберите звёзды в ряд. Награда — личное предсказание.</p>
                 <div class="lbl">Дата рождения (заполнена сегодняшняя)</div>
                 <input type="date" id="birthInput">
                 <div class="lbl">Или выберите знак вручную</div>
@@ -3197,11 +3200,11 @@
                         </div>
                     </div>
                     <div class="statrow">
-                        <div class="stat"><b id="stStars">0/24</b><span>звёзды</span></div>
+                        <div class="stat"><b id="stStars">0/324</b><span>звёзды</span></div>
                         <div class="stat"><b id="stColl">0/12</b><span>коллекция</span></div>
                         <div class="stat"><b id="stAch">0/5</b><span>трофеи</span></div>
                     </div>
-                    <div id="traitsBox"></div>
+                    <details class="traits-disclosure"><summary>Характер знака · 10 граней</summary><div id="traitsBox"></div></details>
                 </div>
                 <div class="hero-panel hwheel-panel" id="wheelPanel" title="Созвездие памяти">
                     <div class="hwheel-box" id="hubWheel"></div>
@@ -3219,15 +3222,24 @@
                     <div id="predList"></div>
                 </div>
             </div>
+            <section class="journey-bar" aria-label="Ваше путешествие">
+                <div class="journey-heading"><span class="eyebrow">ВАШ СЛЕД В НЕБЕ</span><h2>Куда поведут звёзды?</h2><p>Играйте в своём темпе. Пыль и открытые предсказания сохраняются.</p></div>
+                <div class="journey-actions">
+                    <button class="journey-card" id="btnContinue"><span class="mode-glyph">✧</span><b>Продолжить путь</b><span id="continueHint"></span></button>
+                    <button class="journey-card" id="btnEndless"><span class="mode-glyph">∞</span><b>Бесконечное небо</b><span id="endlessHint"></span></button>
+                    <button class="journey-card" id="btnAlchemy"><span class="mode-glyph">✶</span><b>Зал алхимии</b><span>Три в ряд · свободная игра · 10 пыли за победу</span></button>
+                    <button class="journey-card" id="btnJournal"><span class="mode-glyph">☾</span><b>Книга предсказаний</b><span id="journalHint"></span></button>
+                </div>
+                <div class="ritual-row"><div id="dailyQuest"></div><div id="loginHint"></div><button class="btn" id="btnGuide">Как играть</button></div>
+            </section>
             <div class="map-panel">
                 <div class="bigwheel-bg" id="hubWheelBg"></div>
                 <div class="atlas-stars" id="hubStars"></div>
                 <div class="atlas-body" style="width:100%">
                     <div style="display:flex;align-items:center;gap:12px;width:100%;margin-bottom:4px;flex-wrap:wrap">
                         <h2 class="atlas-title">Звёздный атлас</h2>
-                        <span class="chip gold" id="atlasTotal"></span>
                     </div>
-                    <div class="atlas-sub" style="text-align:left;margin-bottom:12px">12 знаков · по 7 уровней в каждом. Соберите все 7 уровней знака — его созвездие попадёт в коллекцию и зажжётся в круге памяти.</div>
+                    <div class="atlas-sub" style="text-align:left;margin-bottom:12px">12 знаков · по 9 уровней: память, внимание и алхимия звёзд. Соберите все 9 уровней знака — его созвездие попадёт в коллекцию и зажжётся в круге памяти.</div>
                     <div class="zcards" id="zcards"></div>
                 </div>
             </div>
@@ -3258,9 +3270,10 @@
                 <div class="timer" id="gTimer"><span class="tlbl" id="gTLbl">время</span><span id="gTV">0:00</span></div>
                 <div class="combo" id="gCombo">
                     <div class="cv" id="gCV">&times;1</div><span class="clbl">комбо</span></div>
-                <div class="pairs"><b id="gPV">0/6</b><span>пар</span></div>
+                <div class="pairs"><b id="gPV">0/6</b><span id="gPLabel">групп</span></div>
             </div>
         </div>
+        <p id="gameGuide" class="game-guide" role="status" aria-live="polite"></p>
         <div class="board-zone">
             <div class="board" id="board"></div>
         </div>
@@ -3360,7 +3373,7 @@
                 if (e.target === this && _modal && !_modal.persistent) ZM.modalClose();
             });
             ZM.GLYPHS = [];
-            for (var gi = 0; gi < 12; gi++) ZM.GLYPHS.push(String.fromCharCode(0x2648 + gi));
+            for (var gi = 0; gi < 12; gi++) ZM.GLYPHS.push(String.fromCharCode(0x2648 + gi) + '\uFE0E');
             ZM.SIGNS = [{
                 name: 'Овен',
                 gen: 'Овна',
@@ -3570,13 +3583,19 @@
             })();
             if (!Array.isArray(sv.calTaken)) sv.calTaken = [];
             if (!Array.isArray(sv.lvOpen) || sv.lvOpen.length !== 12) sv.lvOpen = new Array(12).fill(1);
-            if (!Array.isArray(sv.lvStars) || sv.lvStars.length !== 84) sv.lvStars = new Array(84).fill(0);
+            try {
+                if (loaded && !loaded.journeyVersion && !localStorage.getItem('zodiacMemory.beforeJourney')) {
+                    localStorage.setItem('zodiacMemory.beforeJourney', JSON.stringify(loaded));
+                }
+            } catch (e) {}
+            Journey.upgrade(sv);
             ZM.save = sv;
             ZM.persist = function() {
                 try {
                     localStorage.setItem(KEY, JSON.stringify(ZM.save));
                 } catch (e) {}
             };
+            ZM.persist();
             ZM.addDust = function(n) {
                 ZM.save.dust += n;
                 ZM.persist();
@@ -3694,7 +3713,7 @@
     </script>
 
     <script>
-        /* ═══ ДАННЫЕ: характеры, предсказания, календарь, 96 уровней, коллекция-созвездия ═══ */
+        /* ═══ ДАННЫЕ: характеры, предсказания, календарь, уровни, коллекция-созвездия ═══ */
         (function() {
             'use strict';
             var ZM = window.ZM;
@@ -4270,6 +4289,8 @@
                 }
             }
 
+            ZM.LEVELS96 = Journey.extendLevels(ZM.LEVELS96);
+            ZM.PER_SIGN = Journey.perSign;
             ZM.LEVELS = ZM.LEVELS96;
             ZM.HUES = [42, 18, 268, 206, 330, 152, 52, 290, 178, 10, 232, 86, 340, 120, 262, 70];
             ZM.SHOP = [{
@@ -4345,11 +4366,11 @@
             }, {
                 id: 'collector',
                 name: 'Коллекционер',
-                desc: 'Собрать все 12 знаков (7/7 уровней)',
+                desc: 'Собрать все 12 знаков (9/9 уровней)',
                 reward: 200,
                 test: function() {
                     for (var i = 0; i < 12; i++) {
-                        if (ZM.signDone(i) < 7) return false;
+                        if (ZM.signDone(i) < ZM.PER_SIGN) return false;
                     }
                     return true;
                 }
@@ -4373,6 +4394,7 @@
         })();
     </script>
 
+    <script src="predictions.js"></script>
     <script>
         /* ═══ ДВИЖОК: аудио+музыка, фон, хаб-атлас, игра ═══ */
         (function() {
@@ -5205,16 +5227,143 @@
                 return '<svg viewBox="0 0 100 100" class="cwheel' + (all ? ' complete' : '') + '">' + s + '</svg>';
             }
 
+            function dailyRitual() {
+                var today = ZM.todayISO(), q = ZM.save.ritual;
+                if (!q || q.day !== today) ZM.save.ritual = { day: today, wins: 0, claimed: false };
+                return ZM.save.ritual;
+            }
+
+            function recordDailyWin() {
+                var q = dailyRitual();
+                q.wins = Math.min(3, q.wins + 1);
+                ZM.persist();
+            }
+
+            function claimRitual() {
+                var q = dailyRitual();
+                if (q.wins < 3 || q.claimed) return;
+                q.claimed = true;
+                ZM.save.omens++;
+                ZM.addDust(50);
+                renderJourney();
+                ZM.toast('Ритуал завершён: +50 пыли и печать на любое предсказание', { ic: 'i-gift' });
+            }
+
+            function renderJourney() {
+                var q = dailyRitual(), sign = ZM.save.sign == null ? 0 : ZM.save.sign;
+                var next = Math.min(ZM.PER_SIGN, ZM.save.lvOpen[sign]);
+                document.getElementById('continueHint').textContent = ZM.SIGNS[sign].name + ' · уровень ' + next + ' из ' + ZM.PER_SIGN;
+                document.getElementById('endlessHint').textContent = 'Этап ' + ZM.save.endless.round + ' · рекорд ' + ZM.save.endless.best + ' · три сменяющихся испытания';
+                document.getElementById('journalHint').textContent = ZM.save.journal.length + ' сохранённых посланий · печатей: ' + ZM.save.omens;
+                document.getElementById('loginHint').textContent = 'Серия входов: ' + ZM.save.loginStreak + ' · календарь: ' + Math.min(31, ZM.save.calTaken.length + 1) + '/31';
+                document.getElementById('dailyQuest').innerHTML = '<b>Ритуал дня · ' + q.wins + '/3</b><span>Завершите три любых уровня: 50 пыли и предсказание на выбор.</span>' +
+                    (q.claimed ? '<span class="ritual-done">Награда получена</span>' : q.wins >= 3 ? '<button class="btn primary" id="claimRitual">Забрать дар</button>' : '');
+                var btn = document.getElementById('claimRitual');
+                if (btn) btn.addEventListener('click', claimRitual);
+            }
+
+            function startEndless() {
+                ZM.modalForceClose();
+                var round = ZM.save.endless.round, sign = ZM.save.sign == null ? 0 : ZM.save.sign;
+                startLevel(sign * ZM.PER_SIGN, { cfg: Journey.endlessConfig(round), endless: round });
+            }
+
+            function startPractice() {
+                ZM.modalForceClose();
+                var sign = ZM.save.sign == null ? 0 : ZM.save.sign;
+                startLevel(sign * ZM.PER_SIGN + 7, { practice: true });
+            }
+
+            function finishPractice() {
+                ZM.addDust(10); AE.complete();
+                ZM.modalOpen('<h2>Алхимия удалась</h2><div class="msub">Созвездия сложились в вашу пользу.</div><div class="reward-line">+10 ★ · победа засчитана в ритуал дня</div><div class="m-actions"><button class="btn primary" id="practiceAgain">Новый расклад</button><button class="btn" id="practiceHome">К атласу</button></div>', { persistent: true });
+                document.getElementById('practiceAgain').addEventListener('click', startPractice);
+                document.getElementById('practiceHome').addEventListener('click', function() { ZM.modalForceClose(); killLevel(); enterHub(false); });
+            }
+
+            function finishEndless() {
+                var round = G.endless, pay = 10 + Math.min(10, round) * 2;
+                if (round % 3 === 0) { pay += 15; ZM.save.omens++; }
+                ZM.save.endless.best = Math.max(ZM.save.endless.best, round);
+                ZM.save.endless.round = round + 1;
+                ZM.addDust(pay);
+                AE.complete(); BG.constellation();
+                ZM.modalOpen('<h2>Этап ' + round + ' пройден</h2><div class="msub">Небо меняется — ваше путешествие продолжается.</div>' +
+                    '<div class="reward-line">+' + pay + ' ★' + (round % 3 === 0 ? ' · +1 печать Оракула' : '') + '</div>' +
+                    '<p class="journey-note">Награда уже сохранена. Можно отдохнуть и продолжить с этапа ' + (round + 1) + ' в другой раз.</p>' +
+                    '<div class="m-actions"><button class="btn primary" id="endlessNext">Следующий этап</button><button class="btn" id="endlessHome">К атласу</button></div>', { persistent: true });
+                document.getElementById('endlessNext').addEventListener('click', startEndless);
+                document.getElementById('endlessHome').addEventListener('click', function() { ZM.modalForceClose(); killLevel(); enterHub(false); });
+            }
+
+            function alchemyFail() {
+                if (!G || G.finished) return;
+                G.finished = true; G.running = false;
+                clearInterval(G._tick);
+                var idx = G.idx, options = G.endless ? { endless: G.endless, cfg: G.cfg } : G.practice ? { practice: true, cfg: G.cfg } : {};
+                ZM.modalOpen('<h2>Звёзды ждут нового расклада</h2><div class="msub">Ходы закончились: собрано ' + G.cleared + ' из ' + G.needed + ' символов. Пройденные этапы и награды сохранены.</div>' +
+                    '<div class="m-actions"><button class="btn primary" id="alchemyRetry">Попробовать снова</button><button class="btn" id="alchemyHome">К атласу</button></div>', { persistent: true });
+                document.getElementById('alchemyRetry').addEventListener('click', function() { ZM.modalForceClose(); startLevel(idx, options); });
+                document.getElementById('alchemyHome').addEventListener('click', function() { ZM.modalForceClose(); killLevel(); enterHub(false); });
+            }
+
+            function spendPrediction(price) {
+                if (ZM.save.omens > 0) { ZM.save.omens--; ZM.persist(); }
+                else ZM.addDust(-price);
+            }
+
+            function archivePrediction(cat) {
+                var p = ZM.save.preds[cat], text = predText(cat);
+                p.text = text;
+                ZM.save.journal.push({ day: ZM.todayISO(), sign: ZM.save.sign, cat: cat, text: text });
+                ZM.save.journal = ZM.save.journal.slice(-100);
+            }
+
+            function escapeHTML(text) {
+                return String(text).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+            }
+
+            function openJournal(category) {
+                var entries = ZM.save.journal.slice().reverse().filter(function(p) { return !category || p.cat === category; });
+                var filters = '<div class="journal-filters"><button class="btn" data-journal="">Все</button>' + Object.keys(PRED_META).map(function(c) {
+                    return '<button class="btn' + (c === category ? ' primary' : '') + '" data-journal="' + c + '">' + PRED_META[c].name + '</button>';
+                }).join('') + '</div>';
+                ZM.modalOpen('<h2>Книга предсказаний</h2><div class="msub">Последние 100 открытых посланий. Ваши записи хранятся в этом браузере.</div>' + filters +
+                    '<div class="journal-list">' + (entries.length ? entries.map(function(p) {
+                        var sg = ZM.SIGNS[p.sign], meta = PRED_META[p.cat];
+                        return '<article class="journal-entry"><span class="eyebrow">' + escapeHTML(p.day) + ' · ' + (sg ? sg.name : '') + ' · ' + (meta ? meta.name : '') + '</span><p>' + escapeHTML(p.text) + '</p></article>';
+                    }).join('') : '<p class="journey-note">Книга пока молчит. Завершайте испытания, собирайте пыль и раскрывайте карты в столе гадалки.</p>') + '</div>' +
+                    '<div class="m-actions"><button class="btn" id="exportJourney">Сохранить копию прогресса</button><button class="btn primary" data-close>Закрыть книгу</button></div>');
+                document.getElementById('exportJourney').addEventListener('click', function() {
+                    var url = URL.createObjectURL(new Blob([JSON.stringify({ format: 'zodiac-memory', version: 1, save: ZM.save }, null, 2)], { type: 'application/json' }));
+                    var a = document.createElement('a'); a.href = url; a.download = 'zodiac-memory-' + ZM.todayISO() + '.json';
+                    a.click(); setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+                });
+                ZM.qa('[data-journal]').forEach(function(b) { b.addEventListener('click', function() { openJournal(b.getAttribute('data-journal')); }); });
+            }
+
+            function openGuide() {
+                ZM.modalOpen('<h2>Три пути к предсказанию</h2><div class="guide-list">' +
+                    '<article><b>01 · Созвездие памяти</b><p>Запомните карты и открывайте одинаковые пары. Триады состоят из трёх карт; обманки не имеют пары. Подсказка помогает один раз бесплатно.</p></article>' +
+                    '<article><b>02 · Оракул</b><p>Запомните отмеченные карты. После тасовки найдите все нужные знаки. Каждый этап меняет расклад.</p></article>' +
+                    '<article><b>03 · Алхимия звёзд</b><p>Выберите два соседних символа и обменяйте их местами. Линии от трёх символов исчезают, четыре и больше дают дополнительный ход. Неудачный обмен не тратит ход.</p></article>' +
+                    '<article><b>Награды и возвращения</b><p>Первое прохождение уровня: 25 пыли, повторное: 10. Предсказание стоит 50 пыли или одну печать Оракула. Три победы за день дают 50 пыли и печать. В бесконечном небе каждый третий этап тоже приносит печать.</p></article>' +
+                    '<article><b>Ваше личное небо</b><p>Прогресс хранится в этом браузере. Очистка данных сайта удаляет сохранение. Экспорт в книге позволяет сохранить резервную копию путешествия.</p></article>' +
+                    '</div><div class="m-actions"><button class="btn primary" data-close>Путь понятен</button></div>');
+            }
+
             /* прогресс знака */
             function signDone(si) {
                 var n = 0;
-                for (var l = 0; l < 7; l++)
-                    if (ZM.save.lvStars[si * 7 + l] > 0) n++;
+                for (var l = 0; l < ZM.PER_SIGN; l++)
+                    if (ZM.save.lvStars[si * ZM.PER_SIGN + l] > 0) n++;
                 return n;
             }
 
+            ZM.signDone = signDone;
+
             function signCollected(si) {
-                return signDone(si) === 7;
+                return signDone(si) === ZM.PER_SIGN;
             }
 
             function collectedCount() {
@@ -5316,13 +5465,19 @@
 
             function resetDailyState() {
                 var today = ZM.todayISO();
-                if (ZM.save.predDay !== today) {
+                if (ZM.save.predSign == null && ZM.save.predDay === today) {
+                    ZM.save.predSign = ZM.save.sign;
+                    ['love', 'career', 'fin', 'health'].forEach(function(c) {
+                        if (ZM.save.preds[c].count >= 1) archivePrediction(c);
+                    });
+                    ZM.persist();
+                }
+                if (ZM.save.predDay !== today || ZM.save.predSign !== ZM.save.sign) {
+                    ZM.save.predSign = ZM.save.sign;
                     ZM.save.predDay = today;
                     ['love', 'career', 'fin', 'health'].forEach(function(c) {
-                        ZM.save.preds[c] = {
-                            count: 0,
-                            last: ''
-                        };
+                        var previous = ZM.save.journal.slice().reverse().find(function(p) { return p.day === today && p.sign === ZM.save.sign && p.cat === c; });
+                        ZM.save.preds[c] = previous ? { count: 1, last: '', text: previous.text } : { count: 0, last: '' };
                     });
                     ZM.persist();
                 }
@@ -5358,7 +5513,9 @@
 
             function predText(cat) {
                 var p = ZM.save.preds[cat];
-                if (!p || p.last === '' || p.last == null) return '';
+                if (!p) return '';
+                if (p.text) return p.text;
+                if (p.last === '' || p.last == null) return '';
                 var sg = ZM.SIGNS[ZM.save.sign],
                     arr = ZM.WEEKLY[sg.name][PRED_KEY[cat]],
                     idx = +p.last;
@@ -5375,15 +5532,16 @@
                     });
                     return;
                 }
-                if (ZM.save.dust < price) {
+                if (ZM.save.dust < price && ZM.save.omens <= 0) {
                     ZM.toast('Не хватает звёздной пыли: нужно ' + price + ' ' + ZM.STAR, {
                         ic: 'i-warn'
                     });
                     return;
                 }
-                ZM.addDust(-price);
+                spendPrediction(price);
                 p.count = 1;
                 p.last = drawPredIdx(cat);
+                archivePrediction(cat);
                 ZM.persist();
                 PRED_OPEN[cat] = true;
                 ZM.toast('«' + PRED_META[cat].name + '»: предсказание открыто', {
@@ -5409,27 +5567,28 @@
             }
 
             function openOracleTable() {
+                resetDailyState();
                 var cats = ['love', 'career', 'fin', 'health'];
                 var cardsHtml = cats.map(function(cat) {
                     var m = PRED_META[cat],
                         p = ZM.save.preds[cat],
                         opened = p.count >= 1;
-                    return '<div class="ft-card' + (opened ? ' open' : '') + '" data-cat="' + cat + '">' +
+                    return '<div role="button" tabindex="0" aria-label="' + m.name + '" class="ft-card' + (opened ? ' open' : '') + '" data-cat="' + cat + '">' +
                         '<div class="ft-flip">' +
                         '<div class="ft-face ft-back"><span class="fg">' + m.g + '</span><b>' + m.name + '</b>' +
                         (opened ? '<span class="pr">открыто</span>' :
-                            '<span class="pr">' + ZM.ic('i-star') + ' ' + PRED_PRICES[cat] + '</span>') +
+                            '<span class="pr">' + (ZM.save.omens > 0 ? '1 печать Оракула' : ZM.ic('i-star') + ' ' + PRED_PRICES[cat]) + '</span>') +
                         '</div>' +
                         '<div class="ft-face ft-front"><span class="fh">' + m.name + '</span>' +
                         '<span class="fg2">' + m.g + '</span>' +
-                        '<div class="tx">' + (opened ? predText(cat) : '') + '</div></div>' +
+                        '<div class="tx">' + (opened ? escapeHTML(predText(cat)) : '') + '</div></div>' +
                         '</div></div>';
                 }).join('');
                 ZM.modalOpen(
                     '<h2 style="text-align:center;margin:0 0 8px">Стол гадалки</h2>' +
                     '<div class="ft-table">' +
                     '<div class="ft-flicker ff1"></div><div class="ft-flicker ff2"></div><div class="ft-flicker ff3"></div>' +
-                    '<div class="ft-strip" id="ftStrip"><span>Коснитесь карты — стол раскроет судьбу</span></div>' +
+                    '<div class="ft-strip" id="ftStrip"><span>Выберите тему · ' + ZM.save.dust + ' ★ · печатей: ' + ZM.save.omens + '</span></div>' +
                     '<div class="ft-cards">' + cardsHtml + '</div>' +
                     '<div class="ft-actions"><button class="btn" data-close>' + ZM.ic('i-check') + ' Суждение принято</button></div>' +
                     '</div>', {
@@ -5437,6 +5596,7 @@
                         persistent: true
                     });
                 ZM.qa('.ft-card').forEach(function(c) {
+                    c.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ftCardClick(c.getAttribute('data-cat')); } });
                     c.addEventListener('click', function() {
                         ftCardClick(c.getAttribute('data-cat'));
                     });
@@ -5445,6 +5605,7 @@
             }
 
             function ftCardClick(cat) {
+                resetDailyState();
                 var p = ZM.save.preds[cat],
                     strip = document.getElementById('ftStrip'),
                     m = PRED_META[cat];
@@ -5453,11 +5614,11 @@
                     strip.innerHTML = '<span>«<b>' + m.name + '</b>» уже раскрыта сегодня — вернитесь завтра</span>';
                     return;
                 }
-                if (ZM.save.dust < PRED_PRICES[cat]) {
+                if (ZM.save.dust < PRED_PRICES[cat] && ZM.save.omens <= 0) {
                     strip.innerHTML = '<span>Не хватает звёздной пыли: нужно <b>' + PRED_PRICES[cat] + ' ' + ZM.STAR + '</b></span>';
                     return;
                 }
-                strip.innerHTML = '<span>Раскрыть карту <b>«' + m.name + '»</b> за <b>' + PRED_PRICES[cat] + ' ' + ZM.STAR + '</b>?</span>' +
+                strip.innerHTML = '<span>Раскрыть карту <b>«' + m.name + '»</b> за <b>' + (ZM.save.omens > 0 ? '1 печать Оракула' : PRED_PRICES[cat] + ' ' + ZM.STAR) + '</b>?</span>' +
                     '<button class="btn" id="ftYes">' + ZM.ic('i-star') + ' Раскрыть</button>' +
                     '<button class="btn" id="ftNo">Позже</button>';
                 document.getElementById('ftYes').addEventListener('click', function() {
@@ -5469,17 +5630,19 @@
             }
 
             function ftReveal(cat) {
+                resetDailyState();
                 var p = ZM.save.preds[cat];
                 if (p.count >= 1) return;
-                if (ZM.save.dust < PRED_PRICES[cat]) {
+                if (ZM.save.dust < PRED_PRICES[cat] && ZM.save.omens <= 0) {
                     ZM.toast('Не хватает звёздной пыли', {
                         ic: 'i-warn'
                     });
                     return;
                 }
-                ZM.addDust(-PRED_PRICES[cat]);
+                spendPrediction(PRED_PRICES[cat]);
                 p.count = 1;
                 p.last = drawPredIdx(cat);
+                archivePrediction(cat);
                 ZM.persist();
                 renderPredictions();
                 var card = document.querySelector('.ft-card[data-cat="' + cat + '"]');
@@ -5634,6 +5797,9 @@
             }
 
             function calEnsureStart() {
+                if (ZM.save.calTaken.length >= 31 && ZM.save.calLast !== ZM.todayISO()) {
+                    ZM.save.calTaken = []; ZM.save.calStart = '';
+                }
                 if (!ZM.save.calStart) {
                     ZM.save.calStart = ZM.todayISO();
                     ZM.persist();
@@ -5700,6 +5866,7 @@
             }
 
             function openCalendar() {
+                calEnsureStart();
                 var cur = calCurrentDay(),
                     claimedToday = (ZM.save.calLast === ZM.todayISO()),
                     html = '<h2>Дар за постоянство</h2>' +
@@ -5725,9 +5892,16 @@
                             if (x.d === d) r = x;
                         });
                         if (!r) return;
+                        var yesterday = Journey.dayNumber(ZM.todayISO()) - 1;
+                        ZM.save.loginStreak = ZM.save.loginLast && Journey.dayNumber(ZM.save.loginLast) === yesterday ? ZM.save.loginStreak + 1 : 1;
+                        ZM.save.loginLast = ZM.todayISO();
                         ZM.save.calTaken.push(d);
                         ZM.save.calLast = ZM.todayISO();
                         var lines = calApplyReward(r);
+                        var streakGift = Math.min(7, ZM.save.loginStreak) * 5;
+                        ZM.addDust(streakGift);
+                        lines.push('серия входов ' + ZM.save.loginStreak + ': +' + streakGift + ' ★');
+                        renderJourney();
                         ZM.persist();
                         refreshCalBtn();
                         BG.comet();
@@ -5782,7 +5956,7 @@
             ];
 
             function lvKey(si, l) {
-                return si * 7 + l;
+                return si * ZM.PER_SIGN + l;
             }
 
             function buildAtlas() {
@@ -5800,11 +5974,11 @@
                         '<b class="zglyph">' + ZM.GLYPHS[si] + '</b>' +
                         (url ? '<img src="' + url + '" alt="' + sg.name + '" onerror="this.remove();">' : '') +
                         '</span>' +
-                        '<span class="zbar"><span class="zprog"><i style="width:' + Math.round(done / 7 * 100) + '%"></i></span>' +
+                        '<span class="zbar"><span class="zprog"><i style="width:' + Math.round(done / ZM.PER_SIGN * 100) + '%"></i></span>' +
                         '<span class="zmeta">' +
                         (collected ?
                             '<span class="next">коллекция собрана ' + ZM.ic('i-check') + '</span>' :
-                            '<span class="next">' + done + '/7 уровней ' + ZM.ic('i-arrow') + '</span>') +
+                            '<span class="next">' + done + '/' + ZM.PER_SIGN + ' уровней ' + ZM.ic('i-arrow') + '</span>') +
                         '</span></span>';
                     card.addEventListener('click', function() {
                         AE.pick();
@@ -5821,13 +5995,13 @@
                 document.getElementById('slGlyph').textContent = ZM.GLYPHS[si];
                 document.getElementById('slName').textContent = sg.name + ' · ' + sg.elem;
                 var done = signDone(si);
-                document.getElementById('slProg').textContent = done + '/7 уровней';
-                document.getElementById('slSub').textContent = sg.dates + ' · управитель: ' + sg.ruler + ' · соберите все 7 — созвездие попадёт в коллекцию';
+                document.getElementById('slProg').textContent = done + '/' + ZM.PER_SIGN + ' уровней';
+                document.getElementById('slSub').textContent = sg.dates + ' · управитель: ' + sg.ruler + ' · соберите все 9 — созвездие попадёт в коллекцию';
                 var list = document.getElementById('lvList');
                 list.innerHTML = '';
                 var openLvl = ZM.save.lvOpen[si];
-                for (var l = 0; l < 7; l++) {
-                    var cfg = ZM.LEVELS96[si * 7 + l],
+                for (var l = 0; l < ZM.PER_SIGN; l++) {
+                    var cfg = ZM.LEVELS96[si * ZM.PER_SIGN + l],
                         stars = ZM.save.lvStars[lvKey(si, l)],
                         isOpen = l + 1 <= openLvl && !!cfg,
                         row = document.createElement('button');
@@ -5840,7 +6014,8 @@
                             trios: ['триады', 't-trio'],
                             darks: ['тьма', 't-dark'],
                             boss: ['босс · 8 мин', 't-boss'],
-                            oracle: ['оракул', 't-oracle']
+                            oracle: ['оракул', 't-oracle'],
+                            match3: ['три в ряд', 't-alchemy']
                         };
                         for (var k in T)
                             if (cfg[k]) tags += '<span class="tag ' + T[k][1] + '">' + T[k][0] + '</span>';
@@ -5849,7 +6024,7 @@
                             starsHtml += '<svg class="' + (stars >= n ? 'lit' : '') + '" viewBox="0 0 24 24"><use href="#i-star"/></svg>';
                         });
                         row.innerHTML = '<span class="lv-num">' + (l + 1) + '</span>' +
-                            '<span class="lv-body"><b>Уровень ' + (l + 1) + (cfg.oracle ? ' · оракул' : ' · ' + cfg.rows + '\u00D7' + cfg.cols) + '</b>' +
+                            '<span class="lv-body"><b>Уровень ' + (l + 1) + (cfg.match3 ? ' · алхимия звёзд' : cfg.oracle ? ' · оракул' : ' · ' + cfg.rows + '\u00D7' + cfg.cols) + '</b>' +
                             '<span class="lv-tags">' + (tags || '<span class="tag">базовые пары</span>') +
                             '<span class="lv-stars">' + starsHtml + '</span></span></span>' +
                             '<span class="lv-act">' + (isOpen ? ZM.ic('i-play') : ZM.ic('i-lock')) + '</span>';
@@ -5864,7 +6039,7 @@
                             row.addEventListener('click', function() {
                                 startLevel(idx);
                             });
-                        })(si * 7 + l);
+                        })(si * ZM.PER_SIGN + l);
                     } else {
                         row.disabled = true;
                     }
@@ -5909,7 +6084,7 @@
                 ZM.save.lvStars.forEach(function(s) {
                     totalStars += s;
                 });
-                document.getElementById('stStars').textContent = totalStars + '/252';
+                document.getElementById('stStars').textContent = totalStars + '/' + (ZM.LEVELS.length * 3);
                 document.getElementById('stColl').textContent = collectedCount() + '/12';
                 document.getElementById('stAch').textContent = ZM.ACHDEFS.filter(function(d) {
                     return ZM.save.ach[d.id];
@@ -5918,6 +6093,7 @@
                 refreshDailyBtn();
                 renderPredictions();
                 renderTraits();
+                renderJourney();
                 refreshCalBtn();
                 var hw = document.getElementById('hubWheel');
                 if (hw) hw.innerHTML = constellationWheelSVG();
@@ -5932,7 +6108,7 @@
                     } else if (all) {
                         wh.textContent = 'награда получена · небо благодарит вас';
                     } else {
-                        wh.textContent = 'соберите знаки — пройдите 7 уровней каждого';
+                        wh.textContent = 'соберите знаки — пройдите 9 уровней каждого';
                     }
                 }
                 buildAtlas();
@@ -6106,6 +6282,7 @@
                         ZM.save.sign = +b.getAttribute('data-ps');
                         ZM.persist();
                         ZM.modalClose();
+                        resetDailyState();
                         buildHub();
                         ZM.toast('Теперь покровительствует ' + ZM.SIGNS[ZM.save.sign].name, {
                             ic: 'i-star'
@@ -6119,10 +6296,12 @@
                 sess = 0,
                 SEL = [];
 
-            function startLevel(globalIdx) {
-                var si = Math.floor(globalIdx / 7),
-                    l = globalIdx % 7,
-                    cfg = ZM.LEVELS96[globalIdx];
+            function startLevel(globalIdx, options) {
+                options = options || {};
+                killLevel();
+                var si = Math.floor(globalIdx / ZM.PER_SIGN),
+                    l = globalIdx % ZM.PER_SIGN,
+                    cfg = options.cfg || ZM.LEVELS96[globalIdx];
                 if (!cfg) {
                     ZM.toast('Этот уровень пока пишется звёздами', {
                         ic: 'i-warn'
@@ -6132,7 +6311,9 @@
                 AE.resume();
                 Music.play('game');
                 sess++;
-                BG.setPhase(Math.floor(l / 3));
+                BG.setPhase(Math.min(3, Math.floor(l / 3)));
+                document.getElementById('board').classList.remove('match3-board');
+                document.getElementById('gameGuide').textContent = cfg.oracle ? 'Запомните отмеченные карты, следите за тасовкой, затем найдите их.' : 'Открывайте одинаковые карты. Триады требуют трёх совпадений.';
                 applySkin();
                 var symPool = [];
                 ZM.SYMS.forEach(function(_, i) {
@@ -6154,6 +6335,36 @@
                     });
                 }
                 var k;
+                if (cfg.match3) {
+                    G = { sid: sess, idx: globalIdx, sign: si, lvIdx: l, cfg: cfg,
+                        endless: options.endless || 0, practice: !!options.practice, groups: [], deck: [],
+                        busy: false, preview: false, elapsed: 0, remaining: cfg.par,
+                        frozen: 0, misses: 0, streak: 0, cleared: 0, needed: cfg.target,
+                        hintFree: true, powerUsed: false, running: true, finished: false, dead: false };
+                    buildGameUI();
+                    document.getElementById('board').classList.add('match3-board');
+                    document.getElementById('btnPower').hidden = true;
+                    ['btnFreeze', 'btnMap'].forEach(function(id) { var el = document.getElementById(id); if (el) el.hidden = true; });
+                    ZM.showScreen('game');
+                    var game = G;
+                    game.match3 = Match3.mount(document.getElementById('board'), {
+                        target: cfg.target, moves: cfg.moves,
+                        active: function() { return G === game && !game.dead && !game.finished; },
+                        update: function(state) {
+                            game.cleared = state.score;
+                            game.moves = state.moves;
+                            document.getElementById('gameGuide').textContent = state.message;
+                            renderPairs(); renderTimer(); updateHintUI();
+                        },
+                        match: function(count, chain) { game.streak = chain; AE.match(chain); renderCombo(); },
+                        win: finishWin,
+                        lose: alchemyFail
+                    });
+                    renderCombo(); renderTimer(); renderPairs(); updateHintUI();
+                    requestAnimationFrame(function() { if (G === game) layoutBoard(); });
+                    tickLoop();
+                    return;
+                }
                 if (cfg.oracle) {
                     var zsign = Math.floor(ZM.lvRand(globalIdx * 977 + 41)() * 12),
                         total = 0;
@@ -6162,6 +6373,7 @@
                     });
                     G = {
                         sid: sess,
+                        endless: options.endless || 0, practice: !!options.practice,
                         idx: globalIdx,
                         sign: si,
                         lvIdx: l,
@@ -6199,7 +6411,9 @@
                     renderPairs();
                     updateHintUI();
                     ZM.showScreen('game');
+                    var oracleGame = G;
                     requestAnimationFrame(function() {
+                        if (G !== oracleGame || oracleGame.dead) return;
                         layoutBoard();
                         beginOracleStage();
                     });
@@ -6224,6 +6438,7 @@
                 ZM.shuffle(deck);
                 G = {
                     sid: sess,
+                    endless: options.endless || 0, practice: !!options.practice,
                     idx: globalIdx,
                     sign: si,
                     lvIdx: l,
@@ -6253,7 +6468,9 @@
                 renderPairs();
                 updateHintUI();
                 ZM.showScreen('game');
+                var memoryGame = G;
                 requestAnimationFrame(function() {
+                    if (G !== memoryGame || memoryGame.dead) return;
                     layoutBoard();
                     beginPreview();
                 });
@@ -6263,20 +6480,22 @@
 
 
             function buildGameUI() {
-                document.getElementById('gLvlNum').textContent = ZM.SIGNS[G.sign].name + ' \u00B7 уровень ' + (G.lvIdx + 1) + (G.cfg.boss ? ' \u00B7 Босс' : '');
+                document.getElementById('gLvlNum').textContent = G.practice ? 'Зал алхимии · ' + ZM.SIGNS[G.sign].name : G.endless ? 'Бесконечное небо · этап ' + G.endless : ZM.SIGNS[G.sign].name + ' · уровень ' + (G.lvIdx + 1) + (G.cfg.boss ? ' · Босс' : '');
                 var M = '',
                     parts = [
                         ['decoys', 'Обманки', 't-decoy'],
                         ['trios', 'Триады', 't-trio'],
                         ['darks', 'Тьма: поле гаснет', 't-dark'],
                         ['boss', 'Босс · 8 минут, без штрафа', 't-boss'],
-                        ['oracle', 'Оракул · следите за картами', 't-oracle']
+                        ['oracle', 'Оракул · следите за картами', 't-oracle'],
+                        ['match3', 'Алхимия звёзд · три в ряд', 't-alchemy']
                     ];
                 parts.forEach(function(p) {
                     if (G.cfg[p[0]]) M += '<span class="chip ' + p[2] + '">' + p[1] + '</span>';
                 });
                 if (!M) M = '<span class="chip">Классические пары</span>';
-                document.getElementById('gMechs').innerHTML = M + '<span class="chip gold">эталон: ' + ZM.fmt(G.cfg.par) + '</span>';
+                document.getElementById('gMechs').innerHTML = M + '<span class="chip gold">' + (G.cfg.match3 ? 'цель: ' + G.cfg.target + ' символов' : 'эталон: ' + ZM.fmt(G.cfg.par)) + '</span>';
+                document.getElementById('gBestStars').hidden = !!(G.practice || G.endless);
                 var stars = ZM.save.lvStars[G.idx] || 0;
                 var bs = '';
                 [1, 2, 3].forEach(function(n) {
@@ -6289,10 +6508,15 @@
                 if (G.cfg.darks) b.classList.add('dark-lvl');
                 else b.classList.remove('dark-lvl');
                 b.classList.remove('faded', 'reveal-flash');
+                document.getElementById('gPLabel').textContent = G.cfg.match3 ? 'символов' : (G.oracle ? 'карт' : 'групп');
                 b.innerHTML = '';
                 G.deck.forEach(function(cd, i) {
                     var gr = cd.grp,
                         cell = document.createElement('div');
+                    cell.setAttribute('role', 'button');
+                    cell.tabIndex = 0;
+                    cell.setAttribute('aria-label', 'Карта ' + (i + 1));
+                    cell.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onCell(i); } });
                     cell.className = 'cell' + ((gr.type !== 'pair' && gr.type !== 'decoy') ? ' m-' + gr.type : '');
                     cell.innerHTML = '<div class="cflip"><div class="cf cf-back">' + wheelSVG(false) + '</div>' +
                         '<div class="cf cf-front" style="--hue:' + gr.hue + '">' +
@@ -6332,6 +6556,11 @@
                     cw = Math.min((zw - gap * (G.cfg.cols - 1)) / G.cfg.cols,
                         ((zh - gap * (G.cfg.rows - 1)) / G.cfg.rows) * .72),
                     ch = cw / .72;
+                if (G.cfg.match3) {
+                    var side = Math.max(120, Math.min(zw, zh, 490));
+                    b.style.width = side + 'px'; b.style.height = side + 'px';
+                    return;
+                }
                 b.style.width = (G.cfg.cols * cw + (G.cfg.cols - 1) * gap) + 'px';
                 b.style.height = (G.cfg.rows * ch + (G.cfg.rows - 1) * gap) + 'px';
             }
@@ -6429,7 +6658,7 @@
             function tickLoop() {
                 clearInterval(G._tick);
                 G._tick = setInterval(function() {
-                    if (!G || G.finished || G.dead || curScr !== 'game' || !G.running) return;
+                    if (!G || G.finished || G.dead || curScr !== 'game' || !G.running || document.hidden || document.getElementById('modalRoot').classList.contains('show')) return;
                     if (G.frozen > 0) {
                         G.frozen -= .25;
                         renderTimer();
@@ -6490,6 +6719,12 @@
                 if (!G) return;
                 var t = document.getElementById('gTimer'),
                     v = document.getElementById('gTV');
+                if (G.cfg.match3) {
+                    document.getElementById('gTLbl').textContent = 'ходов';
+                    v.textContent = G.moves == null ? G.cfg.moves : G.moves;
+                    t.classList.remove('hot', 'frozen');
+                    return;
+                }
                 if (G.cfg.boss) {
                     document.getElementById('gTLbl').textContent = 'до конца';
                     v.textContent = ZM.fmt(G.remaining);
@@ -6519,6 +6754,7 @@
 
             function updateHintUI() {
                 if (!G) return;
+                document.getElementById('btnHint').disabled = !!(G.match3 && G.match3.busy);
                 var hc = document.getElementById('hintCnt');
                 if (hc) hc.textContent = (G.hintFree ? 1 : 0) + ZM.save.inv.hint;
                 var pw = document.getElementById('btnPower'),
@@ -6693,7 +6929,7 @@
                 }
                 var f = ZM.SYMS[G.oracle.signSym];
                 b.innerHTML = 'Найдите: <b>' + f.g + ' ' + f.n + '</b> · ' + (G.oracle.foundCount + 1) + '/' + G.oracle.need +
-                    ' · этап ' + (G.oracle.stage + 1) + '/3';
+                    ' · этап ' + (G.oracle.stage + 1) + '/' + G.oracle.stages.length;
             }
 
             function renderOracleFace(i) {
@@ -6888,7 +7124,7 @@
                     banner = document.createElement('div');
                 banner.id = 'peekBanner';
                 document.body.appendChild(banner);
-                banner.textContent = 'Этап ' + (st + 1) + '/3 · запоминайте знаки';
+                banner.textContent = 'Этап ' + (st + 1) + '/' + G.oracle.stages.length + ' · запоминайте знаки';
                 G._stopPreviewUI = removeOracleUI;
                 AE.tone(523, {
                     dur: .5,
@@ -7050,6 +7286,7 @@
             /* способности */
             function useHint() {
                 if (!G || G.busy || G.preview || G.finished || G.dead) return;
+                if (G.match3 && G.match3.busy) return;
                 if (!(G.hintFree || ZM.save.inv.hint > 0)) {
                     ZM.toast('Подсказок нет — загляните в лавку', {
                         ic: 'i-warn'
@@ -7060,6 +7297,12 @@
                 else {
                     ZM.save.inv.hint--;
                     ZM.persist();
+                }
+                if (G.cfg.match3) {
+                    if (G.match3 && G.match3.busy) return;
+                    G.match3.hint();
+                    updateHintUI();
+                    return;
                 }
                 if (G.cfg.boss) G.remaining = Math.max(1, G.remaining - 5);
                 else G.elapsed += 5;
@@ -7299,6 +7542,7 @@
 
             function killLevel() {
                 if (G) {
+                    if (G.match3) G.match3.destroy();
                     clearInterval(G._tick);
                     clearInterval(G._breath);
                     if (G._stopPreviewUI) {
@@ -7365,6 +7609,9 @@
                 G.running = false;
                 clearInterval(G._tick);
                 clearInterval(G._breath);
+                recordDailyWin();
+                if (G.endless) { finishEndless(); return; }
+                if (G.practice) { finishPractice(); return; }
                 var cfg = G.cfg,
                     si = G.sign,
                     lvIdx = G.lvIdx,
@@ -7373,7 +7620,7 @@
                     elapsed = Math.round(G.elapsed),
                     misses = G.misses,
                     streakEnd = Math.max(1, Math.min(G.streak, 5));
-                var stars = starsFor(elapsed, misses, cfg.par),
+                var stars = cfg.match3 ? (G.moves >= Math.ceil(cfg.moves * .3) ? 3 : G.moves > 0 ? 2 : 1) : starsFor(elapsed, misses, cfg.par),
                     under = elapsed <= cfg.par,
                     half = elapsed <= cfg.par * .5;
                 if (misses <= 5) ZM.save.stats.lowMissRun++;
@@ -7384,15 +7631,15 @@
                 var oldStars = ZM.save.lvStars[key] || 0;
                 if (stars > oldStars) {
                     ZM.save.lvStars[key] = stars;
-                    if (lvIdx + 1 < 7) ZM.save.lvOpen[si] = Math.max(ZM.save.lvOpen[si], lvIdx + 2);
+                    if (lvIdx + 1 < ZM.PER_SIGN) ZM.save.lvOpen[si] = Math.max(ZM.save.lvOpen[si], lvIdx + 2);
                 }
-                var pay = 25;
+                var pay = oldStars ? 10 : 25;
                 ZM.addDust(pay);
                 BG.constellation();
                 AE.complete();
 
-                var T2 = under,
-                    T3 = under && (misses === 0 || elapsed <= cfg.par * .7),
+                var T2 = cfg.match3 ? stars >= 2 : under,
+                    T3 = cfg.match3 ? stars >= 3 : under && (misses === 0 || elapsed <= cfg.par * .7),
                     delay = 150;
 
                 function taskCard(icon, done, bonus, title, detail, tick) {
@@ -7409,26 +7656,27 @@
                         'Уровень пройден \u00B7 время ' + ZM.fmt(elapsed) + ' \u00B7 ' +
                         misses + ' ' + ZM.plural(misses, ['промах', 'промаха', 'промахов']),
                         '+ звезда') +
-                    taskCard('i-star', T2, false, 'Звезда за скорость',
-                        (T2 ? 'эталон ' + ZM.fmt(cfg.par) + ' превзойдён' : 'эталон ' + ZM.fmt(cfg.par) + ' не уложен'),
+                    taskCard('i-star', T2, false, cfg.match3 ? 'Запас ходов' : 'Звезда за скорость',
+                        cfg.match3 ? 'Осталось ходов: ' + G.moves + ' · для второй звезды нужен хотя бы один' : (T2 ? 'эталон ' + ZM.fmt(cfg.par) + ' превзойдён' : 'эталон ' + ZM.fmt(cfg.par) + ' не уложен'),
                         T2 ? '+ звезда' : '—') +
-                    taskCard('i-star', T3, false, 'Звезда за точность',
-                        'ноль промахов или время \u2264 70% эталона',
+                    taskCard('i-star', T3, false, cfg.match3 ? 'Искусство алхимии' : 'Звезда за точность',
+                        cfg.match3 ? 'Сохраните не менее ' + Math.ceil(cfg.moves * .3) + ' ходов для третьей звезды' : 'ноль промахов или время \u2264 70% эталона',
                         T3 ? '+ звезда' : '—');
                 if (half) tasks += taskCard('i-zap', true, true, 'Скорость света',
                     'финиш быстрее половины эталона \u00B7 идёт в зачёт трофея', 'бонус');
                 tasks += '</div>';
 
-                var nextOpen = (lvIdx + 1 < 7) ? (lvIdx + 2) : 0;
+                var nextOpen = (lvIdx + 1 < ZM.PER_SIGN) ? (lvIdx + 2) : 0;
                 ZM.modalOpen('<h2>' + ZM.SIGNS[si].name + ' · уровень ' + (lvIdx + 1) + ' покорён</h2>' +
                     '<div class="msub">' + (cfg.boss ? 'Владыка часов повержен!' : 'Созвездие сошлось') + '</div>' +
                     tasks +
                     '<div class="reward-line">' + ZM.ic('i-star') + ' +' + pay + ' звёздной пыли за прохождение</div>' +
                     '<div class="m-actions">' +
-                    (nextOpen && ZM.LEVELS96[si * 7 + nextOpen - 1] ?
+                    (nextOpen && ZM.LEVELS96[si * ZM.PER_SIGN + nextOpen - 1] ?
                         '<button class="btn primary" id="nextBtn">' + ZM.ic('i-arrow') + ' Уровень ' + nextOpen + '</button>' : '') +
                     '<button class="btn" id="menuBtn">' + ZM.ic('i-home') + ' К атласу</button>' +
                     '<button class="btn" id="againBtn">' + ZM.ic('i-refresh') + ' Играть заново</button>' +
+                    '<button class="btn" id="winPrediction">' + ZM.ic('i-eye') + ' К предсказаниям</button>' +
                     '<button class="btn" id="shareBtn">' + ZM.ic('i-share') + ' Поделиться</button></div>', {
                         persistent: true
                     });
@@ -7441,7 +7689,7 @@
                 if (nb) nb.addEventListener('click', function() {
                     ZM.modalForceClose();
                     killLevel();
-                    startLevel(si * 7 + nextOpen - 1);
+                    startLevel(si * ZM.PER_SIGN + nextOpen - 1);
                 });
                 document.getElementById('menuBtn').addEventListener('click', function() {
                     ZM.modalForceClose();
@@ -7452,6 +7700,9 @@
                     ZM.modalForceClose();
                     killLevel();
                     startLevel(idx);
+                });
+                document.getElementById('winPrediction').addEventListener('click', function() {
+                    ZM.modalForceClose(); killLevel(); enterHub(false); openOracleTable();
                 });
                 document.getElementById('shareBtn').addEventListener('click', function() {
                     var txt = '\u00ABСозвездие памяти\u00BB — ' + ZM.SIGNS[si].name + ', уровень ' + (lvIdx + 1) + ': ' +
@@ -7499,11 +7750,11 @@
                 AE.complete();
                 ZM.modalOpen('<h2>Звёздный путь продолжается</h2>' +
                     '<div class="finale-wheel">' + wheelSVG(true) + '</div>' +
-                    '<div class="msub">Овен пройден до конца. Ещё одиннадцать созвездий ждут своего героя.</div>' +
+                    '<div class="msub">Ваше созвездие засияло. Продолжайте исследовать двенадцать знаков.</div>' +
                     '<div class="statgrid">' +
                     '<div class="stat"><b>' + ZM.save.lvStars.reduce(function(a, b) {
                         return a + b;
-                    }, 0) + '/21</b><span>звёзды</span></div>' +
+                    }, 0) + '/324</b><span>звёзды</span></div>' +
                     '<div class="stat"><b>' + ZM.save.dust + '</b><span>пыль</span></div>' +
                     '<div class="stat"><b>' + collectedCount() + '/12</b><span>коллекция</span></div>' +
                     '<div class="stat"><b>\u00D7' + Math.max(1, ZM.save.stats.bestCombo) + '</b><span>лучшее комбо</span></div></div>' +
@@ -7525,6 +7776,14 @@
             document.getElementById('btnVol').addEventListener('click', function() {
                 AE.toggle();
             });
+            document.getElementById('btnContinue').addEventListener('click', function() {
+                var sign = ZM.save.sign == null ? 0 : ZM.save.sign;
+                startLevel(sign * ZM.PER_SIGN + Math.min(ZM.PER_SIGN, ZM.save.lvOpen[sign]) - 1);
+            });
+            document.getElementById('btnAlchemy').addEventListener('click', startPractice);
+            document.getElementById('btnEndless').addEventListener('click', startEndless);
+            document.getElementById('btnJournal').addEventListener('click', function() { openJournal(); });
+            document.getElementById('btnGuide').addEventListener('click', openGuide);
             document.getElementById('btnCalendar').addEventListener('click', openCalendar);
             document.getElementById('btnShop').addEventListener('click', openShop);
             document.getElementById('btnAch').addEventListener('click', openAch);
@@ -7539,7 +7798,7 @@
             document.getElementById('wheelPanel').addEventListener('click', function() {
                 var all = collectedCount() >= 12;
                 if (all && !ZM.save.wheelBonus) claimWheelBonus();
-                else ZM.toast('Соберите все 12 созвездий — пройдите 7 уровней каждого знака', {
+                else ZM.toast('Соберите все 12 созвездий — пройдите 9 уровней каждого знака', {
                     ic: 'i-star'
                 });
             });
