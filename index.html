@@ -3084,14 +3084,14 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="journey.css?v=trail-6">
-    <link rel="stylesheet" href="observatory.css?v=trail-6"><link rel="stylesheet" href="worlds.css?v=trail-6">
+    <link rel="stylesheet" href="journey.css?v=economy-7">
+    <link rel="stylesheet" href="observatory.css?v=economy-7"><link rel="stylesheet" href="worlds.css?v=economy-7">
 </head>
 
 <body>
-    <script src="campaign.js?v=trail-6"></script><script src="journey.js?v=trail-6"></script>
-    <script src="save-files.js?v=trail-6"></script>
-    <script src="match3.js?v=trail-6"></script><script src="level-tour.js?v=trail-6"></script><script src="campaign-map.js?v=trail-6"></script>
+    <script src="economy.js?v=economy-7"></script><script src="campaign.js?v=economy-7"></script><script src="journey.js?v=economy-7"></script>
+    <script src="save-files.js?v=economy-7"></script>
+    <script src="match3.js?v=economy-7"></script><script src="level-tour.js?v=economy-7"></script><script src="campaign-map.js?v=economy-7"></script>
     <script>
         (function() {
             var shown = false;
@@ -3198,7 +3198,7 @@
 <button class="command-chip" id="btnEndless">∞ Бесконечное небо<span id="endlessHint" class="sr-only"></span></button>
 <button class="command-chip" id="btnAlchemy">✶ Свободная алхимия</button>
 <button class="command-chip" id="btnJournal">☾ Предсказания<span id="journalHint" class="sr-only"></span></button>
-<div id="dailyQuest" title="Три победы за день: 50 пыли и печать Оракула"></div>
+<div id="dailyQuest" title="Три победы за день: 20 пыли и печать Оракула"></div>
 </section></div><div class="hub-wrap">
             <aside class="hub-hero personal-observatory" aria-label="Личная обсерватория">
                 <section class="hero-panel observatory-panel" id="observatoryHost" aria-label="Ваш герой и спутник"></section>
@@ -3570,6 +3570,8 @@
             var sv = jclone(DEF);
             if (loaded)
                 for (var kk in loaded) sv[kk] = loaded[kk];
+            ZM.upgradeEconomy = function(save) { return Economy.upgrade(save, DEF); };
+            ZM.upgradeEconomy(sv);
             sv.inv = Object.assign({
                 hint: 0,
                 freeze: 0,
@@ -3888,7 +3890,7 @@
                     "Здоровье": ["Твои ступни несут твою мечтательность: сегодня тёплая ванночка — медитация для них.", "Эмпатия впитывает чужие боли: сегодня солевая ванна смоет всё не твоё.", "Твои сны — аптечка души: сегодня ляг раньше, и увидишь важное.", "Мечтательным Рыбам нужна вода: сегодня два литра — и ясность вернётся.", "Творческий поток лечит тревогу: сегодня полчаса рисования или музыки — твоя терапия.", "Твоя чувствительная психика просит тишины: сегодня наушники без музыки — тоже музыка.", "Интуиция подскажет, чего телу хочется — сегодня доверись ей в выборе ужина."]
                 }
             };
-            /* ─── календарь наград за вход: 31 день, пыль 5–80, пик 120 на 21-й ─── */
+            /* ─── календарь наград за вход: 31 день; итоговые суммы и дополнительные дары задаёт Observatory.init ─── */
             ZM.CAL = [{
                 d: 1,
                 dust: 5
@@ -4425,8 +4427,8 @@
         })();
     </script>
 
-    <script src="predictions.js?v=trail-6"></script>
-    <script src="observatory.js?v=trail-6"></script>
+    <script src="predictions.js?v=economy-7"></script>
+    <script src="observatory.js?v=economy-7"></script>
     <script>Observatory.init(window.ZM);</script>
     <script>
         /* ═══ ДВИЖОК: аудио+музыка, фон, хаб-атлас, игра ═══ */
@@ -5291,9 +5293,9 @@
                 if (q.wins < 3 || q.claimed) return;
                 q.claimed = true;
                 ZM.save.omens++;
-                ZM.addDust(50);
+                ZM.addDust(20);
                 renderJourney();
-                ZM.toast('Ритуал завершён: +50 пыли и печать на любое предсказание', { ic: 'i-gift' });
+                ZM.toast('Ритуал завершён: +20 пыли и печать на любое предсказание', { ic: 'i-gift' });
             }
 
             function renderJourney() {
@@ -5303,7 +5305,7 @@
                 document.getElementById('endlessHint').textContent = 'Этап ' + ZM.save.endless.round + ' · рекорд ' + ZM.save.endless.best + ' · три сменяющихся испытания';
                 document.getElementById('journalHint').textContent = ZM.save.journal.length + ' сохранённых посланий · печатей: ' + ZM.save.omens;
                 document.getElementById('loginHint').textContent = 'Серия входов: ' + ZM.save.loginStreak + ' · календарь: ' + Math.min(31, ZM.save.calTaken.length + 1) + '/31';
-                document.getElementById('dailyQuest').innerHTML = '<b>✦ Ритуал дня · ' + q.wins + '/3</b><span class="ritual-prize">50 ★ + печать</span>' +
+                document.getElementById('dailyQuest').innerHTML = '<b>✦ Ритуал дня · ' + q.wins + '/3</b><span class="ritual-prize">20 ★ + печать</span>' +
                     (q.claimed ? '<span class="ritual-done">Награда получена</span>' : q.wins >= 3 ? '<button class="btn primary" id="claimRitual">Забрать дар</button>' : '');
                 var btn = document.getElementById('claimRitual');
                 if (btn) btn.addEventListener('click', claimRitual);
@@ -5326,15 +5328,15 @@
             }
 
             function finishPractice() {
-                ZM.addDust(10); AE.complete();
+                ZM.addDust(3); AE.complete();
                 ZM.modalOpen('<h2>Алхимия удалась</h2><div class="msub">Созвездия сложились в вашу пользу.</div><div class="reward-line">+10 ★ · победа засчитана в ритуал дня</div><div class="m-actions"><button class="btn primary" id="practiceAgain">Новый расклад</button><button class="btn" id="practiceHome">К атласу</button></div>', { persistent: true });
                 document.getElementById('practiceAgain').addEventListener('click', chooseAlchemy);
                 document.getElementById('practiceHome').addEventListener('click', function() { ZM.modalForceClose(); killLevel(); enterHub(false); });
             }
 
             function finishEndless() {
-                var round = G.endless, pay = 10 + Math.min(10, round) * 2;
-                if (round % 3 === 0) { pay += 15; ZM.save.omens++; }
+                var round = G.endless, pay = 6 + Math.min(8, round);
+                if (round % 3 === 0) { pay += 5; ZM.save.omens++; }
                 ZM.save.endless.best = Math.max(ZM.save.endless.best, round);
                 ZM.save.endless.round = round + 1;
                 ZM.addDust(pay);
@@ -5390,10 +5392,11 @@
             }
 
             function previewImport(imported) {
+                var economyReset = ZM.upgradeEconomy(imported);
                 Journey.upgrade(imported);
                 var stars = imported.lvStars.reduce(function(a, b) { return a + b; }, 0);
                 var sign = imported.sign == null ? 'Знак ещё не выбран' : ZM.SIGNS[imported.sign].name;
-                ZM.modalOpen('<h2>Восстановить путешествие?</h2><div class="msub">Проверьте выбранную копию перед восстановлением.</div>' +
+                ZM.modalOpen('<h2>Восстановить путешествие?</h2><div class="msub">' + (economyReset ? 'Копия из прежней экономики: при восстановлении начнётся новое путешествие с нуля.' : 'Проверьте выбранную копию перед восстановлением.') + '</div>' +
                     '<div class="import-preview"><b>' + sign + '</b><span>' + stars + ' звёзд · ' + imported.dust + ' пыли</span><span>Посланий в книге: ' + (imported.journal || []).length + '</span></div>' +
                     '<p class="journey-note">Текущий прогресс будет заменён. Его резервная копия останется в этом браузере. Перед восстановлением также можно скачать её файлом.</p>' +
                     '<p id="restoreError" role="alert"></p><div class="m-actions"><button class="btn" id="exportBeforeImport">Скачать текущую копию</button><button class="btn" data-close>Отмена</button><button class="btn primary" id="confirmImport">Восстановить</button></div>', { persistent: true });
@@ -5425,7 +5428,7 @@
                 ];
                 ZM.modalOpen('<h2>Зал алхимии</h2><div class="msub">Выберите настроение сегодняшнего расклада.</div><div class="alchemy-choices">' + names.map(function(m) {
                     return '<button class="journey-card" data-alchemy="' + m[0] + '"><span class="mode-glyph">' + (m[0] === 'seals' ? '☾' : m[0] === 'collect' ? '♀' : '✦') + '</span><b>' + m[1] + '</b><span>' + m[2] + '</span></button>';
-                }).join('') + '</div><p class="journey-note">10 пыли за победу · один бесплатный намёк · без ограничения времени</p><div class="m-actions"><button class="btn" data-close>Назад</button></div>');
+                }).join('') + '</div><p class="journey-note">3 пыли за победу · один бесплатный намёк · без ограничения времени</p><div class="m-actions"><button class="btn" data-close>Назад</button></div>');
                 ZM.qa('[data-alchemy]').forEach(function(b) { b.addEventListener('click', function() { startPractice(b.getAttribute('data-alchemy')); }); });
             }
 
@@ -5479,7 +5482,7 @@
                     '<article><b>02 · Оракул</b><p>Запомните отмеченные карты — их не больше двух. После тасовки найдите все нужные знаки. Каждый этап меняет расклад.</p></article>' +
                     '<article><b>03 · Алхимия звёзд</b><p>Выберите два соседних символа и обменяйте их местами. Линии от трёх символов исчезают, четыре и больше дают дополнительный ход. Неудачный обмен не тратит ход. Четыре в ряд создают луч, пять — призму цвета, Т- и Г-комбинации — бомбу. Обмен бонуса запускает его силу; бонусы запускают друг друга. Замки открываются одной соседней комбинацией, лёд — двумя. Можно выбирать символы нажатием или свайпом. В особых раскладах собирайте нужное светило либо снимайте лунные печати.</p></article>' +
                     '<article><b>Звёздная тропа</b><p>Нажмите на звёздочку и выберите режим. Любая победа открывает следующую звёздочку. Три отметки под кругом показывают пройденные режимы. Закройте все три режима в десяти звёздочках знака, чтобы добавить его карту в альбом.</p></article>' +
-                    '<article><b>Награды и возвращения</b><p>Первое прохождение уровня: 25 пыли, повторное: 10. Предсказание стоит 50 пыли или одну печать Оракула. Три победы за день дают 50 пыли и печать. В бесконечном небе каждый третий этап тоже приносит печать.</p></article>' +
+                    '<article><b>Награды и возвращения</b><p>Первое прохождение уровня: 18 пыли, повторное: 3. Предсказание стоит 50 пыли или одну печать Оракула. Три победы за день дают 20 пыли и печать. В бесконечном небе каждый третий этап тоже приносит печать.</p></article>' +
                     '<article><b>Ваше личное небо</b><p>Прогресс хранится в этом браузере. Очистка данных сайта удаляет сохранение. В книге можно скачать копию и восстановить её в другом браузере. Перед заменой прогресса вы увидите подтверждение.</p></article>' +
                     '</div><div class="m-actions"><button class="btn primary" id="tutorialDone" data-close>Обучение просмотрено</button></div>');
                 document.getElementById('tutorialDone').addEventListener('click', function() { Observatory.record('tutorial'); });
@@ -6031,7 +6034,7 @@
                         ZM.save.calTaken.push(d);
                         ZM.save.calLast = ZM.todayISO();
                         var lines = calApplyReward(r);
-                        var streakGift = Math.min(7, ZM.save.loginStreak) * 5;
+                        var streakGift = Math.min(7, ZM.save.loginStreak) * 2;
                         ZM.addDust(streakGift);
                         lines.push('серия входов ' + ZM.save.loginStreak + ': +' + streakGift + ' ★');
                         renderJourney();
@@ -7819,7 +7822,7 @@
                     var sealKey=si+':'+cfg.campaignMode;
                     if(!ZM.save.pathRewards[sealKey]){ZM.save.pathRewards[sealKey]=true;ZM.save.omens++;sealReward=true;}
                 }
-                var pay = (oldStars ? 10 : 25)+(sealReward?75:0);
+                var pay = (oldStars ? 3 : 18)+(sealReward?35:0);
                 ZM.addDust(pay);
                 Observatory.check();
                 BG.constellation();
@@ -7856,7 +7859,7 @@
                 var nextKey=Campaign.next(ZM.save,cfg.campaignMode??0);
                 var nextOpen = nextKey===idx?0:nextKey+1;
                 ZM.modalOpen('<h2>' + ZM.SIGNS[si].name + ' · ' + (Number.isInteger(cfg.campaignMode)?Campaign.names[cfg.campaignMode]+' '+(si*10+cfg.campaignStep+1):'уровень '+(lvIdx+1)) + ' покорён</h2>' +
-                    '<div class="msub">' + (sealReward?'Печать пути снята! +75 пыли и печать Оракула':cfg.campaignBoss?'Хранитель повержен!':'Созвездие сошлось') + '</div>' +
+                    '<div class="msub">' + (sealReward?'Печать пути снята! +35 пыли и печать Оракула':cfg.campaignBoss?'Хранитель повержен!':'Созвездие сошлось') + '</div>' +
                     (sealReward?'<div class="seal-celebration"><span class="zodiac-seal releasing" style="--seal-x:'+(cfg.campaignMode*50)+'%"></span><b>'+Campaign.names[cfg.campaignMode]+' · 10 / 10</b></div>':'')+tasks +
                     '<div class="reward-line">' + ZM.ic('i-star') + ' +' + pay + ' звёздной пыли за прохождение</div>' +
                     '<div class="m-actions">' +

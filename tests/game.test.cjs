@@ -39,7 +39,7 @@ async function game(t, seed, settings = {}) {
         if (fs.existsSync(file)) return route.fulfill({ path: file });
         return route.fulfill({ status: 404, body: '' });
     });
-    if (seed) await page.addInitScript(save => localStorage.setItem('zodiacMemory.v3', JSON.stringify(save)), seed);
+    if (seed) await page.addInitScript(save => { if(!localStorage.getItem('zodiacMemory.v3'))localStorage.setItem('zodiacMemory.v3', JSON.stringify(save)); }, settings.legacyEconomy?seed:{...seed,economyVersion:2});
     if (!settings.realTime) {
         await page.clock.install();
         // Deterministic model tests omit native animations; real-time tests verify falling frames.
@@ -301,7 +301,7 @@ test('endless rewards are banked once, do not unlock campaign, and resume after 
     await page.clock.runFor(32);
     const old=await page.evaluate(()=>ZM.save.dust);
     await page.evaluate(()=>{testGame.win();testGame.win();});
-    assert.equal(await page.evaluate(()=>ZM.save.dust),old+12);
+    assert.equal(await page.evaluate(()=>ZM.save.dust),old+7);
     assert.equal(await page.evaluate(()=>ZM.save.endless.round),2);
     assert.equal(await page.evaluate(()=>ZM.save.lvStars.reduce((a,b)=>a+b,0)),0);
     await page.reload();
@@ -317,7 +317,7 @@ test('ritual reward can be claimed once per day and resets on the next day', asy
         ZM.save.ritual={day:ZM.todayISO(),wins:3,claimed:false};
         testGame.ritual();testGame.ritual();
     });
-    assert.equal(await page.evaluate(()=>ZM.save.dust),50);
+    assert.equal(await page.evaluate(()=>ZM.save.dust),20);
     assert.equal(await page.evaluate(()=>ZM.save.omens),1);
     await page.evaluate(()=>{ZM.save.ritual.day='2000-01-01';testGame.renderJourney();});
     assert.equal(await page.evaluate(()=>ZM.save.ritual.wins),0);
@@ -359,7 +359,7 @@ test('a completed calendar repeats and login streak rewards cannot be claimed tw
     assert.equal(await page.evaluate(()=>ZM.save.dust),dust);
 });
 
-test('legacy browser save resets levels but retains currency, calendar and today purchased prediction', async t => {
+test('campaign migration in a current-economy save retains currency, calendar and purchased prediction', async t => {
     const page=await game(t);
     await page.evaluate(()=>{
         const save=JSON.parse(JSON.stringify(ZM.save));
@@ -621,11 +621,11 @@ test('real animation keeps survivors moving downward and waits before the next c
     assert.equal(await page.locator('#board').getAttribute('data-phase'),null);
 });
 
-test('hero wardrobe purchases are shared, persistent and never charged twice',async t=>{
+test('outfits cannot be directly purchased and owned shared outfits persist between heroes',async t=>{
     const page=await game(t);
     const outcome=await page.evaluate(()=>{
         ZM.save.dust=500;Observatory.setHero('female');
-        const bought=Observatory.buy('outfits','astral'),after=ZM.save.dust;
+        const blocked=Observatory.buy('outfits','astral');Observatory.giveReward({cosmetics:[{kind:'outfits',id:'astral'}]});const bought=Observatory.buy('outfits','astral'),after=ZM.save.dust;if(blocked)throw new Error('Direct costume sale');
         Observatory.buy('outfits','astral');Observatory.setHero('male');
         return {bought,after,current:ZM.save.dust,hero:Observatory.state().hero,outfit:Observatory.state().outfit};
     });
@@ -663,15 +663,15 @@ test('daily cosmetic gifts convert duplicates and equipped scenes survive save i
         const parsed=SaveFiles.parse(JSON.stringify({format:'zodiac-memory',version:1,save:ZM.save}));
         return {duplicateDust,scene:parsed.observatory.background,pet:parsed.observatory.pet,ach:ZM.save.ach.new_sky};
     });
-    assert.equal(outcome.duplicateDust,25);assert.equal(outcome.scene,'garden');assert.equal(outcome.pet,'cat');assert.equal(outcome.ach,true);
+    assert.equal(outcome.duplicateDust,16);assert.equal(outcome.scene,'garden');assert.equal(outcome.pet,'cat');assert.equal(outcome.ach,true);
 });
 
-test('daily pet gift is visible and cannot be claimed twice',async t=>{
+test('daily support gift cannot be claimed twice and keeps pets in cases',async t=>{
     const page=await game(t);
     await page.evaluate(()=>{ZM.save.sign=0;ZM.save.calTaken=[1,2];ZM.save.calLast='2000-01-01';testGame.calendar();});
     await page.locator('[data-claim="3"]').click();
-    assert.equal(await page.evaluate(()=>Observatory.owned('pets','cat')),true);
-    assert.equal(await page.locator('.reward-showcase .figure-art').count(),1);
+    assert.equal(await page.evaluate(()=>Observatory.owned('pets','cat')),false);
+    assert.equal(await page.evaluate(()=>ZM.save.inv.hint),1);
     const dust=await page.evaluate(()=>ZM.save.dust);
     await page.evaluate(()=>testGame.calendar());
     assert.equal(await page.locator('[data-claim]').count(),0);
@@ -704,7 +704,7 @@ test('generated assets decode and the atlas leads the mobile observatory',async 
     assert.equal(await page.evaluate(()=>Observatory.state().hero),'male');
     const result=await page.evaluate(async()=>{
         const decoded=[];
-        for(const src of['assets/observatory-atlas.png','assets/alchemy-icons.png','assets/moon-garden.png','assets/mystic-emblems.png']){
+        for(const src of['assets/observatory-atlas.png','assets/alchemy-icons.png','assets/moon-garden.png','assets/mystic-emblems.png',...Array.from({length:4},(_,i)=>'assets/costumes-'+i+'.webp'),...Array.from({length:2},(_,i)=>'assets/familiars-'+i+'.webp')]){
             const image=new Image();image.src=src;await image.decode();decoded.push(image.naturalWidth>0);
         }
         const avatar=document.getElementById('observatoryHost').getBoundingClientRect();
@@ -944,4 +944,30 @@ test('alchemy chooser has no automatic first-item frame and the observatory scro
  await page.evaluate(()=>ZM.modalForceClose());
  const scroll=await page.evaluate(()=>{const panel=document.querySelector('.personal-observatory');panel.scrollTop=200;return{bar:getComputedStyle(panel).scrollbarWidth,top:panel.scrollTop,overflow:panel.scrollHeight>panel.clientHeight};});
  assert.equal(scroll.bar,'none');assert.equal(scroll.overflow,true);assert.ok(scroll.top>0);
+});
+
+test('the new economy resets legacy browser saves once and reset imports show a clear preview',async t=>{
+ const seed={sign:2,dust:99999,lvStars:new Array(360).fill(3),lvOpen:new Array(12).fill(30),campaignVersion:1,journeyVersion:2,ach:{collector:true},skins:{classic:true,gold:true},skin:'gold'};
+ const page=await game(t,seed,{legacyEconomy:true});
+ assert.equal(await page.evaluate(()=>ZM.save.economyVersion),2);assert.equal(await page.evaluate(()=>ZM.save.dust),0);assert.equal(await page.evaluate(()=>ZM.save.lvStars.reduce((a,b)=>a+b,0)),0);
+ assert.equal(await page.evaluate(()=>ZM.save.sign),null);assert.equal(await page.evaluate(()=>Observatory.owned('pets','dragon')),false);
+ await page.evaluate(()=>{ZM.save.dust=91;ZM.save.lvStars[0]=1;ZM.persist();});await page.reload();
+ assert.equal(await page.evaluate(()=>ZM.save.dust),91);assert.equal(await page.evaluate(()=>ZM.save.lvStars[0]),1);
+ await page.evaluate(()=>testGame.journal());
+ const old=await page.evaluate(()=>{const save=JSON.parse(JSON.stringify(ZM.save));delete save.economyVersion;save.dust=99999;return JSON.stringify({format:'zodiac-memory',version:1,save});});
+ await page.locator('#importFile').setInputFiles({name:'old.json',mimeType:'application/json',buffer:Buffer.from(old)});
+ assert.match(await page.locator('.import-preview').innerText(),/0 звёзд · 0 пыли/);
+ assert.match(await page.locator('.msub').innerText(),/прежней экономики/);assert.equal(await page.evaluate(()=>ZM.save.dust),91);
+});
+
+test('case opening commits its prize before animation, supports equip and forbids direct costume purchases',async t=>{
+ const page=await game(t);await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>{ZM.modalForceClose();ZM.save.dust=1000;Observatory.setHero('female');Observatory.openWardrobe();});
+ await page.locator('[data-case="outfits"]').click();assert.equal(await page.locator('.case-prize .product-art').count(),1);
+ const result=await page.evaluate(()=>{const owned=Object.keys(Observatory.state().owned.outfits);const saved=JSON.parse(localStorage.getItem('zodiacMemory.v3'));return{owned,persisted:saved.observatory.owned.outfits,opens:saved.observatory.cases.outfits.opens,dust:saved.dust};});
+ assert.equal(result.opens,1);assert.equal(result.owned.length,2);assert.ok(result.owned.every(id=>result.persisted[id]));assert.ok(result.dust<=825);
+ await page.locator('#caseEquip').click();const outfit=await page.evaluate(()=>Observatory.state().outfit);assert.notEqual(outfit,'apprentice');
+ await page.reload();assert.equal(await page.evaluate(()=>Observatory.state().outfit),outfit);
+ assert.equal(await page.evaluate(()=>{const before=ZM.save.dust;const bought=Observatory.buy('outfits','archmage');return bought===false&&before===ZM.save.dust;}),true);
+ await page.evaluate(()=>{Observatory.giveReward({cosmetics:[{kind:'outfits',id:'blackwitch'}]});Observatory.setHero('female');Observatory.equip('outfits','blackwitch');Observatory.setHero('male');});
+ assert.equal(await page.evaluate(()=>Observatory.state().outfit),'apprentice');assert.equal(await page.evaluate(()=>Observatory.equip('outfits','blackwitch')),false);
 });

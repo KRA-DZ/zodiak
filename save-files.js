@@ -1,6 +1,7 @@
 /* Проверка переносимых сохранений до любой записи в localStorage. */
 (function(root) {
     'use strict';
+    const Economy=root.Economy||(typeof require==='function'?require('./economy.js'):null);
     const fail = () => { throw new Error('Файл не похож на корректную копию прогресса этой игры.'); };
     const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
     const int = (n, max = 1e9) => Number.isSafeInteger(n) && n >= 0 && n <= max;
@@ -66,13 +67,17 @@
         if (s.ritual != null && (!object(s.ritual) || !date(s.ritual.day) || !int(s.ritual.wins,3) || typeof s.ritual.claimed !== 'boolean')) fail();
         if (s.observatory != null) {
             const o=s.observatory;
-            const groups={outfits:['apprentice','astral','moon','forest'],pets:['none','cat','owl','dog','dragon'],backgrounds:['original','garden','candles'],effects:['starlight','aurora','petals','comets']};
+            const groups={outfits:['apprentice','astral','moon','forest',...Economy.additions.outfits.map(d=>d.id)],pets:['none','cat','owl','dog','dragon',...Economy.additions.pets.map(d=>d.id)],backgrounds:['original','garden','candles'],effects:['starlight','aurora','petals','comets']};
             if(!object(o)||o.version!==1||!(o.hero===null||['female','male'].includes(o.hero))||!['system','full','minimal'].includes(o.motion)||!object(o.owned)||!object(o.stats)||typeof o.collectorGift!=='boolean')fail();
             if(!Object.keys(o.owned).every(kind=>Object.hasOwn(groups,kind)))fail();
             for(const [kind,ids] of Object.entries(groups)) {
                 if(!flags(o.owned[kind])||!Object.keys(o.owned[kind]).every(id=>ids.includes(id)))fail();
                 const field={outfits:'outfit',pets:'pet',backgrounds:'background',effects:'effect'}[kind];
                 if(!ids.includes(o[field])||o.owned[kind][o[field]]!==true)fail();
+            }
+            if(o.cases!=null){
+                if(!object(o.cases)||Object.keys(o.cases).length!==2||!['outfits','pets'].every(k=>object(o.cases[k])))fail();
+                for(const kind of ['outfits','pets']){const c=o.cases[kind];if(Object.keys(c).length!==4||!int(c.opens)||!int(c.rare,7)||!int(c.epic,19)||!int(c.legend,59)||c.rare>c.opens||c.epic>c.opens||c.legend>c.opens)fail();}
             }
             const stats=['tutorial','wardrobeBuys','backgroundChanges','bestCascade','gems','alchemyWins','oracleWins','memoryWins','predictions'];
             if(!Object.keys(o.stats).every(k=>stats.includes(k)&&int(o.stats[k])))fail();
@@ -82,7 +87,8 @@
         if(s.campaignVersion!=null&&(s.campaignVersion!==1||s.lvStars.length!==360||!int(s.campaignMode,2)||!int(s.campaignChapter,11)))fail();
         if(s.pathRewards!=null&&(!flags(s.pathRewards)||!Object.keys(s.pathRewards).every(k=>/^(?:[0-9]|1[01]):[012]$/.test(k))))fail();
         if(s.albumSeen!=null&&(!Array.isArray(s.albumSeen)||s.albumSeen.length>12||!s.albumSeen.every(n=>int(n,11))||new Set(s.albumSeen).size!==s.albumSeen.length))fail();
-        const fields = ['created','sign','birth','dust','inv','skins','skin','lvOpen','lvStars','ach','stats','horoUsed','daily','preds','predDay','predSign','wheelBonus','traits','calStart','calLast','calTaken','journeyVersion','journal','omens','endless','loginStreak','loginLast','ritual','frag','stars','observatory','levelGuides','campaignVersion','campaignMode','campaignChapter','pathRewards','albumSeen'];
+        if(s.economyVersion!=null&&s.economyVersion!==Economy.VERSION)fail();
+        const fields = ['economyVersion','created','sign','birth','dust','inv','skins','skin','lvOpen','lvStars','ach','stats','horoUsed','daily','preds','predDay','predSign','wheelBonus','traits','calStart','calLast','calTaken','journeyVersion','journal','omens','endless','loginStreak','loginLast','ritual','frag','stars','observatory','levelGuides','campaignVersion','campaignMode','campaignChapter','pathRewards','albumSeen'];
         const save = {};
         fields.forEach(k => { if (Object.hasOwn(s,k)) save[k] = s[k]; });
         for (const k of ['frag','stars']) if (save[k] != null && (!Array.isArray(save[k]) || save[k].length > 108 || !save[k].every(n => int(n)))) fail();
