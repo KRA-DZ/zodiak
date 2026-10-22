@@ -74,7 +74,12 @@
         return '<span class="figure-art '+extra+'" role="img" aria-label="'+label+'" style="--art-x:'+(col/3*100)+'%;--art-y:'+y+'%;--art-size:'+(1086/h*100)+'%;--art-ratio:362/'+h+'"></span>';
     }
     function figure(d,hero,extra=''){
-        if(d.image)return '<span class="figure-art sheet-art '+extra+'" role="img" aria-label="'+d.name+'" style="--sheet:url('+d.image+');--sheet-size:'+d.columns*100+'% '+d.rows*100+'%;--sheet-x:'+(d.cell%d.columns)/(d.columns-1)*100+'%;--sheet-y:'+Math.floor(d.cell/d.columns)/(d.rows-1)*100+'%"></span>';
+        if(d.image){
+            const frame=Economy.artwork[d.image.split('?')[0]],row=Math.floor(d.cell/d.columns),col=d.cell%d.columns;
+            const height=frame?(row===0?frame.cuts[col]:frame.height-frame.cuts[col]):1;
+            const size=frame?frame.height/height*100:d.rows*100,ratio=frame?(frame.width/d.columns)+'/'+height:'1';
+            return '<span class="figure-art sheet-art '+extra+'" role="img" aria-label="'+d.name+'" style="--sheet:url('+d.image+');--sheet-size:'+d.columns*100+'% '+size+'%;--sheet-ratio:'+ratio+';--sheet-x:'+col/(d.columns-1)*100+'%;--sheet-y:'+row/(d.rows-1)*100+'%"></span>';
+        }
         return sprite(Array.isArray(d.art)?d.art[hero==='male'?1:0]:d.art,d.name,extra);
     }
     function portrait(s){

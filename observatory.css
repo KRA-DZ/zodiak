@@ -290,7 +290,7 @@ body::after { content:'';position:fixed;inset:0;pointer-events:none;background-i
 @media(max-width:720px) { .path-observatory { float:none;position:absolute;top:14px;right:14px;margin:0; }.path-heading > .eyebrow { font-size:.55rem; }.chapter-dot { font-size:.85rem; } }
 .path-landscape::before { background-size:cover,auto 165%;background-position:center,center top; }
 /* Cosmetic collections and earned-currency cases. */
-.figure-art.sheet-art { background-image:var(--sheet);background-size:var(--sheet-size);background-position:var(--sheet-x) var(--sheet-y);aspect-ratio:1; }
+.figure-art.sheet-art { background-image:var(--sheet);background-size:var(--sheet-size);background-position:var(--sheet-x) var(--sheet-y);aspect-ratio:var(--sheet-ratio,1); }
 .wardrobe-item[style] { border-color:var(--rarity);box-shadow:inset 0 0 20px color-mix(in srgb,var(--rarity) 9%,transparent); }
 .rarity-badge { color:var(--rarity,#d3c6e0);font-size:.64rem;letter-spacing:.04em;padding:3px 8px;border:1px solid var(--rarity,#877394);border-radius:20px;display:inline-block; }
 .case-intro { text-align:center;color:var(--muted);font-size:.8rem;line-height:1.7;margin:16px auto;max-width:600px; }
@@ -305,3 +305,5 @@ body::after { content:'';position:fixed;inset:0;pointer-events:none;background-i
 @media(prefers-reduced-motion:reduce) { .case-opening { display:none; }.case-prize { animation:none; } }
 body[data-motion=minimal] .case-opening { display:none; }body[data-motion=minimal] .case-prize { animation:none; }
 .wardrobe-cases .wardrobe-preview { max-width:170px; }.wardrobe-cases .wardrobe-preview .observatory-display { min-height:135px; }.wardrobe-cases .hero-figure { max-width:125px; }.wardrobe-cases .pet-figure { max-width:65px; }.wardrobe-cases .case-intro { margin:10px auto;font-size:.73rem; }.wardrobe-cases .hero-switch,.wardrobe-cases .wardrobe-tabs { margin:11px 0; }
+
+.case-prize .sheet-art { height:auto;aspect-ratio:var(--sheet-ratio,1); }.case-contents .sheet-art { aspect-ratio:var(--sheet-ratio,1); }
