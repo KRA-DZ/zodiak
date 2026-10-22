@@ -862,7 +862,7 @@ test('streak and guide lead the atlas, header opens inline and trophies avoid au
 
 test('the compact trail offers three modes in every star and moves the atlas into the observatory',async t=>{
  const page=await game(t);await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
- assert.equal(await page.locator('.star-node').count(),120);assert.equal(await page.locator('.star-node:not(.locked)').count(),1);assert.equal(await page.locator('.star-node.guardian').count(),24);
+ assert.equal(await page.locator('.star-node').count(),10);assert.equal(await page.locator('.star-node:not(.locked)').count(),1);assert.equal(await page.locator('.star-node.guardian').count(),2);
  assert.equal(await page.locator('#atlasPanel').isVisible(),false);
  await page.locator('#openAtlas').click();assert.equal(await page.locator('#atlasModal .zcard').count(),12);assert.equal(await page.locator('.zodiac-seal').count(),36);
  await page.locator('#modalRoot [data-close]').click();assert.equal(await page.locator('#atlasPanel').isVisible(),false);
@@ -891,7 +891,7 @@ test('a late alchemy guardian renders voids that cannot be swapped or filled by 
 test('compact header contains all actions, hero stays unclipped and map matches the observatory height',async t=>{
  const page=await game(t);await page.setViewportSize({width:1366,height:900});
  await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
- for(const id of['btnGuide','btnContinue','btnEndless','btnAlchemy','btnJournal','dailyQuest','loginHint'])assert.equal(await page.locator('.hub-command #'+id).count(),1);
+ for(const id of['btnGuide','btnContinue','btnEndless','btnAlchemy','dailyQuest','loginHint'])assert.equal(await page.locator('.hub-command #'+id).count(),1);
  assert.equal(await page.locator('.journey-bar').count(),0);
  for(const hero of['female','male'])for(const outfit of['apprentice','astral','moon','forest']){
   const metrics=await page.evaluate(([hero,outfit])=>{const s=Observatory.state();s.hero=hero;s.outfit=outfit;Observatory.render();const figure=document.querySelector('#observatoryHost .hero-figure').getBoundingClientRect(),host=document.getElementById('observatoryHost').getBoundingClientRect();return{fits:figure.top>=host.top&&figure.bottom<=host.bottom&&figure.height>130};},[hero,outfit]);assert.equal(metrics.fits,true,hero+' '+outfit);
@@ -899,9 +899,9 @@ test('compact header contains all actions, hero stays unclipped and map matches 
  const heights=await page.evaluate(()=>[document.getElementById('campaignMap').getBoundingClientRect().height,document.querySelector('.personal-observatory').getBoundingClientRect().height]);assert.ok(Math.abs(heights[0]-heights[1])<2);
 });
 
-test('continuous map scrolls through twelve illustrated regions while future levels stay locked',async t=>{
+test('chapter map shows one illustrated region at a time while future levels stay locked',async t=>{
  const page=await game(t);await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
- assert.equal(await page.locator('.zodiac-region').count(),12);assert.equal(await page.locator('.star-node').count(),120);
+ assert.equal(await page.locator('.zodiac-region').count(),1);assert.equal(await page.locator('.star-node').count(),10);
  const decoded=await page.evaluate(async()=>Promise.all(['aries','taurus','gemini','cancer','leo','virgo','libra','scorpio','sagittarius','capricorn','aquarius','pisces'].map(async sign=>{const image=new Image();image.src='assets/route-'+sign+'.webp';await image.decode();return image.naturalWidth>=1024&&image.naturalHeight>=1536;})));assert.ok(decoded.every(Boolean));
  await page.locator('[data-chapter="11"]').click();await page.clock.runFor(100);
  assert.match(await page.locator('.path-heading h2').innerText(),/Рыбы/);
@@ -970,4 +970,36 @@ test('case opening commits its prize before animation, supports equip and forbid
  assert.equal(await page.evaluate(()=>{const before=ZM.save.dust;const bought=Observatory.buy('outfits','archmage');return bought===false&&before===ZM.save.dust;}),true);
  await page.evaluate(()=>{Observatory.giveReward({cosmetics:[{kind:'outfits',id:'blackwitch'}]});Observatory.setHero('female');Observatory.equip('outfits','blackwitch');Observatory.setHero('male');});
  assert.equal(await page.evaluate(()=>Observatory.state().outfit),'apprentice');assert.equal(await page.evaluate(()=>Observatory.equip('outfits','blackwitch')),false);
+});
+
+test('wheel gestures change exactly one chapter with no neighbouring backgrounds and keyboard navigation still works',async t=>{
+ const page=await game(t);await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
+ assert.equal(await page.locator('#pathAtlas,#btnJournal').count(),0);
+ await page.evaluate(()=>{const viewport=document.querySelector('.chapter-viewport');for(let i=0;i<4;i++)viewport.dispatchEvent(new WheelEvent('wheel',{deltaY:90,bubbles:true,cancelable:true}));});
+ assert.equal(await page.locator('.chapter-scene').getAttribute('data-region'),'1');assert.equal(await page.locator('.star-node').count(),10);assert.equal(await page.locator('.zodiac-region').count(),1);
+ const bounds=await page.evaluate(()=>{const viewport=document.querySelector('.chapter-viewport').getBoundingClientRect(),scene=document.querySelector('.chapter-scene').getBoundingClientRect(),header=document.querySelector('.chapter-heading').getBoundingClientRect();return{flush:Math.abs(viewport.top-scene.top)<1&&Math.abs(viewport.bottom-scene.bottom)<1,separate:header.bottom<=scene.top};});assert.deepEqual(bounds,{flush:true,separate:true});
+ await page.clock.runFor(360);await page.evaluate(()=>document.querySelector('.chapter-viewport').dispatchEvent(new WheelEvent('wheel',{deltaY:90,bubbles:true,cancelable:true})));assert.equal(await page.locator('.chapter-scene').getAttribute('data-region'),'2');
+ await page.locator('.chapter-viewport').focus();await page.keyboard.press('PageUp');assert.equal(await page.locator('.chapter-scene').getAttribute('data-region'),'1');
+ await page.keyboard.press('Home');assert.equal(await page.locator('.chapter-scene').getAttribute('data-region'),'0');await page.keyboard.press('End');assert.equal(await page.locator('.chapter-scene').getAttribute('data-region'),'11');
+ assert.equal(await page.locator('[data-node="119"]').getAttribute('aria-disabled'),'true');
+});
+
+test('album keeps complete original art and places smaller seals and progress outside the image on desktop and phone',async t=>{
+ const page=await game(t);await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
+ for(const width of [1366,390]){
+  await page.setViewportSize({width,height:950});await page.evaluate(()=>document.getElementById('openAtlas').click());
+  const result=await page.evaluate(async()=>{await Promise.all([...document.querySelectorAll('.zcover img')].map(im=>im.decode()));const card=document.querySelector('.zcard'),img=card.querySelector('img'),r=img.getBoundingClientRect(),seals=card.querySelector('.card-seals').getBoundingClientRect(),progress=card.querySelector('.zbar').getBoundingClientRect();return{ratio:r.width/r.height,natural:img.naturalWidth/img.naturalHeight,sealsBelow:seals.top>=r.bottom,progressBelow:progress.top>=seals.bottom,sealsInside:card.querySelector('.zcover .zodiac-seal')!==null,size:card.querySelector('.zodiac-seal').getBoundingClientRect().width,fit:getComputedStyle(img).objectFit,overflow:document.documentElement.scrollWidth>innerWidth};});
+  assert.ok(Math.abs(result.ratio-result.natural)<.001);assert.equal(result.fit,'contain');assert.equal(result.sealsBelow,true);assert.equal(result.progressBelow,true);assert.equal(result.sealsInside,false);assert.ok(result.size<=34);assert.equal(result.overflow,false);
+  await page.locator('#modalRoot [data-close]').click();
+ }
+ const decoded=await page.evaluate(async()=>{const img=new Image();img.src='assets/path-seals-dark.webp';await img.decode();return img.naturalWidth>0;});assert.equal(decoded,true);
+});
+
+test('mobile swipes switch whole zodiac pages without opening a level from a trailing click',async t=>{
+ const page=await game(t);await page.setViewportSize({width:390,height:844});await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
+ const swipe=async (from,to)=>page.evaluate(([from,to])=>{const v=document.querySelector('.chapter-viewport');for(const [type,field,y]of [['touchstart','touches',from],['touchend','changedTouches',to]]){const event=new Event(type,{bubbles:true});Object.defineProperty(event,field,{value:[{clientX:170,clientY:y}]});v.dispatchEvent(event);}},[from,to]);
+ await swipe(300,200);assert.equal(await page.locator('.chapter-scene').getAttribute('data-region'),'1');
+ await swipe(200,300);assert.equal(await page.locator('.chapter-scene').getAttribute('data-region'),'0');
+ await page.evaluate(()=>document.querySelector('[data-node="0"]').click());assert.equal(await page.locator('.node-picker').count(),0);
+ await page.clock.runFor(360);await page.locator('[data-node="0"]').click();assert.equal(await page.locator('.picker-mode').count(),3);
 });

@@ -3084,14 +3084,14 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="journey.css?v=figures-8">
-    <link rel="stylesheet" href="observatory.css?v=figures-8"><link rel="stylesheet" href="worlds.css?v=figures-8">
+    <link rel="stylesheet" href="journey.css?v=chapters-9">
+    <link rel="stylesheet" href="observatory.css?v=chapters-9"><link rel="stylesheet" href="worlds.css?v=chapters-9">
 </head>
 
 <body>
-    <script src="economy.js?v=figures-8"></script><script src="campaign.js?v=figures-8"></script><script src="journey.js?v=figures-8"></script>
-    <script src="save-files.js?v=figures-8"></script>
-    <script src="match3.js?v=figures-8"></script><script src="level-tour.js?v=figures-8"></script><script src="campaign-map.js?v=figures-8"></script>
+    <script src="economy.js?v=chapters-9"></script><script src="campaign.js?v=chapters-9"></script><script src="journey.js?v=chapters-9"></script>
+    <script src="save-files.js?v=chapters-9"></script>
+    <script src="match3.js?v=chapters-9"></script><script src="level-tour.js?v=chapters-9"></script><script src="campaign-map.js?v=chapters-9"></script>
     <script>
         (function() {
             var shown = false;
@@ -3197,7 +3197,7 @@
 <button class="command-chip" id="btnContinue">✧ Продолжить<span id="continueHint" class="sr-only"></span></button>
 <button class="command-chip" id="btnEndless">∞ Бесконечное небо<span id="endlessHint" class="sr-only"></span></button>
 <button class="command-chip" id="btnAlchemy">✶ Свободная алхимия</button>
-<button class="command-chip" id="btnJournal">☾ Предсказания<span id="journalHint" class="sr-only"></span></button>
+<span id="journalHint" class="sr-only"></span>
 <div id="dailyQuest" title="Три победы за день: 20 пыли и печать Оракула"></div>
 </section></div><div class="hub-wrap">
             <aside class="hub-hero personal-observatory" aria-label="Личная обсерватория">
@@ -4427,8 +4427,8 @@
         })();
     </script>
 
-    <script src="predictions.js?v=figures-8"></script>
-    <script src="observatory.js?v=figures-8"></script>
+    <script src="predictions.js?v=chapters-9"></script>
+    <script src="observatory.js?v=chapters-9"></script>
     <script>Observatory.init(window.ZM);</script>
     <script>
         /* ═══ ДВИЖОК: аудио+музыка, фон, хаб-атлас, игра ═══ */
@@ -6114,7 +6114,7 @@
                     card.innerHTML = '<span class="atlas-card-heading"><b>' + sg.name + '</b><span>' + ZM.GLYPHS[si] + '</span></span><span class="zcover">' +
                         '<b class="zglyph">' + ZM.GLYPHS[si] + '</b>' +
                         (url ? '<img src="' + url + '" alt="' + sg.name + '" onerror="this.remove();">' : '') +
-                        '<span class="card-seals">'+[0,1,2].map(function(mode){var fallen=Campaign.completed(ZM.save,si,mode)===10;return '<span class="zodiac-seal'+(fallen?' fallen':'')+'" style="--seal-x:'+mode*50+'%" title="'+Campaign.names[mode]+': '+Campaign.completed(ZM.save,si,mode)+'/10"><span>'+ (fallen?'✓':'')+'</span></span>';}).join('')+'</span></span>' +
+                        '</span><span class="card-seals">'+[0,1,2].map(function(mode){var fallen=Campaign.completed(ZM.save,si,mode)===10;return '<span class="zodiac-seal'+(fallen?' fallen':'')+'" style="--seal-x:'+mode*50+'%" title="'+Campaign.names[mode]+': '+Campaign.completed(ZM.save,si,mode)+'/10"><span>'+ (fallen?'✓':'')+'</span></span>';}).join('')+'</span>' +
                         '<span class="zbar"><span class="awakening-label">' + (collected ? 'Созвездие пробуждено' : 'Пробуждение · ' + card.dataset.progress + '%') + '</span><span class="zprog"><i style="width:' + Math.round(done / ZM.PER_SIGN * 100) + '%"></i></span>' +
                         '<span class="zmeta">' +
                         (collected ?
@@ -6140,7 +6140,7 @@
             }
             function openCampaignAtlas(){
                 buildAtlas();
-                ZM.modalOpen('<h2>Альбом знаков · три печати</h2><div class="msub">12 знаков · по 10 звёздочек с тремя режимами. Закройте все 10 игр одного режима, чтобы снять его печать.</div><div id="atlasModal"></div><div class="m-actions"><button class="btn" data-close>К звёздной тропе</button></div>',{cls:'atlas-modal'});
+                ZM.modalOpen('<h2>Альбом знаков</h2><div class="msub">12 знаков · по 10 звёздочек с тремя режимами. Закройте все 10 игр одного режима, чтобы снять его печать.</div><div id="atlasModal"></div><div class="m-actions"><button class="btn" data-close>К звёздной тропе</button></div>',{cls:'atlas-modal'});
                 var panel=document.getElementById('atlasPanel');panel.hidden=false;document.getElementById('atlasModal').appendChild(panel);
             }
             function openSignLevels(si) {
@@ -7995,7 +7995,6 @@
             });
             document.getElementById('btnAlchemy').addEventListener('click', chooseAlchemy);
             document.getElementById('btnEndless').addEventListener('click', startEndless);
-            document.getElementById('btnJournal').addEventListener('click', openOracleTable);
             document.getElementById('btnGuide').addEventListener('click', openGuide);
             document.getElementById('btnCalendar').addEventListener('click', openCalendar);
             document.getElementById('btnShop').addEventListener('click', openShop);
@@ -8023,7 +8022,7 @@
                 }
                 enterHub(true);
             };
-            CampaignMap.init(ZM,function(index){if(Campaign.available(ZM.save,index))startLevel(index);},openCampaignAtlas);
+            CampaignMap.init(ZM,function(index){if(Campaign.available(ZM.save,index))startLevel(index);});
             document.getElementById('openAtlas').onclick=openCampaignAtlas;
             Observatory.connect({ grantAch: grantAch, applySkin: applySkin, background: function() { BG.loadImages(); } });
             document.getElementById('observatoryShortcut').onclick = function(){document.querySelector('.personal-observatory').scrollIntoView({behavior:'smooth',block:'start'});};
