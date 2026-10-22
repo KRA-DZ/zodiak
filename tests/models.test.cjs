@@ -44,7 +44,7 @@ test('360 campaign configs are bounded, with two guardians and recovery levels p
  const levels=J.extendLevels([]);assert.equal(levels.length,360);
  for(let s=0;s<12;s++)for(let m=0;m<3;m++){
   const path=levels.slice(s*30+m*10,s*30+m*10+10);assert.equal(path.length,10);assert.deepEqual(path.filter(c=>c.campaignBoss).map(c=>c.campaignStep),[4,9]);assert.ok(path[0].rest&&path[5].rest);
-  for(const c of path){if(c.oracle)assert.ok(c.stages.every(st=>st.targets<=2&&st.swaps<=12&&st.dur>=420));if(c.match3){assert.ok(c.obstacles?.length<=6||!c.obstacles);assert.ok(c.moves>=24);assert.ok((c.goal?.cells||[]).every(i=>!c.voids?.includes(i)));}else if(!c.oracle)assert.equal(c.rows*c.cols,c.pairs*2+(c.trios||0)*3+(c.darks||0)*2+(c.decoys||0));}
+  for(const c of path){if(c.oracle)assert.ok(c.stages.every(st=>st.targets<=2&&st.swaps<=12&&st.dur>=420));if(c.match3){assert.ok(c.obstacles?.length<=8||!c.obstacles);assert.ok(c.moves>=24);assert.ok((c.goal?.cells||[]).every(i=>!c.voids?.includes(i)));}else if(!c.oracle)assert.equal(c.rows*c.cols,c.pairs*2+(c.trios||0)*3+(c.darks||0)*2+(c.decoys||0));}
  }
  for(let n=1;n<=120;n++){const c=J.endlessConfig(n);assert.ok(c.par>0);}
 });
@@ -82,7 +82,7 @@ test('campaign and endless include three supported mission types with valid seal
         const cfg=J.alchemyConfig(s,v);types.add(cfg.goal?.type||'score');
         if(cfg.goal?.cells){
             assert.equal(new Set(cfg.goal.cells).size,cfg.target);
-            assert.ok(cfg.goal.cells.every(n=>n>=0&&n<36));
+            assert.ok(cfg.goal.cells.every(n=>n>=0&&n<cfg.rows*cfg.cols));
         }
     }
     assert.deepEqual([...types].sort(),['collect','score','seals']);
@@ -236,4 +236,39 @@ test('an album card is collected only after all thirty levels and celebrated onc
  assert.equal(C.collectCard(save,0),true);assert.equal(C.collectCard(save,0),false);
  const p=packet();C.upgrade(p.save);p.save.albumSeen=[0];assert.deepEqual(Saves.parse(JSON.stringify(p)).albumSeen,[0]);
  p.save.albumSeen=[0,0];assert.throws(()=>Saves.parse(JSON.stringify(p)));p.save.albumSeen=[12];assert.throws(()=>Saves.parse(JSON.stringify(p)));
+});
+
+test('all alchemy shapes start without matches and expose a legal move at 6, 7 and 8 cells per side',()=>{
+ const sizes=new Set(),shapes=new Set();
+ for(const cfg of C.generate().filter(c=>c.match3)){
+  sizes.add(cfg.cols);shapes.add(cfg.shape);const holes=new Set(cfg.voids||[]),blocked=new Set([...(cfg.obstacles||[]).map(([i])=>i),...holes]);
+  for(const random of [()=>0,()=>.999,Math.random]){
+   const board=M.newBoard(random,cfg.cols,holes,blocked);assert.equal(board.length,cfg.rows*cfg.cols);assert.equal(M.matches(board).length,0);
+   const move=M.findMove(board,cfg.goal,new Set(cfg.goal?.cells||[]),blocked);assert.ok(move,JSON.stringify(cfg));assert.ok(M.adjacent(...move,cfg.cols));assert.ok(move.every(i=>!blocked.has(i)));
+   assert.deepEqual(board.map((v,i)=>v===null?i:-1).filter(i=>i>=0),[...holes]);
+  }
+  assert.ok((cfg.goal?.cells||[]).every(i=>!holes.has(i)));assert.ok(cfg.rows<=8&&cfg.cols<=8);
+ }
+ assert.deepEqual([...sizes].sort(),[6,7,8]);assert.equal(shapes.size,8);
+});
+
+test('large boards do not wrap rows and row, column and bomb powers use their real dimensions',()=>{
+ for(const side of [7,8]){
+  const board=Array.from({length:side*side},(_,i)=>(Math.floor(i/side)+i%side)%6);
+  assert.equal(M.adjacent(side-1,side,side),false);assert.equal(M.adjacent(side,side*2,side),true);
+  const row=M.blast(board,[side+2],new Map([[side+2,'row']]));assert.equal(row.length,side);assert.ok(row.every(i=>Math.floor(i/side)===1));
+  const col=M.blast(board,[side+2],new Map([[side+2,'column']]));assert.equal(col.length,side);assert.ok(col.every(i=>i%side===2));
+  assert.equal(M.blast(board,[0],new Map([[0,'bomb']])).length,4);
+  [side,side+1,side+2,side+3].forEach(i=>board[i]=5);board[side+4]=2;assert.ok([...M.combinationPlan(board).spawns.values()].includes('row'));
+ }
+});
+
+test('marked tiles retain their identity when swapped, dropped past clears or shuffled',()=>{
+ const board=Array.from({length:64},(_,i)=>i),holes=new Set([26]);board[26]=null;
+ const plan=M.collapsePlan(board,[10,18,42,50],()=>.3,holes),marked=M.moveMarks(new Set([2,34]),plan.origins);
+ assert.deepEqual([...marked].sort((a,b)=>a-b),[18,50]);assert.equal(plan.board[18],2);assert.equal(plan.board[50],34);assert.equal(plan.board[26],null);
+ assert.deepEqual([...M.swapMarks(marked,18,19)].sort((a,b)=>a-b),[19,50]);
+ const generated=M.newBoard(Math.random,8,holes),shuffled=M.shufflePlan(generated,holes);const moved=M.moveMarks(new Set([2,34]),shuffled.origins);
+ assert.equal(moved.size,2);for(const to of moved)assert.ok([2,34].includes(shuffled.origins[to]));
+ const remaining=new Set([18,50]);assert.equal(M.missionProgress({type:'seals'},plan.board,[50,50],remaining),1);assert.deepEqual([...remaining],[18]);
 });

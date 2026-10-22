@@ -164,9 +164,10 @@ test('all 360 levels render cards without runtime errors', async t => {
             cards: document.querySelectorAll('#board .cell').length,
             gems: document.querySelectorAll('#board .gem').length,
             deck: testGame.state.deck.length,
+            size:testGame.state.cfg.rows*testGame.state.cfg.cols,
             missingSymbols: testGame.state.deck.some(cd => !ZM.SYMS[cd.grp.sym]),
         }));
-        if (result.gems) { assert.equal(result.gems, 36); continue; }
+        if (result.gems) { assert.equal(result.gems, result.size); continue; }
         assert.ok(result.cards > 0, `level ${index + 1}`);
         assert.equal(result.cards, result.deck, `level ${index + 1}`);
         assert.equal(result.missingSymbols, false, `level ${index + 1}`);
@@ -881,11 +882,11 @@ test('the tenth level removes only its own seal, rewards it once and opens the n
 });
 test('a late alchemy guardian renders voids that cannot be swapped or filled by gravity',async t=>{
  const page=await game(t);await start(page,84);
- assert.equal(await page.locator('.gem[data-void="true"]').count(),2);
+ assert.equal(await page.locator('.gem[data-void="true"]').count(),await page.evaluate(()=>testGame.state.cfg.voids.length));
  const before=await page.evaluate(()=>testGame.state.match3.moves);
  await page.evaluate(()=>{document.querySelector('.gem[data-void="true"]').click();});
  assert.equal(await page.evaluate(()=>testGame.state.match3.moves),before);
- assert.equal(await page.evaluate(()=>testGame.state.match3.board.filter(n=>n===null).length),2);
+ assert.equal(await page.evaluate(()=>testGame.state.match3.board.filter(n=>n===null).length),await page.evaluate(()=>testGame.state.cfg.voids.length));
 });
 
 test('compact header contains all actions, hero stays unclipped and map matches the observatory height',async t=>{
@@ -975,11 +976,11 @@ test('case opening commits its prize before animation, supports equip and forbid
 test('wheel gestures change exactly one chapter with no neighbouring backgrounds and keyboard navigation still works',async t=>{
  const page=await game(t);await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
  assert.equal(await page.locator('#pathAtlas,#btnJournal').count(),0);
- await page.evaluate(()=>{const viewport=document.querySelector('.chapter-viewport');for(let i=0;i<4;i++)viewport.dispatchEvent(new WheelEvent('wheel',{deltaY:90,bubbles:true,cancelable:true}));});
+ await page.evaluate(()=>{const viewport=document.querySelector('.chapter-viewport');for(let i=0;i<4;i++)viewport.dispatchEvent(new WheelEvent('wheel',{deltaY:-90,bubbles:true,cancelable:true}));});
  assert.equal(await page.locator('.chapter-scene').getAttribute('data-region'),'1');assert.equal(await page.locator('.star-node').count(),10);assert.equal(await page.locator('.zodiac-region').count(),1);
  const bounds=await page.evaluate(()=>{const viewport=document.querySelector('.chapter-viewport').getBoundingClientRect(),scene=document.querySelector('.chapter-scene').getBoundingClientRect(),header=document.querySelector('.chapter-heading').getBoundingClientRect();return{flush:Math.abs(viewport.top-scene.top)<1&&Math.abs(viewport.bottom-scene.bottom)<1,separate:header.bottom<=scene.top};});assert.deepEqual(bounds,{flush:true,separate:true});
- await page.clock.runFor(360);await page.evaluate(()=>document.querySelector('.chapter-viewport').dispatchEvent(new WheelEvent('wheel',{deltaY:90,bubbles:true,cancelable:true})));assert.equal(await page.locator('.chapter-scene').getAttribute('data-region'),'2');
- await page.locator('.chapter-viewport').focus();await page.keyboard.press('PageUp');assert.equal(await page.locator('.chapter-scene').getAttribute('data-region'),'1');
+ await page.clock.runFor(360);await page.evaluate(()=>document.querySelector('.chapter-viewport').dispatchEvent(new WheelEvent('wheel',{deltaY:-90,bubbles:true,cancelable:true})));assert.equal(await page.locator('.chapter-scene').getAttribute('data-region'),'2');
+ await page.locator('.chapter-viewport').focus();await page.keyboard.press('PageDown');assert.equal(await page.locator('.chapter-scene').getAttribute('data-region'),'1');
  await page.keyboard.press('Home');assert.equal(await page.locator('.chapter-scene').getAttribute('data-region'),'0');await page.keyboard.press('End');assert.equal(await page.locator('.chapter-scene').getAttribute('data-region'),'11');
  assert.equal(await page.locator('[data-node="119"]').getAttribute('aria-disabled'),'true');
 });
@@ -998,8 +999,45 @@ test('album keeps complete original art and places smaller seals and progress ou
 test('mobile swipes switch whole zodiac pages without opening a level from a trailing click',async t=>{
  const page=await game(t);await page.setViewportSize({width:390,height:844});await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
  const swipe=async (from,to)=>page.evaluate(([from,to])=>{const v=document.querySelector('.chapter-viewport');for(const [type,field,y]of [['touchstart','touches',from],['touchend','changedTouches',to]]){const event=new Event(type,{bubbles:true});Object.defineProperty(event,field,{value:[{clientX:170,clientY:y}]});v.dispatchEvent(event);}},[from,to]);
- await swipe(300,200);assert.equal(await page.locator('.chapter-scene').getAttribute('data-region'),'1');
- await swipe(200,300);assert.equal(await page.locator('.chapter-scene').getAttribute('data-region'),'0');
+ await swipe(200,300);assert.equal(await page.locator('.chapter-scene').getAttribute('data-region'),'1');
+ await swipe(300,200);assert.equal(await page.locator('.chapter-scene').getAttribute('data-region'),'0');
  await page.evaluate(()=>document.querySelector('[data-node="0"]').click());assert.equal(await page.locator('.node-picker').count(),0);
  await page.clock.runFor(360);await page.locator('[data-node="0"]').click();assert.equal(await page.locator('.picker-mode').count(),3);
+});
+
+test('moon seals stay on the same DOM tile during gravity and a successful exchange',async t=>{
+ const page=await game(t);await start(page,20);
+ await page.evaluate(()=>{
+  testGame.state.match3.destroy();const host=document.getElementById('board'),board=Array.from({length:36},(_,i)=>(Math.floor(i/6)+i%6)%6);
+  window.moonTest=Match3.mount(host,{initialBoard:board,rows:6,cols:6,moves:20,target:1,goal:{type:'seals',cells:[0]},specials:[[24,'row']],active:()=>true,update:()=>{},match:()=>{},win:()=>{},lose:()=>{}});
+  window.sealedObject=host.children[0];host.children[24].click();host.children[25].click();
+ });
+ for(let i=0;i<40&&await page.evaluate(()=>moonTest.busy);i++)await page.clock.runFor(250);
+ assert.deepEqual(await page.evaluate(()=>[...moonTest.seals]),[6]);assert.equal(await page.evaluate(()=>sealedObject===document.querySelector('.gem[data-index="6"]')&&sealedObject.classList.contains('sealed')),true);
+ await page.evaluate(()=>{
+  moonTest.destroy();const board=Array.from({length:36},(_,i)=>(Math.floor(i/6)+i%6)%6);[board[0],board[1],board[2],board[6],board[7],board[8]]=[1,0,1,2,1,3];
+  const host=document.getElementById('board');window.moonTest=Match3.mount(host,{initialBoard:board,rows:6,cols:6,moves:20,target:1,goal:{type:'seals',cells:[1]},active:()=>true,update:()=>{},match:()=>{},win:()=>{},lose:()=>{}});window.sealedObject=host.children[1];host.children[1].click();host.children[7].click();
+ });
+ for(let i=0;i<40&&await page.evaluate(()=>moonTest.busy);i++)await page.clock.runFor(250);
+ assert.deepEqual(await page.evaluate(()=>[...moonTest.seals]),[7]);assert.equal(await page.evaluate(()=>sealedObject===document.querySelector('.gem[data-index="7"]')&&sealedObject.classList.contains('sealed')),true);
+ await page.evaluate(()=>moonTest.destroy());
+});
+
+test('an irregular 8 by 8 board fits a phone, accepts valid moves and preserves its void mask',async t=>{
+ const page=await game(t);await page.setViewportSize({width:390,height:844});
+ const index=await page.evaluate(()=>ZM.LEVELS.findIndex(c=>c.match3&&c.cols===8&&c.voids?.length));await start(page,index);
+ assert.equal(await page.locator('.gem').count(),64);
+ const holes=await page.evaluate(()=>testGame.state.cfg.voids);
+ const fits=await page.evaluate(()=>{const board=document.getElementById('board').getBoundingClientRect();return [...document.querySelectorAll('.gem')].every(el=>{const r=el.getBoundingClientRect();return r.left>=board.left&&r.right<=board.right+.5&&r.top>=board.top&&r.bottom<=board.bottom+.5&&r.width>=25;});});assert.equal(fits,true);
+ await page.evaluate(()=>{const m=testGame.state.match3,blocked=new Set([...m.obstacles.keys(),...testGame.state.cfg.voids]);const pair=Match3.findMove(m.board,testGame.state.cfg.goal,m.seals,blocked,m.specials);document.querySelectorAll('.gem')[pair[0]].click();document.querySelectorAll('.gem')[pair[1]].click();});
+ await settleAlchemy(page);
+ assert.deepEqual(await page.evaluate(()=>testGame.state.match3.board.flatMap((v,i)=>v===null?[i]:[])),holes);
+});
+
+test('native chapter paging brings the next zodiac in from above when scrolling upward',async t=>{
+ const page=await game(t,undefined,{realTime:true});await page.emulateMedia({reducedMotion:'no-preference'});await page.locator('#setupGo').click();await page.waitForTimeout(700);await page.evaluate(()=>ZM.modalForceClose());
+ const motion=await page.evaluate(()=>{document.querySelector('.chapter-viewport').dispatchEvent(new WheelEvent('wheel',{deltaY:-90,bubbles:true,cancelable:true}));const scene=document.querySelector('.chapter-scene'),animation=scene.getAnimations()[0];return{chapter:scene.dataset.region,first:animation.effect.getKeyframes()[0].transform,duration:animation.effect.getTiming().duration};});
+ assert.deepEqual(motion,{chapter:'1',first:'translateY(-100%)',duration:440});
+ await page.waitForFunction(()=>!document.querySelector('.chapter-scene').getAnimations().length);assert.equal(await page.locator('.chapter-scene').count(),1);
+ const flush=await page.evaluate(()=>Math.abs(document.querySelector('.chapter-viewport').getBoundingClientRect().top-document.querySelector('.chapter-scene').getBoundingClientRect().top)<1);assert.equal(flush,true);
 });

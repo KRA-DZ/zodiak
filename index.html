@@ -3084,14 +3084,14 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="journey.css?v=chapters-9">
-    <link rel="stylesheet" href="observatory.css?v=chapters-9"><link rel="stylesheet" href="worlds.css?v=chapters-9">
+    <link rel="stylesheet" href="journey.css?v=alchemy-10">
+    <link rel="stylesheet" href="observatory.css?v=alchemy-10"><link rel="stylesheet" href="worlds.css?v=alchemy-10">
 </head>
 
 <body>
-    <script src="economy.js?v=chapters-9"></script><script src="campaign.js?v=chapters-9"></script><script src="journey.js?v=chapters-9"></script>
-    <script src="save-files.js?v=chapters-9"></script>
-    <script src="match3.js?v=chapters-9"></script><script src="level-tour.js?v=chapters-9"></script><script src="campaign-map.js?v=chapters-9"></script>
+    <script src="economy.js?v=alchemy-10"></script><script src="campaign.js?v=alchemy-10"></script><script src="journey.js?v=alchemy-10"></script>
+    <script src="save-files.js?v=alchemy-10"></script>
+    <script src="match3.js?v=alchemy-10"></script><script src="level-tour.js?v=alchemy-10"></script><script src="campaign-map.js?v=alchemy-10"></script>
     <script>
         (function() {
             var shown = false;
@@ -4427,8 +4427,8 @@
         })();
     </script>
 
-    <script src="predictions.js?v=chapters-9"></script>
-    <script src="observatory.js?v=chapters-9"></script>
+    <script src="predictions.js?v=alchemy-10"></script>
+    <script src="observatory.js?v=alchemy-10"></script>
     <script>Observatory.init(window.ZM);</script>
     <script>
         /* ═══ ДВИЖОК: аудио+музыка, фон, хаб-атлас, игра ═══ */
@@ -5424,7 +5424,7 @@
                 var names = [
                     ['score', 'Звёздный поток', 'Собирайте линии любых символов. Каскады помогут достичь цели.'],
                     ['collect', 'Светило судьбы', 'Охотьтесь за одним светилом. Другие линии открывают путь.'],
-                    ['seals', 'Лунные печати', 'Собирайте линии на отмеченных клетках, чтобы снять все печати.']
+                    ['seals', 'Лунные печати', 'Собирайте комбинации с отмеченными фишками. Печати перемещаются вместе с ними.']
                 ];
                 ZM.modalOpen('<h2>Зал алхимии</h2><div class="msub">Выберите настроение сегодняшнего расклада.</div><div class="alchemy-choices">' + names.map(function(m) {
                     return '<button class="journey-card" data-alchemy="' + m[0] + '"><span class="mode-glyph">' + (m[0] === 'seals' ? '☾' : m[0] === 'collect' ? '♀' : '✦') + '</span><b>' + m[1] + '</b><span>' + m[2] + '</span></button>';
@@ -5448,7 +5448,7 @@
                 document.getElementById('missionCount').textContent = Math.min(G.cleared, G.needed) + ' / ' + G.needed;
                 var progress = document.getElementById('missionProgress');
                 progress.max = G.needed; progress.value = Math.min(G.cleared, G.needed);
-                document.getElementById('missionHint').textContent = G.cfg.goal && G.cfg.goal.type === 'seals' ? 'Совпадения и бонусы снимают печати в зоне действия' : G.cfg.goal && G.cfg.goal.type === 'collect' ? 'В цель идут только выбранные символы' : 'Комбинация 4+ дарит дополнительный ход';
+                document.getElementById('missionHint').textContent = G.cfg.goal && G.cfg.goal.type === 'seals' ? 'Печати движутся с фишками; комбинации и бонусы снимают их' : G.cfg.goal && G.cfg.goal.type === 'collect' ? 'В цель идут только выбранные символы' : 'Комбинация 4+ дарит дополнительный ход';
             }
 
             function openJournal(category) {
@@ -6527,7 +6527,7 @@
                     ZM.showScreen('game');
                     var game = G;
                     game.match3 = Match3.mount(document.getElementById('board'), {
-                        target: cfg.target, moves: cfg.moves, goal: cfg.goal, obstacles: cfg.obstacles, voids:cfg.voids,
+                        target: cfg.target, moves: cfg.moves, rows:cfg.rows, cols:cfg.cols, shape:cfg.shape, goal: cfg.goal, obstacles: cfg.obstacles, voids:cfg.voids,
                         active: function() { return G === game && !game.dead && !game.finished && !game.touring; },
                         update: function(state) {
                             game.cleared = state.score;

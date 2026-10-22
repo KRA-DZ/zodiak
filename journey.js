@@ -38,10 +38,12 @@
         endlessConfig(round) {
             const tier = Math.min(5, Math.floor((round - 1) / 3));
             if (round % 3 === 0) {
-                const variant = Math.floor((round - 1) / 3) % 3;
-                if (variant === 1) return { ...this.alchemyConfig(round % 12, 0), goal: { type: 'collect', symbol: tier % 6 }, target: 12 + tier, moves: 24 };
-                if (variant === 2) return this.alchemyConfig(round % 12, 1);
-                return { match3: true, rows: 6, cols: 6, target: 60 + tier * 8, moves: 22, par: 240 };
+                const variant=Math.floor((round-1)/3)%3,chapter=Math.min(11,Math.floor((round-1)/6)),step=(Math.floor(round/3)-1)%10;
+                const cfg=Campaign.alchemyConfig(chapter,step);
+                if(variant===0){delete cfg.goal;cfg.target=Math.round((cfg.rows*cfg.cols-(cfg.voids?.length||0))*1.5);}
+                if(variant===1){cfg.goal={type:'collect',symbol:tier%6};cfg.target=14+tier;}
+                if(variant===2){const active=Array.from({length:cfg.rows*cfg.cols},(_,i)=>i).filter(i=>!cfg.voids?.includes(i));const cells=Array.from({length:6+Math.min(2,tier)},(_,k)=>active[Math.floor((k+.5)*active.length/(6+Math.min(2,tier)))]);cfg.goal={type:'seals',cells};cfg.target=cells.length;}
+                return cfg;
             }
             if (round % 3 === 2) return {
                 oracle: true, par: 180,

@@ -307,3 +307,8 @@ body[data-motion=minimal] .case-opening { display:none; }body[data-motion=minima
 .wardrobe-cases .wardrobe-preview { max-width:170px; }.wardrobe-cases .wardrobe-preview .observatory-display { min-height:135px; }.wardrobe-cases .hero-figure { max-width:125px; }.wardrobe-cases .pet-figure { max-width:65px; }.wardrobe-cases .case-intro { margin:10px auto;font-size:.73rem; }.wardrobe-cases .hero-switch,.wardrobe-cases .wardrobe-tabs { margin:11px 0; }
 
 .case-prize .sheet-art { height:auto;aspect-ratio:var(--sheet-ratio,1); }.case-contents .sheet-art { aspect-ratio:var(--sheet-ratio,1); }
+/* Larger alchemy boards keep compact gaps and separate the travelling moon marker. */
+.board.match3-board[data-size="7"],.board.match3-board[data-size="8"] { gap:clamp(3px,.6vw,6px); }
+.match3-board[data-size="8"] .gem { border-radius:8px; }.match3-board[data-size="8"] .gem-power { font-size:clamp(12px,2.2vw,20px); }
+.board.match3-board[data-shape]:not([data-shape="rectangle"]) { background:#070b1a26;border-color:transparent;box-shadow:none; }
+.gem.sealed::after { top:3%;left:3%;right:auto;bottom:auto;font-size:clamp(9px,1.3vw,12px); }
