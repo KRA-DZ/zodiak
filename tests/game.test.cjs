@@ -302,7 +302,7 @@ test('endless rewards are banked once, do not unlock campaign, and resume after 
     await page.clock.runFor(32);
     const old=await page.evaluate(()=>ZM.save.dust);
     await page.evaluate(()=>{testGame.win();testGame.win();});
-    assert.equal(await page.evaluate(()=>ZM.save.dust),old+7);
+    assert.equal(await page.evaluate(()=>ZM.save.dust),old+19);
     assert.equal(await page.evaluate(()=>ZM.save.endless.round),2);
     assert.equal(await page.evaluate(()=>ZM.save.lvStars.reduce((a,b)=>a+b,0)),0);
     await page.reload();
@@ -1040,4 +1040,17 @@ test('native chapter paging brings the next zodiac in from above when scrolling 
  assert.deepEqual(motion,{chapter:'1',first:'translateY(-100%)',duration:440});
  await page.waitForFunction(()=>!document.querySelector('.chapter-scene').getAnimations().length);assert.equal(await page.locator('.chapter-scene').count(),1);
  const flush=await page.evaluate(()=>Math.abs(document.querySelector('.chapter-viewport').getBoundingClientRect().top-document.querySelector('.chapter-scene').getBoundingClientRect().top)<1);assert.equal(flush,true);
+});
+
+test('seasonal chest reveals an equippable outfit, persists its independent counter and loads every new sheet',async t=>{
+ const page=await game(t);await page.locator('#setupGo').click();await page.clock.runFor(800);
+ await page.evaluate(()=>{ZM.modalForceClose();ZM.save.dust=1000;Observatory.setHero('female');Observatory.openWardrobe('cases');});
+ assert.equal(await page.locator('[data-case]').count(),3);
+ await page.locator('[data-case="seasonal"]').click();
+ const result=await page.evaluate(()=>{const s=Observatory.state(),saved=JSON.parse(localStorage.getItem('zodiacMemory.v3'));return{opens:s.cases.seasonal.opens,regular:s.cases.outfits.opens,persisted:saved.observatory.cases.seasonal.opens,seasonal:WardrobeContent.outfits.filter(d=>d.seasonal&&s.owned.outfits[d.id]).length};});
+ assert.deepEqual(result,{opens:1,regular:0,persisted:1,seasonal:1});
+ await page.locator('#caseEquip').click();const outfit=await page.evaluate(()=>Observatory.state().outfit);
+ await page.reload();assert.equal(await page.evaluate(()=>Observatory.state().outfit),outfit);
+ const images=await page.evaluate(async()=>Promise.all([...new Set(WardrobeContent.outfits.map(d=>d.image))].map(async src=>{const im=new Image();im.src=src;await im.decode();return im.naturalWidth>1000&&im.naturalHeight>1000;})));
+ assert.equal(images.length,8);assert.ok(images.every(Boolean));assert.equal(await page.getByText('Колёсико или свайп — по одному знаку',{exact:true}).count(),0);
 });

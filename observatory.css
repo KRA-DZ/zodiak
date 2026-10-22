@@ -312,3 +312,7 @@ body[data-motion=minimal] .case-opening { display:none; }body[data-motion=minima
 .match3-board[data-size="8"] .gem { border-radius:8px; }.match3-board[data-size="8"] .gem-power { font-size:clamp(12px,2.2vw,20px); }
 .board.match3-board[data-shape]:not([data-shape="rectangle"]) { background:#070b1a26;border-color:transparent;box-shadow:none; }
 .gem.sealed::after { top:3%;left:3%;right:auto;bottom:auto;font-size:clamp(9px,1.3vw,12px); }
+@media(min-width:900px) { .case-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }.case-card { padding:17px 10px; }.case-card > .btn { font-size:.75rem;padding:10px 12px; } }
+.case-card[data-case-kind="seasonal"] { background:radial-gradient(circle at 50% 8%,#9d4e613b,#10132a 65%);border-color:#ce9a8c66; }.case-card[data-case-kind="seasonal"] .case-orb { background:linear-gradient(135deg,#59324c,#23213e);border-color:#e3b48b; }
+.case-card .season-themes { min-height:32px;font-size:.63rem;line-height:1.5;color:#d5b8c9; }
+.chapter-footer { justify-content:flex-end; }

@@ -43,7 +43,7 @@ test('the authorized new campaign reset is idempotent and keeps cosmetics and pr
 test('360 campaign configs are bounded, with two guardians and recovery levels per chapter',()=>{
  const levels=J.extendLevels([]);assert.equal(levels.length,360);
  for(let s=0;s<12;s++)for(let m=0;m<3;m++){
-  const path=levels.slice(s*30+m*10,s*30+m*10+10);assert.equal(path.length,10);assert.deepEqual(path.filter(c=>c.campaignBoss).map(c=>c.campaignStep),[4,9]);assert.ok(path[0].rest&&path[5].rest);
+  const path=levels.slice(s*30+m*10,s*30+m*10+10);assert.equal(path.length,10);assert.deepEqual(path.filter(c=>c.campaignBoss).map(c=>c.campaignStep),[4,9]);if(m!==2)assert.ok(path[0].rest&&path[5].rest);else assert.ok(path.every(c=>!c.rest));
   for(const c of path){if(c.oracle)assert.ok(c.stages.every(st=>st.targets<=2&&st.swaps<=12&&st.dur>=420));if(c.match3){assert.ok(c.obstacles?.length<=8||!c.obstacles);assert.ok(c.moves>=24);assert.ok((c.goal?.cells||[]).every(i=>!c.voids?.includes(i)));}else if(!c.oracle)assert.equal(c.rows*c.cols,c.pairs*2+(c.trios||0)*3+(c.darks||0)*2+(c.decoys||0));}
  }
  for(let n=1;n<=120;n++){const c=J.endlessConfig(n);assert.ok(c.par>0);}
@@ -271,4 +271,12 @@ test('marked tiles retain their identity when swapped, dropped past clears or sh
  const generated=M.newBoard(Math.random,8,holes),shuffled=M.shufflePlan(generated,holes);const moved=M.moveMarks(new Set([2,34]),shuffled.origins);
  assert.equal(moved.size,2);for(const to of moved)assert.ok([2,34].includes(shuffled.origins[to]));
  const remaining=new Set([18,50]);assert.equal(M.missionProgress({type:'seals'},plan.board,[50,50],remaining),1);assert.deepEqual([...remaining],[18]);
+});
+
+
+test('small alchemy boards are full squares and campaign board sizes never drop back',()=>{
+ let last=6;
+ for(let sign=0;sign<12;sign++)for(let step=0;step<10;step++){const c=C.alchemyConfig(sign,step);assert.ok(c.cols>=last);last=c.cols;assert.equal(c.rest,false);if(c.cols===6){assert.equal(c.shape,'rectangle');assert.equal(c.voids?.length||0,0);}}
+ assert.equal(last,8);
+ for(const shape of ['cross','ring','diamond','stairs','hourglass','wings'])assert.deepEqual(C.alchemyLayout(6,shape),[]);
 });

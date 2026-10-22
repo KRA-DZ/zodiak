@@ -76,8 +76,8 @@
                 if(!ids.includes(o[field])||o.owned[kind][o[field]]!==true)fail();
             }
             if(o.cases!=null){
-                if(!object(o.cases)||Object.keys(o.cases).length!==2||!['outfits','pets'].every(k=>object(o.cases[k])))fail();
-                for(const kind of ['outfits','pets']){const c=o.cases[kind];if(Object.keys(c).length!==4||!int(c.opens)||!int(c.rare,7)||!int(c.epic,19)||!int(c.legend,59)||c.rare>c.opens||c.epic>c.opens||c.legend>c.opens)fail();}
+                if(!object(o.cases)||!Object.keys(o.cases).every(k=>Object.hasOwn(Economy.cases,k))||!['outfits','pets'].every(k=>object(o.cases[k])))fail();
+                for(const kind of Object.keys(o.cases)){const c=o.cases[kind];if(!object(c)||Object.keys(c).length!==4||!int(c.opens)||!int(c.rare,7)||!int(c.epic,19)||!int(c.legend,59)||c.rare>c.opens||c.epic>c.opens||c.legend>c.opens)fail();}
             }
             const stats=['tutorial','wardrobeBuys','backgroundChanges','bestCascade','gems','alchemyWins','oracleWins','memoryWins','predictions'];
             if(!Object.keys(o.stats).every(k=>stats.includes(k)&&int(o.stats[k])))fail();

@@ -3084,14 +3084,14 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="journey.css?v=alchemy-10">
-    <link rel="stylesheet" href="observatory.css?v=alchemy-10"><link rel="stylesheet" href="worlds.css?v=alchemy-10">
+    <link rel="stylesheet" href="journey.css?v=seasons-11">
+    <link rel="stylesheet" href="observatory.css?v=seasons-11"><link rel="stylesheet" href="worlds.css?v=seasons-11">
 </head>
 
 <body>
-    <script src="economy.js?v=alchemy-10"></script><script src="campaign.js?v=alchemy-10"></script><script src="journey.js?v=alchemy-10"></script>
-    <script src="save-files.js?v=alchemy-10"></script>
-    <script src="match3.js?v=alchemy-10"></script><script src="level-tour.js?v=alchemy-10"></script><script src="campaign-map.js?v=alchemy-10"></script>
+    <script src="wardrobe-content.js?v=seasons-11"></script><script src="economy.js?v=seasons-11"></script><script src="campaign.js?v=seasons-11"></script><script src="journey.js?v=seasons-11"></script>
+    <script src="save-files.js?v=seasons-11"></script>
+    <script src="match3.js?v=seasons-11"></script><script src="level-tour.js?v=seasons-11"></script><script src="campaign-map.js?v=seasons-11"></script>
     <script>
         (function() {
             var shown = false;
@@ -4427,8 +4427,8 @@
         })();
     </script>
 
-    <script src="predictions.js?v=alchemy-10"></script>
-    <script src="observatory.js?v=alchemy-10"></script>
+    <script src="predictions.js?v=seasons-11"></script>
+    <script src="observatory.js?v=seasons-11"></script>
     <script>Observatory.init(window.ZM);</script>
     <script>
         /* ═══ ДВИЖОК: аудио+музыка, фон, хаб-атлас, игра ═══ */
@@ -5328,15 +5328,15 @@
             }
 
             function finishPractice() {
-                ZM.addDust(3); AE.complete();
-                ZM.modalOpen('<h2>Алхимия удалась</h2><div class="msub">Созвездия сложились в вашу пользу.</div><div class="reward-line">+10 ★ · победа засчитана в ритуал дня</div><div class="m-actions"><button class="btn primary" id="practiceAgain">Новый расклад</button><button class="btn" id="practiceHome">К атласу</button></div>', { persistent: true });
+                ZM.addDust(14); AE.complete();
+                ZM.modalOpen('<h2>Алхимия удалась</h2><div class="msub">Созвездия сложились в вашу пользу.</div><div class="reward-line">+14 ★ · победа засчитана в ритуал дня</div><div class="m-actions"><button class="btn primary" id="practiceAgain">Новый расклад</button><button class="btn" id="practiceHome">К атласу</button></div>', { persistent: true });
                 document.getElementById('practiceAgain').addEventListener('click', chooseAlchemy);
                 document.getElementById('practiceHome').addEventListener('click', function() { ZM.modalForceClose(); killLevel(); enterHub(false); });
             }
 
             function finishEndless() {
-                var round = G.endless, pay = 6 + Math.min(8, round);
-                if (round % 3 === 0) { pay += 5; ZM.save.omens++; }
+                var round = G.endless, pay = Economy.endlessReward(round);
+                if (round % 3 === 0) { ZM.save.omens++; }
                 ZM.save.endless.best = Math.max(ZM.save.endless.best, round);
                 ZM.save.endless.round = round + 1;
                 ZM.addDust(pay);
@@ -5428,7 +5428,7 @@
                 ];
                 ZM.modalOpen('<h2>Зал алхимии</h2><div class="msub">Выберите настроение сегодняшнего расклада.</div><div class="alchemy-choices">' + names.map(function(m) {
                     return '<button class="journey-card" data-alchemy="' + m[0] + '"><span class="mode-glyph">' + (m[0] === 'seals' ? '☾' : m[0] === 'collect' ? '♀' : '✦') + '</span><b>' + m[1] + '</b><span>' + m[2] + '</span></button>';
-                }).join('') + '</div><p class="journey-note">3 пыли за победу · один бесплатный намёк · без ограничения времени</p><div class="m-actions"><button class="btn" data-close>Назад</button></div>');
+                }).join('') + '</div><p class="journey-note">14 пыли за победу · один бесплатный намёк · без ограничения времени</p><div class="m-actions"><button class="btn" data-close>Назад</button></div>');
                 ZM.qa('[data-alchemy]').forEach(function(b) { b.addEventListener('click', function() { startPractice(b.getAttribute('data-alchemy')); }); });
             }
 
@@ -5482,7 +5482,7 @@
                     '<article><b>02 · Оракул</b><p>Запомните отмеченные карты — их не больше двух. После тасовки найдите все нужные знаки. Каждый этап меняет расклад.</p></article>' +
                     '<article><b>03 · Алхимия звёзд</b><p>Выберите два соседних символа и обменяйте их местами. Линии от трёх символов исчезают, четыре и больше дают дополнительный ход. Неудачный обмен не тратит ход. Четыре в ряд создают луч, пять — призму цвета, Т- и Г-комбинации — бомбу. Обмен бонуса запускает его силу; бонусы запускают друг друга. Замки открываются одной соседней комбинацией, лёд — двумя. Можно выбирать символы нажатием или свайпом. В особых раскладах собирайте нужное светило либо снимайте лунные печати.</p></article>' +
                     '<article><b>Звёздная тропа</b><p>Нажмите на звёздочку и выберите режим. Любая победа открывает следующую звёздочку. Три отметки под кругом показывают пройденные режимы. Закройте все три режима в десяти звёздочках знака, чтобы добавить его карту в альбом.</p></article>' +
-                    '<article><b>Награды и возвращения</b><p>Первое прохождение уровня: 18 пыли, повторное: 3. Предсказание стоит 50 пыли или одну печать Оракула. Три победы за день дают 20 пыли и печать. В бесконечном небе каждый третий этап тоже приносит печать.</p></article>' +
+                    '<article><b>Награды и возвращения</b><p>Первое прохождение: 20–24 пыли по звёздам, повторное: 10–14. Восемь новых побед на три звезды дают 192 пыли — достаточно для ларца облачений за 180. Предсказание стоит 50 пыли или одну печать Оракула. Три победы за день дают 20 пыли и печать. В бесконечном небе каждый третий этап тоже приносит печать.</p></article>' +
                     '<article><b>Ваше личное небо</b><p>Прогресс хранится в этом браузере. Очистка данных сайта удаляет сохранение. В книге можно скачать копию и восстановить её в другом браузере. Перед заменой прогресса вы увидите подтверждение.</p></article>' +
                     '</div><div class="m-actions"><button class="btn primary" id="tutorialDone" data-close>Обучение просмотрено</button></div>');
                 document.getElementById('tutorialDone').addEventListener('click', function() { Observatory.record('tutorial'); });
@@ -7822,7 +7822,7 @@
                     var sealKey=si+':'+cfg.campaignMode;
                     if(!ZM.save.pathRewards[sealKey]){ZM.save.pathRewards[sealKey]=true;ZM.save.omens++;sealReward=true;}
                 }
-                var pay = (oldStars ? 3 : 18)+(sealReward?35:0);
+                var pay = Economy.levelReward(stars,oldStars)+(sealReward?35:0);
                 ZM.addDust(pay);
                 Observatory.check();
                 BG.constellation();

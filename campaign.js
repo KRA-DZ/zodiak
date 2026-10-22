@@ -31,6 +31,7 @@ function collectCard(save,sign){
  save.albumSeen.push(sign);return true;
 }
 function alchemyLayout(side,shape){
+ if(side<=6)return [];
  const middle=(side-1)/2,voids=[];
  for(let r=0;r<side;r++)for(let c=0;c<side;c++){
   const corner=(r<2||r>=side-2)&&(c<2||c>=side-2);
@@ -39,12 +40,12 @@ function alchemyLayout(side,shape){
  }return voids;
 }
 function alchemyConfig(sign,step){
- const n=step+1,boss=n%5===0,rest=[1,6].includes(n),tier=Math.min(3,Math.floor(sign/3));
- const side=rest?6:sign===0?6:sign<4?(n>=7||sign>=2?7:6):sign<7?(boss||n>=7?8:7):8;
+ const n=step+1,boss=n%5===0,tier=Math.min(3,Math.floor(sign/3));
+ const progress=sign*10+step,side=progress<12?6:progress<35?7:8;
  const forms=['rectangle','corners','diamond','cross','hourglass','ring','stairs','wings'];
- const shape=rest||sign===0&&n<5?'rectangle':forms[(sign+step)%forms.length],voids=alchemyLayout(side,shape);
+ const shape=side===6?'rectangle':forms[(sign+step)%forms.length],voids=alchemyLayout(side,shape);
  const active=Array.from({length:side*side},(_,i)=>i).filter(i=>!voids.includes(i));
- const cfg={match3:true,rows:side,cols:side,shape,shapeLabel:{rectangle:'Открытое небо',corners:'Срезанные углы',diamond:'Кристальный ромб',cross:'Звёздный крест',hourglass:'Песочные часы',ring:'Лунное кольцо',stairs:'Небесные ступени',wings:'Крылья созвездия'}[shape],target:rest?42:Math.round(active.length*1.5)+tier*8+(boss?12:0),moves:rest?25:boss?32:26+Math.floor(sign/4),par:240};
+ const cfg={rest:false,match3:true,rows:side,cols:side,shape,shapeLabel:{rectangle:'Открытое небо',corners:'Срезанные углы',diamond:'Кристальный ромб',cross:'Звёздный крест',hourglass:'Песочные часы',ring:'Лунное кольцо',stairs:'Небесные ступени',wings:'Крылья созвездия'}[shape],target:Math.round(active.length*1.5)+tier*8+(boss?12:0),moves:boss?32:26+Math.floor(sign/4),par:240};
  if(voids.length)cfg.voids=voids;
  if([3,7].includes(n)){cfg.goal={type:'collect',symbol:(sign+step)%6};cfg.target=14+tier*2+(side===8?3:0);}
  if([4,5,8,9,10].includes(n)){
