@@ -35,34 +35,18 @@ test('collapse preserves the order of survivors and refills every hole', () => {
     assert.equal(next[1], b[1]);
 });
 
-test('legacy save migration keeps all 84 stars, unlocks and mapped fast achievements', () => {
-    const old = Array.from({length:84}, (_,i) => i%4);
-    old[6] = 3;
-    const save = { lvStars: old.slice(), lvOpen: new Array(12).fill(7), stats:{fast:[6,7,83]} };
-    J.upgrade(save);
-    assert.equal(save.lvStars.length,108);
-    for(let s=0;s<12;s++) for(let l=0;l<7;l++) assert.equal(save.lvStars[s*9+l],old[s*7+l]);
-    assert.equal(save.lvOpen[0],8);
-    assert.deepEqual(save.stats.fast,[6,9,105]);
-    const same = JSON.stringify(save);
-    J.upgrade(save);
-    assert.equal(JSON.stringify(save),same, 'migration must be idempotent');
+test('the authorized new campaign reset is idempotent and keeps cosmetics and predictions',()=>{
+ const save={lvStars:new Array(108).fill(3),lvOpen:new Array(12).fill(9),stats:{fast:[1]},skins:{classic:true},dust:120,journal:[],ach:{collector:true}};
+ J.upgrade(save);assert.equal(save.lvStars.length,360);assert.ok(save.lvStars.every(n=>n===0));assert.equal(save.dust,120);assert.equal(save.skins.classic,true);
+ const same=JSON.stringify(save);J.upgrade(save);assert.equal(JSON.stringify(save),same);
 });
-
-test('108 campaign configs and endless difficulty stay within supported sizes', () => {
-    const levels = J.extendLevels(Array.from({length:84},(_,i)=>({id:i})));
-    assert.equal(levels.length,108);
-    for(let s=0;s<12;s++) {
-        assert.equal(levels[s*9].id,s*7);
-        assert.equal(levels[s*9+7].match3,true);
-        assert.equal(levels[s*9+8].match3,true);
-    }
-    for(let n=1;n<=120;n++) {
-        const c=J.endlessConfig(n);
-        assert.ok(c.par>0);
-        if(c.oracle) assert.ok(c.stages[0].rows*c.stages[0].cols>=c.stages[0].targets);
-        else if(!c.match3) assert.ok(c.rows*c.cols>=c.pairs*2);
-    }
+test('360 campaign configs are bounded, with two guardians and recovery levels per chapter',()=>{
+ const levels=J.extendLevels([]);assert.equal(levels.length,360);
+ for(let s=0;s<12;s++)for(let m=0;m<3;m++){
+  const path=levels.slice(s*30+m*10,s*30+m*10+10);assert.equal(path.length,10);assert.deepEqual(path.filter(c=>c.campaignBoss).map(c=>c.campaignStep),[4,9]);assert.ok(path[0].rest&&path[5].rest);
+  for(const c of path){if(c.oracle)assert.ok(c.stages.every(st=>st.targets<=2&&st.swaps<=12&&st.dur>=420));if(c.match3){assert.ok(c.obstacles?.length<=6||!c.obstacles);assert.ok(c.moves>=24);assert.ok((c.goal?.cells||[]).every(i=>!c.voids?.includes(i)));}else if(!c.oracle)assert.equal(c.rows*c.cols,c.pairs*2+(c.trios||0)*3+(c.darks||0)*2+(c.decoys||0));}
+ }
+ for(let n=1;n<=120;n++){const c=J.endlessConfig(n);assert.ok(c.par>0);}
 });
 
 const Saves = require('../save-files.js');
@@ -215,4 +199,24 @@ test('portable saves retain only valid visual-guide completion flags',()=>{
     assert.deepEqual(Saves.parse(JSON.stringify(save)).levelGuides,save.save.levelGuides);
     save.save.levelGuides.unknown=true;assert.throws(()=>Saves.parse(JSON.stringify(save)));
     delete save.save.levelGuides.unknown;save.save.levelGuides.memory='true';assert.throws(()=>Saves.parse(JSON.stringify(save)));
+});
+
+const C=require('../campaign.js');
+test('paths unlock independently and a completed path unlocks a shared next zodiac chapter',()=>{
+ const save={stats:{},ach:{}};C.upgrade(save);
+ assert.ok(C.available(save,0)&&C.available(save,10)&&C.available(save,20));assert.equal(C.available(save,1),false);assert.equal(C.available(save,30),false);
+ save.lvStars[0]=1;assert.ok(C.available(save,1));assert.equal(C.available(save,11),false);
+ for(let i=20;i<30;i++)save.lvStars[i]=1;
+ assert.equal(C.frontier(save),1);assert.ok(C.available(save,30)&&C.available(save,40)&&C.available(save,50));assert.equal(C.available(save,60),false);
+ assert.equal(C.next(save,2),50);assert.equal(C.completed(save,0,2),10);assert.equal(C.completed(save,0,0),1);
+});
+test('new campaign saves round-trip all 360 stars, chapter selection and claimed seal gifts',()=>{
+ const p=packet();C.upgrade(p.save);p.save.lvStars[359]=3;p.save.pathRewards['11:2']=true;
+ assert.deepEqual(Saves.parse(JSON.stringify(p)).lvStars,p.save.lvStars);
+ p.save.pathRewards['12:3']=true;assert.throws(()=>Saves.parse(JSON.stringify(p)));
+});
+test('voids remain empty barriers to matching and split gravity into separate segments',()=>{
+ const b=Array.from({length:36},(_,i)=>i%6);b[12]=null;
+ const plan=M.collapsePlan(b,[0,18],()=>.5,new Set([12]));assert.equal(plan.board[12],null);assert.equal(plan.origins[12],12);assert.equal(plan.origins[18],null);assert.equal(plan.origins[0],null);
+ assert.ok(!M.combinationPlan(b,new Set([12])).found.includes(12));
 });

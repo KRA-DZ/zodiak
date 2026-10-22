@@ -138,7 +138,7 @@ test('a complete level awards stars, unlocks the next level and survives reload'
     const page = await game(t);
     await start(page);
     await skipPreview(page);
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 8; i++) {
         await page.evaluate(() => {
             const g = testGame.state;
             const gr = g.groups.find(gr => !gr.done);
@@ -155,10 +155,10 @@ test('a complete level awards stars, unlocks the next level and survives reload'
     assert.equal(await page.evaluate(() => ZM.save.lvOpen[0]), 2);
 });
 
-test('all 108 levels render cards without runtime errors', async t => {
+test('all 360 levels render cards without runtime errors', async t => {
     const page = await game(t);
-    assert.equal(await page.evaluate(() => ZM.LEVELS96.length), 108);
-    for (let index = 0; index < 108; index++) {
+    assert.equal(await page.evaluate(() => ZM.LEVELS96.length), 360);
+    for (let index = 0; index < 360; index++) {
         await start(page, index);
         const result = await page.evaluate(() => ({
             cards: document.querySelectorAll('#board .cell').length,
@@ -222,23 +222,18 @@ test('mobile setup, atlas and level selection work through visible controls', as
     await page.locator('#setupGo').click();
     await page.clock.runFor(500);
     await page.locator('#modalRoot [data-close]').click();
-    // Atlas cards levitate continuously; click their visible centre without
-    // waiting for an animation that is intentionally infinite to stop.
-    await page.locator('.zcard').first().evaluate(el => el.scrollIntoView({ block: 'start' }));
-    await page.clock.runFor(500);
-    const card = await page.locator('.zcard').first().boundingBox();
-    await page.mouse.click(card.x + card.width / 2, card.y + Math.min(card.height / 2, 200));
-    await page.locator('.lv-row.open').first().click();
+    await page.locator('[data-level="0"]').click();
+    await page.locator('[data-level="0"]').click();
     await page.clock.runFor(4500);
     assert.equal(await page.locator('#s_game.active').count(), 1);
-    assert.equal(await page.locator('#board .cell').count(), 12);
+    assert.equal(await page.locator('#board .cell').count(), 16);
     const bounds = await page.locator('#board').boundingBox();
     assert.ok(bounds.width > 0 && bounds.x >= 0 && bounds.x + bounds.width <= 390);
 });
 
 test('match3 swaps, resolves cascades, awards campaign stars and cleans up on exit', async t => {
     const page = await game(t);
-    await start(page, 7);
+    await start(page, 20);
     assert.equal(await page.locator('#board .gem').count(), 36);
     // Make actual valid exchanges through the same button handlers a player uses.
     for (let n=0; n<40; n++) {
@@ -261,12 +256,12 @@ test('match3 swaps, resolves cascades, awards campaign stars and cleans up on ex
         },pair);
         await settleAlchemy(page);
     }
-    const result = await page.evaluate(() => ({ stars: ZM.save.lvStars[7], finished: testGame.state.finished }));
+    const result = await page.evaluate(() => ({ stars: ZM.save.lvStars[20], finished: testGame.state.finished }));
     assert.equal(result.finished,true);
     // Both victory and a legitimate out-of-moves result are supported.
     if(result.stars) {
         assert.ok(result.stars>=1 && result.stars<=3);
-        assert.equal(await page.evaluate(()=>ZM.save.lvOpen[0]),9);
+        assert.equal(await page.evaluate(()=>ZM.save.lvOpen[0]),22);
     } else assert.equal(await page.locator('#alchemyRetry').count(),1);
     await page.evaluate(()=>testGame.kill());
     await page.clock.runFor(1000);
@@ -274,7 +269,7 @@ test('match3 swaps, resolves cascades, awards campaign stars and cleans up on ex
 
 test('invalid match3 exchange keeps moves and a hint is not spent during a cascade', async t => {
     const page=await game(t);
-    await start(page,7);
+    await start(page,20);
     const result=await page.evaluate(()=>{
         const g=testGame.state, board=g.match3.board;
         let pair;
@@ -364,7 +359,7 @@ test('a completed calendar repeats and login streak rewards cannot be claimed tw
     assert.equal(await page.evaluate(()=>ZM.save.dust),dust);
 });
 
-test('legacy browser save retains stars, currency, calendar and today purchased prediction', async t => {
+test('legacy browser save resets levels but retains currency, calendar and today purchased prediction', async t => {
     const page=await game(t);
     await page.evaluate(()=>{
         const save=JSON.parse(JSON.stringify(ZM.save));
@@ -376,14 +371,14 @@ test('legacy browser save retains stars, currency, calendar and today purchased 
         localStorage.setItem('zodiacMemory.v3',JSON.stringify(save));
     });
     await page.reload();
-    assert.equal(await page.evaluate(()=>ZM.save.lvStars[9]),3);
-    assert.equal(await page.evaluate(()=>ZM.save.lvStars[15]),2);
-    assert.equal(await page.evaluate(()=>ZM.save.lvOpen[1]),8);
+    assert.equal(await page.evaluate(()=>ZM.save.lvStars[9]),0);
+    assert.equal(await page.evaluate(()=>ZM.save.lvStars[15]),0);
+    assert.equal(await page.evaluate(()=>ZM.save.lvOpen[1]),1);
     assert.equal(await page.evaluate(()=>ZM.save.dust),321);
     assert.equal(await page.evaluate(()=>ZM.save.calTaken.length),2);
     assert.equal(await page.evaluate(()=>ZM.save.preds.love.count),1);
     assert.ok(await page.evaluate(()=>ZM.save.preds.love.text.length>20));
-    assert.deepEqual(await page.evaluate(()=>ZM.save.stats.fast),[9,15]);
+    assert.deepEqual(await page.evaluate(()=>ZM.save.stats.fast),[]);
 });
 
 test('match3 real move can win and persist stars, while exhausted moves never award a win', async t => {
@@ -424,9 +419,9 @@ test('match3 real move can win and persist stars, while exhausted moves never aw
     assert.equal(await page.evaluate(()=>ZM.save.dust),dust);
 });
 
-test('rapid level changes only start the current preview and collector sees all nine levels', async t => {
+test('rapid level changes only start the current preview and collector sees all thirty levels', async t => {
     const page=await game(t);
-    await page.evaluate(()=>{testGame.start(0);testGame.start(9);});
+    await page.evaluate(()=>{testGame.start(0);testGame.start(30);});
     await page.clock.runFor(32);
     assert.equal(await page.locator('#peekBanner').count(),1);
     assert.equal(await page.evaluate(()=>testGame.state.sign),1);
@@ -434,7 +429,7 @@ test('rapid level changes only start the current preview and collector sees all 
         ZM.save.lvStars.fill(3);
         return {done:ZM.signDone(1),collected:ZM.ACHDEFS.find(a=>a.id==='collector').test()};
     });
-    assert.deepEqual(result,{done:9,collected:true});
+    assert.deepEqual(result,{done:30,collected:true});
 });
 
 test('mobile predictions are readable, cost is shown and atlas art fits its column', async t => {
@@ -457,7 +452,8 @@ test('mobile predictions are readable, cost is shown and atlas art fits its colu
     assert.ok(sizes.width>240 && sizes.left>=0 && sizes.right<=390);
     assert.ok(sizes.text.length>40);
     await page.evaluate(()=>ZM.modalForceClose());
-    const fit=await page.locator('.map-panel').evaluate(el=>{
+    await page.evaluate(()=>ZM.modalForceClose());await page.locator('#openAtlas').click();
+    const fit=await page.locator('#atlasModal .map-panel').evaluate(el=>{
         const b=el.getBoundingClientRect();return {left:b.left,right:b.right,width:b.width,images:el.querySelectorAll('.zcover img').length};
     });
     assert.equal(fit.images,12);
@@ -500,7 +496,7 @@ test('invalid import never changes current progress',async t=>{
 
 test('alchemy shows mission types, preserves tiles on selection, and supports arrow-key focus',async t=>{
     const page=await game(t);
-    await start(page,8);
+    await start(page,23);
     assert.equal(await page.locator('.gem.sealed').count(),6);
     assert.match(await page.locator('#missionTitle').innerText(),/печати/);
     await page.locator('.gem').nth(0).focus();
@@ -509,14 +505,14 @@ test('alchemy shows mission types, preserves tiles on selection, and supports ar
     await page.keyboard.press('Enter');
     assert.equal(await page.evaluate(()=>document.activeElement.dataset.index),'1');
     assert.equal(await page.locator('.gem.selected').count(),1);
-    await start(page,16);
-    assert.match(await page.locator('#missionTitle').innerText(),/Луна/);
+    await start(page,22);
+    assert.match(await page.locator('#missionTitle').innerText(),/Роза/);
 });
 
 test('reduced motion settles gameplay and cancels all animation effects on exit',async t=>{
     const page=await game(t);
     await page.emulateMedia({reducedMotion:'reduce'});
-    await start(page,7);
+    await start(page,20);
     await page.evaluate(()=>{
         const pair=Match3.findMove(testGame.state.match3.board);
         document.querySelectorAll('.gem')[pair[0]].click();document.querySelectorAll('.gem')[pair[1]].click();
@@ -550,7 +546,7 @@ test('mobile hub keeps secondary actions in a keyboard-accessible menu',async t=
 
 test('touch-style swipe makes one exchange and keyboard focus survives a cascade',async t=>{
     const page=await game(t);
-    await start(page,7);
+    await start(page,20);
     const pair=await page.evaluate(()=>Match3.findMove(testGame.state.match3.board));
     const a=await page.locator('.gem').nth(pair[0]).boundingBox(),b=await page.locator('.gem').nth(pair[1]).boundingBox();
     await page.mouse.move(a.x+a.width/2,a.y+a.height/2);
@@ -613,7 +609,7 @@ test('real animation keeps survivors moving downward and waits before the next c
     assert.equal(second.phase,'fall');assert.ok(second.y>first.y,'survivor should move down continuously');
     await page.waitForFunction(()=>testGame.state.finished,{},{timeout:30000});
     assert.equal(await page.locator('#board').getAttribute('data-phase'),'complete');
-    await page.evaluate(()=>{ZM.modalForceClose();testGame.start(7);});
+    await page.evaluate(()=>{ZM.modalForceClose();testGame.start(20);});
     await page.waitForTimeout(450);
     await page.evaluate(()=>{const pair=Match3.findMove(testGame.state.match3.board);document.querySelectorAll('.gem')[pair[0]].click();document.querySelectorAll('.gem')[pair[1]].click();});
     await page.waitForFunction(()=>document.getElementById('board').dataset.phase==='fall');
@@ -648,7 +644,7 @@ test('tutorial and completed book unlock cosmetic trophies exactly once',async t
     const dust=await page.evaluate(()=>ZM.save.dust);
     await page.evaluate(()=>{testGame.guide();document.getElementById('tutorialDone').click();});
     assert.equal(await page.evaluate(()=>ZM.save.dust),dust);
-    await page.evaluate(()=>{for(let i=0;i<9;i++)ZM.save.lvStars[i]=1;Observatory.check();});
+    await page.evaluate(()=>{for(let i=0;i<30;i++)ZM.save.lvStars[i]=1;Observatory.check();});
     assert.equal(await page.evaluate(()=>Observatory.owned('outfits','moon')),true);
     assert.equal(await page.evaluate(()=>Observatory.owned('pets','owl')),true);
     assert.equal(await page.evaluate(()=>ZM.save.ach.first_book),true);
@@ -711,8 +707,8 @@ test('generated assets decode and the atlas leads the mobile observatory',async 
         }
         const avatar=document.getElementById('observatoryHost').getBoundingClientRect();
         const modes=document.querySelector('.journey-bar').getBoundingClientRect();
-        const atlas=document.querySelector('.map-panel').getBoundingClientRect();
-        return {decoded,above:avatar.top<modes.top,atlasFirst:atlas.top<avatar.top,columns:getComputedStyle(document.getElementById('zcards')).gridTemplateColumns.split(' ').length,overflow:document.documentElement.scrollWidth>innerWidth};
+        const atlas=document.getElementById('campaignMap').getBoundingClientRect();
+        return {decoded,above:avatar.top<modes.top,atlasFirst:atlas.top<avatar.top,columns:document.querySelectorAll('.path-legend button').length,overflow:document.documentElement.scrollWidth>innerWidth};
     });
     assert.ok(result.decoded.every(Boolean));assert.equal(result.above,true);assert.equal(result.atlasFirst,true);assert.equal(result.columns,3);assert.equal(result.overflow,false);
 });
@@ -738,14 +734,14 @@ test('atlas awakening reflects completed levels, grows monotonically and survive
     await page.locator('#setupGo').click();await page.clock.runFor(800);
     const stages=await page.evaluate(()=>{
         ZM.modalForceClose();const results=[];
-        for(const count of[0,1,3,6,9]){
-            for(let i=0;i<9;i++)ZM.save.lvStars[i]=i<count?1:0;
+        for(const count of[0,1,10,20,30]){
+            for(let i=0;i<30;i++)ZM.save.lvStars[i]=i<count?1:0;
             testGame.hub();const card=document.querySelector('.zcard');
             results.push({percent:+card.dataset.progress,filter:getComputedStyle(card.querySelector('img')).filter,complete:card.classList.contains('done')});
         }
         ZM.persist();return results;
     });
-    assert.deepEqual(stages.map(s=>s.percent),[0,11,33,67,100]);
+    assert.deepEqual(stages.map(s=>s.percent),[0,3,33,67,100]);
     assert.equal(stages[0].complete,false);assert.equal(stages[4].complete,true);
     assert.equal(new Set(stages.map(s=>s.filter)).size,5);
     await page.reload();await page.clock.runFor(800);
@@ -788,7 +784,7 @@ test('oracle does not auto-focus Love and keeps an accessible keyboard focus ind
 
 test('first-visit visual guides pause every mode and persist completion without repeating',async t=>{
     const page=await game(t);
-    for(const [mode,index]of[['memory',0],['oracle',null],['alchemy',7]]){
+    for(const [mode,index]of[['memory',0],['oracle',null],['alchemy',20]]){
         await page.evaluate(([mode,index])=>{ZM.save.levelGuides[mode]=false;testGame.kill();testGame.start(index==null?ZM.LEVELS96.findIndex(c=>c.oracle):index);},[mode,index]);
         await page.clock.runFor(100);
         assert.equal(await page.locator('#levelTour').count(),1);
@@ -851,7 +847,7 @@ test('special tile swaps trigger chains, respect obstacles and preserve a create
 
 test('streak and guide lead the atlas, header opens inline and trophies avoid automatic focus',async t=>{
     const page=await game(t);await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
-    assert.equal(await page.evaluate(()=>document.querySelector('.welcome-strip').getBoundingClientRect().top<document.querySelector('.map-panel').getBoundingClientRect().top),true);
+    assert.equal(await page.evaluate(()=>document.querySelector('.welcome-strip').getBoundingClientRect().top<document.getElementById('campaignMap').getBoundingClientRect().top),true);
     await page.locator('#btnHubMenu').click();
     assert.equal(await page.evaluate(()=>document.querySelector('.topbar').classList.contains('menu-expanded')),true);
     assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('hubTools')).position),'static');
@@ -860,4 +856,32 @@ test('streak and guide lead the atlas, header opens inline and trophies avoid au
     await page.locator('#openTrophies').click();
     assert.equal(await page.evaluate(()=>document.activeElement.classList.contains('trophies-modal')),true);
     assert.equal(await page.locator('.achievement-inspect:focus').count(),0);
+});
+
+test('the intertwined map offers three independent starts and moves the atlas into the observatory',async t=>{
+ const page=await game(t);await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
+ assert.equal(await page.locator('.path-node').count(),30);assert.equal(await page.locator('.path-node.available').count(),3);assert.equal(await page.locator('.path-node.guardian').count(),6);
+ assert.equal(await page.locator('#atlasPanel').isVisible(),false);
+ await page.locator('#openAtlas').click();assert.equal(await page.locator('#atlasModal .zcard').count(),12);assert.equal(await page.locator('.zodiac-seal').count(),36);
+ await page.locator('#modalRoot [data-close]').click();assert.equal(await page.locator('#atlasPanel').isVisible(),false);
+ await page.locator('[data-level="20"]').click();await page.locator('[data-level="20"]').click();await page.clock.runFor(100);
+ assert.equal(await page.locator('.gem').count(),36);assert.equal(await page.evaluate(()=>testGame.state.cfg.campaignMode),2);
+});
+test('the tenth level removes only its own seal, rewards it once and opens the next shared chapter',async t=>{
+ const page=await game(t);await page.evaluate(()=>{ZM.save.sign=0;for(let i=20;i<29;i++)ZM.save.lvStars[i]=1;testGame.start(29);testGame.win();});
+ assert.equal(await page.evaluate(()=>Campaign.frontier(ZM.save)),1);assert.equal(await page.evaluate(()=>ZM.save.pathRewards['0:2']),true);
+ const seals=await page.evaluate(()=>ZM.save.omens);
+ await page.locator('#menuBtn').click();await page.clock.runFor(100);
+ assert.match(await page.locator('.path-heading h2').innerText(),/Телец/);
+ await page.locator('#openAtlas').click();assert.equal(await page.locator('.zcard').first().locator('.fallen').count(),1);
+ await page.locator('#modalRoot [data-close]').click();
+ await page.evaluate(()=>{testGame.start(29);testGame.win();});assert.equal(await page.evaluate(()=>ZM.save.omens),seals);
+});
+test('a late alchemy guardian renders voids that cannot be swapped or filled by gravity',async t=>{
+ const page=await game(t);await start(page,84);
+ assert.equal(await page.locator('.gem[data-void="true"]').count(),2);
+ const before=await page.evaluate(()=>testGame.state.match3.moves);
+ await page.evaluate(()=>{document.querySelector('.gem[data-void="true"]').click();});
+ assert.equal(await page.evaluate(()=>testGame.state.match3.moves),before);
+ assert.equal(await page.evaluate(()=>testGame.state.match3.board.filter(n=>n===null).length),2);
 });

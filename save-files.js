@@ -32,9 +32,9 @@
         depth(packet); safeKeys(packet);
         const s = packet.save;
         if (!(s.sign === null || int(s.sign, 11)) || !int(s.dust)) fail();
-        if (!Array.isArray(s.lvStars) || ![84,108].includes(s.lvStars.length) || !s.lvStars.every(n => int(n, 3))) fail();
-        if (!Array.isArray(s.lvOpen) || s.lvOpen.length !== 12 || !s.lvOpen.every(n => int(n, 9) && n >= 1)) fail();
-        if (s.journeyVersion != null && (s.journeyVersion !== 1 || s.lvStars.length !== 108)) fail();
+        if (!Array.isArray(s.lvStars) || ![84,108,360].includes(s.lvStars.length) || !s.lvStars.every(n => int(n, 3))) fail();
+        if (!Array.isArray(s.lvOpen) || s.lvOpen.length !== 12 || !s.lvOpen.every(n => int(n, 30) && n >= 1)) fail();
+        if (s.journeyVersion != null && (![1,2].includes(s.journeyVersion) || (s.journeyVersion===1?s.lvStars.length!==108:s.lvStars.length!==360))) fail();
         if (!object(s.inv) || !['hint','freeze','map'].every(k => int(s.inv[k], 1000000))) fail();
         for (const k of ['created','omens','loginStreak']) if (s[k] != null && !int(s[k], Number.MAX_SAFE_INTEGER)) fail();
         for (const k of ['birth','daily','predDay','calStart','calLast','loginLast']) if (s[k] != null && !date(s[k])) fail();
@@ -46,7 +46,7 @@
         if (s.stats != null) {
             if (!object(s.stats)) fail();
             for (const [k,v] of Object.entries(s.stats)) {
-                if (k === 'fast') { if (!Array.isArray(v) || v.length > 108 || !v.every(n => int(n,107))) fail(); }
+                if (k === 'fast') { if (!Array.isArray(v) || v.length > 360 || !v.every(n => int(n,359))) fail(); }
                 else if (k === 'fastMaskLo' || k === 'fastMaskHi') { if (!Number.isInteger(v) || v < -2147483648 || v > 4294967295) fail(); }
                 else if (!int(v)) fail();
             }
@@ -78,7 +78,10 @@
             if(!Object.keys(o.stats).every(k=>stats.includes(k)&&int(o.stats[k])))fail();
         }
         if(s.levelGuides!=null&&(!flags(s.levelGuides)||!Object.keys(s.levelGuides).every(k=>['memory','oracle','alchemy'].includes(k))))fail();
-        const fields = ['created','sign','birth','dust','inv','skins','skin','lvOpen','lvStars','ach','stats','horoUsed','daily','preds','predDay','predSign','wheelBonus','traits','calStart','calLast','calTaken','journeyVersion','journal','omens','endless','loginStreak','loginLast','ritual','frag','stars','observatory','levelGuides'];
+        if(s.journeyVersion===2&&s.campaignVersion!==1)fail();
+        if(s.campaignVersion!=null&&(s.campaignVersion!==1||s.lvStars.length!==360||!int(s.campaignMode,2)||!int(s.campaignChapter,11)))fail();
+        if(s.pathRewards!=null&&(!flags(s.pathRewards)||!Object.keys(s.pathRewards).every(k=>/^(?:[0-9]|1[01]):[012]$/.test(k))))fail();
+        const fields = ['created','sign','birth','dust','inv','skins','skin','lvOpen','lvStars','ach','stats','horoUsed','daily','preds','predDay','predSign','wheelBonus','traits','calStart','calLast','calTaken','journeyVersion','journal','omens','endless','loginStreak','loginLast','ritual','frag','stars','observatory','levelGuides','campaignVersion','campaignMode','campaignChapter','pathRewards'];
         const save = {};
         fields.forEach(k => { if (Object.hasOwn(s,k)) save[k] = s[k]; });
         for (const k of ['frag','stars']) if (save[k] != null && (!Array.isArray(save[k]) || save[k].length > 108 || !save[k].every(n => int(n)))) fail();

@@ -3084,14 +3084,14 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="journey.css?v=combos-3">
-    <link rel="stylesheet" href="observatory.css?v=combos-3">
+    <link rel="stylesheet" href="journey.css?v=paths-4">
+    <link rel="stylesheet" href="observatory.css?v=paths-4">
 </head>
 
 <body>
-    <script src="journey.js?v=combos-3"></script>
-    <script src="save-files.js?v=combos-3"></script>
-    <script src="match3.js?v=combos-3"></script><script src="level-tour.js?v=combos-3"></script>
+    <script src="campaign.js?v=paths-4"></script><script src="journey.js?v=paths-4"></script>
+    <script src="save-files.js?v=paths-4"></script>
+    <script src="match3.js?v=paths-4"></script><script src="level-tour.js?v=paths-4"></script><script src="campaign-map.js?v=paths-4"></script>
     <script>
         (function() {
             var shown = false;
@@ -3207,7 +3207,7 @@
                         <div class="stat"><b id="stColl">0/12</b><span>коллекция</span></div>
                         <div class="stat"><b id="stAch">0/5</b><span>трофеи</span></div>
                     </div>
-                    <div class="observatory-functions">
+                    <div class="observatory-functions"><button class="observatory-link" id="openAtlas"><span class="mystic-icon" aria-hidden="true"></span><span><b>Звёздный атлас · три печати</b><small>12 карт зодиака · ваша коллекция</small></span><span>›</span></button>
 <button class="observatory-link" id="openTraits"><span class="mystic-icon icon-zodiac" aria-hidden="true"></span><span><b>Характер знака</b><small>Откройте 10 граней своей натуры</small></span><span>›</span></button>
 <button class="observatory-link" id="openPredictions"><span class="mystic-icon icon-oracle" aria-hidden="true"></span><span><b>Предсказания звёзд</b><small>Любовь · карьера · финансы · здоровье</small></span><span>›</span></button>
 <button class="observatory-link" id="openTrophies"><span class="mystic-icon icon-trophy" aria-hidden="true"></span><span><b>Мои трофеи</b><small>Награды за ваши открытия</small></span><span>›</span></button>
@@ -3239,14 +3239,14 @@
                 </div>
                 <div class="ritual-row"><div id="dailyQuest"></div></div>
             </section>
-            <div class="map-panel">
+            <section class="campaign-map" id="campaignMap"></section><div class="map-panel" id="atlasPanel" hidden>
                 <div class="bigwheel-bg" id="hubWheelBg"></div>
                 <div class="atlas-stars" id="hubStars"></div>
                 <div class="atlas-body" style="width:100%">
                     <div style="display:flex;align-items:center;gap:12px;width:100%;margin-bottom:4px;flex-wrap:wrap">
                         <h2 class="atlas-title">Звёздный атлас</h2><button class="observatory-shortcut" id="observatoryShortcut">☾ Личная обсерватория <span>Характер · предсказания · трофеи ↓</span></button>
                     </div>
-                    <div class="atlas-sub" style="text-align:left;margin-bottom:12px">Пробуждайте созвездия: каждый пройденный уровень возвращает карте цвет и сияние. 9 уровней — полностью раскрытый знак.</div>
+                    <div class="atlas-sub" style="text-align:left;margin-bottom:12px">Пробуждайте созвездия: каждый пройденный уровень возвращает карте цвет и сияние. Три пути по 10 уровней — полностью раскрытый знак.</div>
                     <div class="zcards" id="zcards"></div>
                 </div>
             </div>
@@ -3374,6 +3374,8 @@
             };
             ZM.modalForceClose = function() {
                 var r = document.getElementById('modalRoot');
+                var atlas = document.querySelector('#atlasModal #atlasPanel');
+                if(atlas){atlas.hidden=true;document.getElementById('s_hub').appendChild(atlas);}
                 var traits = document.querySelector('#traitsModal #traitsBox');
                 if (traits) document.getElementById('traitsHome').appendChild(traits);
                 if (r) {
@@ -4425,8 +4427,8 @@
         })();
     </script>
 
-    <script src="predictions.js?v=combos-3"></script>
-    <script src="observatory.js?v=combos-3"></script>
+    <script src="predictions.js?v=paths-4"></script>
+    <script src="observatory.js?v=paths-4"></script>
     <script>Observatory.init(window.ZM);</script>
     <script>
         /* ═══ ДВИЖОК: аудио+музыка, фон, хаб-атлас, игра ═══ */
@@ -5298,8 +5300,8 @@
 
             function renderJourney() {
                 var q = dailyRitual(), sign = ZM.save.sign == null ? 0 : ZM.save.sign;
-                var next = Math.min(ZM.PER_SIGN, ZM.save.lvOpen[sign]);
-                document.getElementById('continueHint').textContent = ZM.SIGNS[sign].name + ' · уровень ' + next + ' из ' + ZM.PER_SIGN;
+                var next = Campaign.next(ZM.save,ZM.save.campaignMode)%30+1;
+                document.getElementById('continueHint').textContent = Campaign.names[ZM.save.campaignMode] + ' · 120 уровней';
                 document.getElementById('endlessHint').textContent = 'Этап ' + ZM.save.endless.round + ' · рекорд ' + ZM.save.endless.best + ' · три сменяющихся испытания';
                 document.getElementById('journalHint').textContent = ZM.save.journal.length + ' сохранённых посланий · печатей: ' + ZM.save.omens;
                 document.getElementById('loginHint').textContent = 'Серия входов: ' + ZM.save.loginStreak + ' · календарь: ' + Math.min(31, ZM.save.calTaken.length + 1) + '/31';
@@ -5390,6 +5392,7 @@
             }
 
             function previewImport(imported) {
+                Journey.upgrade(imported);
                 var stars = imported.lvStars.reduce(function(a, b) { return a + b; }, 0);
                 var sign = imported.sign == null ? 'Знак ещё не выбран' : ZM.SIGNS[imported.sign].name;
                 ZM.modalOpen('<h2>Восстановить путешествие?</h2><div class="msub">Проверьте выбранную копию перед восстановлением.</div>' +
@@ -6109,7 +6112,7 @@
                     card.innerHTML = '<span class="atlas-card-heading"><b>' + sg.name + '</b><span>' + ZM.GLYPHS[si] + '</span></span><span class="zcover">' +
                         '<b class="zglyph">' + ZM.GLYPHS[si] + '</b>' +
                         (url ? '<img src="' + url + '" alt="' + sg.name + '" onerror="this.remove();">' : '') +
-                        '</span>' +
+                        '<span class="card-seals">'+[0,1,2].map(function(mode){var fallen=Campaign.completed(ZM.save,si,mode)===10;return '<span class="zodiac-seal'+(fallen?' fallen':'')+'" style="--seal-x:'+mode*50+'%" title="'+Campaign.names[mode]+': '+Campaign.completed(ZM.save,si,mode)+'/10"><span>'+ (fallen?'✓':'')+'</span></span>';}).join('')+'</span></span>' +
                         '<span class="zbar"><span class="awakening-label">' + (collected ? 'Созвездие пробуждено' : 'Пробуждение · ' + card.dataset.progress + '%') + '</span><span class="zprog"><i style="width:' + Math.round(done / ZM.PER_SIGN * 100) + '%"></i></span>' +
                         '<span class="zmeta">' +
                         (collected ?
@@ -6117,13 +6120,19 @@
                             '<span class="next">' + done + '/' + ZM.PER_SIGN + ' уровней ' + ZM.ic('i-arrow') + '</span>') +
                         '</span></span>';
                     card.addEventListener('click', function() {
+                        if(si>Campaign.frontier(ZM.save)){ZM.toast('Сначала завершите любой путь предыдущего знака',{ic:'i-lock'});return;}
                         AE.pick();
-                        openSignLevels(si);
+                        ZM.modalForceClose(); ZM.save.campaignChapter=Math.min(si,Campaign.frontier(ZM.save)); ZM.persist(); CampaignMap.render();
                     });
                     grid.appendChild(card);
                 });
             }
 
+            function openCampaignAtlas(){
+                buildAtlas();
+                ZM.modalOpen('<h2>Звёздный атлас · три печати</h2><div class="msub">12 знаков · 3 пути по 10 уровней. Завершите путь, чтобы снять его печать.</div><div id="atlasModal"></div><div class="m-actions"><button class="btn" data-close>К трём путям</button></div>',{cls:'atlas-modal'});
+                var panel=document.getElementById('atlasPanel');panel.hidden=false;document.getElementById('atlasModal').appendChild(panel);
+            }
             function openSignLevels(si) {
                 ZM.showScreen('signLevels');
                 spawnSubStars(document.getElementById('slStars'));
@@ -6139,7 +6148,7 @@
                 for (var l = 0; l < ZM.PER_SIGN; l++) {
                     var cfg = ZM.LEVELS96[si * ZM.PER_SIGN + l],
                         stars = ZM.save.lvStars[lvKey(si, l)],
-                        isOpen = l + 1 <= openLvl && !!cfg,
+                        isOpen = Campaign.available(ZM.save,si*30+l) && !!cfg,
                         row = document.createElement('button');
                     row.type = 'button';
                     row.className = 'lv-row' + (isOpen ? ' open' : ' locked') + (stars > 0 ? ' done' : '');
@@ -6244,10 +6253,11 @@
                     } else if (all) {
                         wh.textContent = 'награда получена · небо благодарит вас';
                     } else {
-                        wh.textContent = 'соберите знаки — пройдите 9 уровней каждого';
+                        wh.textContent = 'соберите знаки — пройдите 30 уровней каждого';
                     }
                 }
                 buildAtlas();
+                CampaignMap.render();
                 Observatory.render();
                 Observatory.check();
                 spawnHubStars();
@@ -6507,7 +6517,7 @@
                     ZM.showScreen('game');
                     var game = G;
                     game.match3 = Match3.mount(document.getElementById('board'), {
-                        target: cfg.target, moves: cfg.moves, goal: cfg.goal, obstacles: cfg.obstacles,
+                        target: cfg.target, moves: cfg.moves, goal: cfg.goal, obstacles: cfg.obstacles, voids:cfg.voids,
                         active: function() { return G === game && !game.dead && !game.finished && !game.touring; },
                         update: function(state) {
                             game.cleared = state.score;
@@ -6639,7 +6649,7 @@
 
 
             function buildGameUI() {
-                document.getElementById('gLvlNum').textContent = G.practice ? 'Зал алхимии · ' + ZM.SIGNS[G.sign].name : G.endless ? 'Бесконечное небо · этап ' + G.endless : ZM.SIGNS[G.sign].name + ' · уровень ' + (G.lvIdx + 1) + (G.cfg.boss ? ' · Босс' : '');
+                document.getElementById('gLvlNum').textContent = G.practice ? 'Зал алхимии · ' + ZM.SIGNS[G.sign].name : G.endless ? 'Бесконечное небо · этап ' + G.endless : ZM.SIGNS[G.sign].name + ' · ' + (Number.isInteger(G.cfg.campaignMode)?Campaign.names[G.cfg.campaignMode]+' '+(G.sign*10+G.cfg.campaignStep+1):'уровень '+(G.lvIdx+1)) + (G.cfg.boss || G.cfg.campaignBoss ? ' · Хранитель' : '');
                 var M = '',
                     parts = [
                         ['decoys', 'Обманки', 't-decoy'],
@@ -7795,8 +7805,14 @@
                 if (stars > oldStars) {
                     ZM.save.lvStars[key] = stars;
                     if (lvIdx + 1 < ZM.PER_SIGN) ZM.save.lvOpen[si] = Math.max(ZM.save.lvOpen[si], lvIdx + 2);
+                    ZM.save.campaignChapter=Math.min(si+(cfg.campaignStep===9?1:0),Campaign.frontier(ZM.save)); ZM.save.campaignMode=cfg.campaignMode ?? ZM.save.campaignMode;
                 }
-                var pay = oldStars ? 10 : 25;
+                var sealReward=false;
+                if(Number.isInteger(cfg.campaignMode)&&Campaign.completed(ZM.save,si,cfg.campaignMode)===10){
+                    var sealKey=si+':'+cfg.campaignMode;
+                    if(!ZM.save.pathRewards[sealKey]){ZM.save.pathRewards[sealKey]=true;ZM.save.omens++;sealReward=true;}
+                }
+                var pay = (oldStars ? 10 : 25)+(sealReward?75:0);
                 ZM.addDust(pay);
                 Observatory.check();
                 BG.constellation();
@@ -7830,14 +7846,15 @@
                     'финиш быстрее половины эталона \u00B7 идёт в зачёт трофея', 'бонус');
                 tasks += '</div>';
 
-                var nextOpen = (lvIdx + 1 < ZM.PER_SIGN) ? (lvIdx + 2) : 0;
-                ZM.modalOpen('<h2>' + ZM.SIGNS[si].name + ' · уровень ' + (lvIdx + 1) + ' покорён</h2>' +
-                    '<div class="msub">' + (cfg.boss ? 'Владыка часов повержен!' : 'Созвездие сошлось') + '</div>' +
-                    tasks +
+                var nextKey=Campaign.next(ZM.save,cfg.campaignMode??0);
+                var nextOpen = nextKey===idx?0:nextKey+1;
+                ZM.modalOpen('<h2>' + ZM.SIGNS[si].name + ' · ' + (Number.isInteger(cfg.campaignMode)?Campaign.names[cfg.campaignMode]+' '+(si*10+cfg.campaignStep+1):'уровень '+(lvIdx+1)) + ' покорён</h2>' +
+                    '<div class="msub">' + (sealReward?'Печать пути снята! +75 пыли и печать Оракула':cfg.campaignBoss?'Хранитель повержен!':'Созвездие сошлось') + '</div>' +
+                    (sealReward?'<div class="seal-celebration"><span class="zodiac-seal releasing" style="--seal-x:'+(cfg.campaignMode*50)+'%"></span><b>'+Campaign.names[cfg.campaignMode]+' · 10 / 10</b></div>':'')+tasks +
                     '<div class="reward-line">' + ZM.ic('i-star') + ' +' + pay + ' звёздной пыли за прохождение</div>' +
                     '<div class="m-actions">' +
-                    (nextOpen && ZM.LEVELS96[si * ZM.PER_SIGN + nextOpen - 1] ?
-                        '<button class="btn primary" id="nextBtn">' + ZM.ic('i-arrow') + ' Уровень ' + nextOpen + '</button>' : '') +
+                    (nextOpen && ZM.LEVELS96[nextOpen - 1] ?
+                        '<button class="btn primary" id="nextBtn">' + ZM.ic('i-arrow') + ' Продолжить путь' + '</button>' : '') +
                     '<button class="btn" id="menuBtn">' + ZM.ic('i-home') + ' К атласу</button>' +
                     '<button class="btn" id="againBtn">' + ZM.ic('i-refresh') + ' Играть заново</button>' +
                     '<button class="btn" id="winPrediction">' + ZM.ic('i-eye') + ' К предсказаниям</button>' +
@@ -7853,7 +7870,7 @@
                 if (nb) nb.addEventListener('click', function() {
                     ZM.modalForceClose();
                     killLevel();
-                    startLevel(si * ZM.PER_SIGN + nextOpen - 1);
+                    startLevel(nextOpen - 1);
                 });
                 document.getElementById('menuBtn').addEventListener('click', function() {
                     ZM.modalForceClose();
@@ -7963,7 +7980,7 @@
             });
             document.getElementById('btnContinue').addEventListener('click', function() {
                 var sign = ZM.save.sign == null ? 0 : ZM.save.sign;
-                startLevel(sign * ZM.PER_SIGN + Math.min(ZM.PER_SIGN, ZM.save.lvOpen[sign]) - 1);
+                startLevel(Campaign.next(ZM.save,ZM.save.campaignMode));
             });
             document.getElementById('btnAlchemy').addEventListener('click', chooseAlchemy);
             document.getElementById('btnEndless').addEventListener('click', startEndless);
@@ -7983,7 +8000,7 @@
             document.getElementById('wheelPanel').addEventListener('click', function() {
                 var all = collectedCount() >= 12;
                 if (all && !ZM.save.wheelBonus) claimWheelBonus();
-                else ZM.toast('Соберите все 12 созвездий — пройдите 9 уровней каждого знака', {
+                else ZM.toast('Соберите все 12 созвездий — пройдите 30 уровней каждого знака', {
                     ic: 'i-star'
                 });
             });
@@ -7995,6 +8012,8 @@
                 }
                 enterHub(true);
             };
+            CampaignMap.init(ZM,function(index){if(Campaign.available(ZM.save,index))startLevel(index);},openCampaignAtlas);
+            document.getElementById('openAtlas').onclick=openCampaignAtlas;
             Observatory.connect({ grantAch: grantAch, applySkin: applySkin, background: function() { BG.loadImages(); } });
             document.getElementById('observatoryShortcut').onclick = function(){document.querySelector('.personal-observatory').scrollIntoView({behavior:'smooth',block:'start'});};
             document.getElementById('openTraits').onclick = function() {

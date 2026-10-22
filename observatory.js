@@ -176,11 +176,11 @@
             catalog.backs.unshift(...ZM.SKINS.map(d=>({id:d.id,name:d.name,price:d.price,desc:'Рубашка карт для поиска пар и Оракула',unlock:calendar[d.id]?'Календарь · день '+calendar[d.id]:'Трофей «Коллекционер»'})));
         }
         ZM.SKINS.push({id:'moonlace',name:'Лунное кружево',price:180},{id:'roseglass',name:'Розовый кварц',price:null});
-        const completed=()=>Array.from({length:12},(_,i)=>ZM.save.lvStars.slice(i*9,i*9+9).every(n=>n>0)).filter(Boolean).length;
+        const completed=()=>Array.from({length:12},(_,i)=>ZM.save.lvStars.slice(i*30,i*30+30).every(n=>n>0)).filter(Boolean).length;
         const stat=(k,n)=>()=>state().stats[k]>=n;
         const definitions=[
             ['tutorial','Первый урок','Дочитайте правила и нажмите «Обучение просмотрено»',25,stat('tutorial',1),{inv:{hint:2},skin:'roseglass'}],
-            ['first_book','Первая книга','Пройдите все 9 глав одного знака',100,()=>completed()>=1,{cosmetics:[{kind:'outfits',id:'moon'},{kind:'pets',id:'owl'}]}],
+            ['first_book','Первая книга','Пройдите все 30 глав одного знака',100,()=>completed()>=1,{cosmetics:[{kind:'outfits',id:'moon'},{kind:'pets',id:'owl'}]}],
             ['dresser','Маленькое преображение','Купите первый наряд, питомца, фон или рубашку',35,stat('wardrobeBuys',1),{omens:1}],
             ['new_sky','Новое небо','Примените другой фон',25,stat('backgroundChanges',1),{cosmetics:[{kind:'effects',id:'aurora'}]}],
             ['familiar','Добрый спутник','Выберите любого питомца',20,()=>state().pet!=='none',{inv:{hint:2}}],
@@ -195,7 +195,7 @@
             ['archive12','Архивариус','Откройте 12 платных предсказаний за пыль или печати',60,stat('predictions',12),{omens:2}],
             ['four_topics','Четыре дороги','Сохраните в книге предсказания всех четырёх категорий',40,()=>new Set(ZM.save.journal.map(p=>p.cat)).size>=4,{omens:1}],
             ['seven_visits','Неделя под звёздами','Получайте ежедневный дар 7 дней подряд',60,()=>ZM.save.loginStreak>=7,{cosmetics:[{kind:'effects',id:'petals'}]}],
-            ['perfect_book','Девять огней','Соберите три звезды во всех главах одного знака',125,()=>Array.from({length:12},(_,i)=>ZM.save.lvStars.slice(i*9,i*9+9).every(n=>n===3)).some(Boolean),{omens:3}]
+            ['perfect_book','Тридцать огней','Соберите три звезды во всех главах одного знака',125,()=>Array.from({length:12},(_,i)=>ZM.save.lvStars.slice(i*30,i*30+30).every(n=>n===3)).some(Boolean),{omens:3}]
         ];
         definitions.forEach(([id,name,desc,reward,test,extra])=>ZM.ACHDEFS.push({id,name,desc,reward,test,extra}));
         const metrics={
@@ -205,11 +205,11 @@
             cascade3:()=>[state().stats.bestCascade,3],cascade5:()=>[state().stats.bestCascade,5],alchemy10:()=>[state().stats.alchemyWins,10],
             oracle10:()=>[state().stats.oracleWins,10],memory25:()=>[state().stats.memoryWins,25],archive12:()=>[state().stats.predictions,12],
             four_topics:()=>[new Set(ZM.save.journal.map(p=>p.cat)).size,4],seven_visits:()=>[ZM.save.loginStreak,7],
-            perfect_book:()=>[Math.max(...Array.from({length:12},(_,i)=>ZM.save.lvStars.slice(i*9,i*9+9).filter(n=>n===3).length)),9]
+            perfect_book:()=>[Math.max(...Array.from({length:12},(_,i)=>ZM.save.lvStars.slice(i*30,i*30+30).filter(n=>n===3).length)),30]
         };
         ZM.ACHDEFS.forEach(d=>{if(metrics[d.id])d.progress=()=>{const [n,total]=metrics[d.id]();return Math.min(n,total)+'/'+total;};});
         const collector=ZM.ACHDEFS.find(d=>d.id==='collector');collector.extra={cosmetics:[{kind:'pets',id:'dragon'},{kind:'backgrounds',id:'garden'}]};
-        collector.desc='Заполните все 12 книг зодиака: по 9 глав в каждой';
+        collector.desc='Заполните все 12 книг зодиака: по 30 глав в каждой';
         const gifts={2:{omens:1},3:{cosmetics:[{kind:'pets',id:'cat'}]},5:{cosmetics:[{kind:'effects',id:'aurora'}]},7:{cosmetics:[{kind:'outfits',id:'astral'}]},10:{cosmetics:[{kind:'pets',id:'owl'}]},12:{skin:'moonlace'},16:{omens:2},18:{cosmetics:[{kind:'effects',id:'comets'}]},21:{cosmetics:[{kind:'outfits',id:'forest'}]},24:{cosmetics:[{kind:'pets',id:'dog'}]},28:{skin:'roseglass'},31:{cosmetics:[{kind:'backgrounds',id:'garden'}],omens:3}};
         ZM.CAL.forEach(r=>{if(gifts[r.d])r.extra=gifts[r.d];});
         if(ZM.save.ach.collector&&!state().collectorGift){giveReward(collector.extra);state().collectorGift=true;}

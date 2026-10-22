@@ -1,23 +1,11 @@
 /* Данные и миграция путешествия. Не содержит сетевых запросов. */
 (function(root) {
     'use strict';
+    const Campaign = root.Campaign || (typeof require==='function'?require('./campaign.js'):null);
     const Journey = {
-        perSign: 9,
+        perSign: 30,
         upgrade(save) {
-            if (save.journeyVersion !== 1) {
-                const old = Array.isArray(save.lvStars) ? save.lvStars : [];
-                if (old.length === 84) {
-                    save.lvStars = Array.from({ length: 108 }, (_, i) => i % 9 < 7 ? old[Math.floor(i / 9) * 7 + i % 9] || 0 : 0);
-                    save.stats.fast = (save.stats.fast || []).map(i => Math.floor(i / 7) * 9 + i % 7);
-                    for (let s = 0; s < 12; s++) {
-                        if (old[s * 7 + 6] > 0) save.lvOpen[s] = Math.max(8, save.lvOpen[s]);
-                    }
-                }
-                save.journeyVersion = 1;
-            }
-            if (!Array.isArray(save.lvStars) || save.lvStars.length !== 108) save.lvStars = new Array(108).fill(0);
-            save.lvStars = save.lvStars.map(n => Number.isFinite(n) ? Math.max(0, Math.min(3, Math.floor(n))) : 0);
-            save.lvOpen = save.lvOpen.map(n => Number.isFinite(n) ? Math.max(1, Math.min(9, Math.floor(n))) : 1);
+            Campaign.upgrade(save);
             if(!save.levelGuides||typeof save.levelGuides!=='object')save.levelGuides={};
             if (!Array.isArray(save.journal)) save.journal = [];
             save.journal = save.journal.filter(p => p && typeof p.text === 'string' && typeof p.day === 'string').slice(-100);
@@ -31,13 +19,7 @@
             return save;
         },
         extendLevels(levels) {
-            const expanded = [];
-            for (let s = 0; s < 12; s++) {
-                expanded.push(...levels.slice(s * 7, s * 7 + 7));
-                expanded.push(this.alchemyConfig(s, 0));
-                expanded.push(this.alchemyConfig(s, 1));
-            }
-            return expanded;
+            return Campaign.generate();
         },
         alchemyConfig(sign, variant = 0) {
             const config = { match3: true, rows: 6, cols: 6, target: 70, moves: 20, par: 180 };
