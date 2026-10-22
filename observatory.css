@@ -200,3 +200,57 @@ body[data-motion=minimal]::before { content:'';position:fixed;inset:0;z-index:0;
 .toast.ach .achievement-medallion { float:left;margin:0 18px 5px 0; }
 .observatory-shortcut { display:none; }
 @media(max-width:720px) { .observatory-shortcut { display:grid;gap:4px;width:100%;padding:10px 12px;border-radius:12px;border:1px solid #b39cce66;background:#49365855;color:var(--gold-hi);text-align:left;font:inherit;font-size:.75rem; }.observatory-shortcut span { font-size:.6rem;color:var(--muted); } }
+
+/* Header drawer expands along the same line, moving the gift and dust left. */
+#s_hub .topbar { display:flex;align-items:center;gap:8px; }
+#s_hub .topbar .logo { flex:1;min-width:0;overflow:hidden;white-space:nowrap;transition:flex-basis .3s; }
+#s_hub .dustchip { order:1;flex-shrink:0; }
+#btnCalendar { order:2;flex-shrink:0; }
+#hubTools { position:static;order:3;display:flex;flex-wrap:nowrap;gap:5px;max-width:340px;width:auto;overflow:hidden;visibility:visible;padding:0;border:0;box-shadow:none;background:none;border-radius:0;opacity:1;transition:max-width .35s ease,opacity .25s; }
+#hubTools[hidden] { display:flex!important;max-width:0;opacity:0;visibility:hidden;pointer-events:none; }
+#hubTools .iconbtn { min-height:48px;min-width:44px;flex-shrink:0;padding:6px; }
+#btnHubMenu { order:4;flex-shrink:0; }
+.welcome-strip { width:min(1240px,96vw);display:flex;gap:12px;align-items:center;justify-content:space-between;border:1px solid #cbb4e738;border-radius:14px;background:#171b3bce;padding:10px 16px;margin:0 auto 14px; }
+.welcome-strip #loginHint { font-size:.78rem;color:var(--gold-hi);line-height:1.5; }
+.welcome-strip .btn { padding:9px 15px;white-space:nowrap;font-size:.8rem; }
+.trophies-modal:focus { outline:none; }
+.achievement-inspect:focus { outline:none; }
+.achievement-inspect:focus-visible { outline:2px solid var(--gold-hi);outline-offset:3px;border-radius:50%; }
+.gem-power { position:absolute;right:3%;bottom:0;font-size:clamp(15px,2.7vw,25px);font-weight:bold;z-index:3;color:#fff1c4;line-height:1.2;text-shadow:0 0 7px #39284e,0 1px 3px #000;pointer-events:none; }
+.gem[data-special]:not([data-special=""]) { border:2px solid #f1d08b;box-shadow:inset 0 0 14px #f8d9ff66,0 0 12px #e5bdff55; }
+.gem[data-special=row]::after,.gem[data-special=column]::after { content:'';position:absolute;inset:44% 3%;background:#ffe9b3;box-shadow:0 0 9px #fff;pointer-events:none;opacity:.65; }
+.gem[data-special=column]::after { inset:3% 44%; }
+.gem[data-special=bomb] { background:radial-gradient(circle,#b986c888,#252045); }
+.gem[data-special=color] { background:conic-gradient(#d791bc,#e5cf85,#96deb1,#8ac9e5,#b293e1,#d791bc); }
+.gem[data-special=color] .gem-art { opacity:.4; }
+.gem[data-lock]:not([data-lock=""]) { border:2px solid #a0cced;cursor:not-allowed; }
+.gem[data-lock]:not([data-lock=""]) .gem-art { filter:saturate(.4);opacity:.55; }
+.gem[data-lock]:not([data-lock=""])::after { content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent 0 12px,#d8eaf333 12px 15px);pointer-events:none; }
+.gem[data-lock=ice] { background:linear-gradient(135deg,#9bd2e866,#5783af77); }
+.gem.unlocking { animation:unlockGlow .5s ease; }
+@keyframes unlockGlow { 50% { filter:brightness(2);box-shadow:0 0 24px #a8d7ff; } }
+#levelTour { position:fixed;inset:0;z-index:9000;isolation:isolate; }
+.tour-highlight { position:fixed;pointer-events:none;border:2px solid #f3d795;border-radius:15px;box-shadow:0 0 0 9999px #060919db,0 0 25px #e4c3ff88; }
+.tour-card { position:fixed;width:min(370px,calc(100vw - 24px));padding:22px;border:1px solid #e3c989;border-radius:20px;background:linear-gradient(145deg,#302749,#151a39);box-shadow:0 15px 45px #0008;color:var(--ink); }
+.tour-card small { color:#c3acd6;font-size:.72rem; }.tour-card h2 { color:var(--gold-hi);font-size:1.25rem;margin:9px 0; }.tour-card p { font-size:.85rem;line-height:1.75; }.tour-card > div { display:flex;justify-content:space-between;gap:12px;margin-top:18px; }.tour-card .btn { font-size:.76rem;padding:10px; }
+.tour-arrow { position:absolute;top:-16px;left:45%;color:var(--gold-hi);font-size:25px;filter:drop-shadow(0 0 8px #ffe6a6); }
+@media(max-width:600px) {
+ #s_hub .menu-expanded .logo { display:none; }
+ #hubTools .iconbtn { min-width:29px;width:29px;padding:4px 2px;min-height:38px; }
+ #hubTools .il { display:none; }#hubTools { gap:2px; }#hubTools .iconbtn svg { width:18px;height:18px; }
+ #s_hub .menu-expanded .dustchip { min-width:45px;padding:6px; }
+ #s_hub .topbar.menu-expanded { gap:5px;justify-content:flex-end; }
+ .welcome-strip { padding:9px 10px;gap:8px; }.welcome-strip #loginHint { font-size:.66rem; }.welcome-strip .btn { font-size:.7rem;padding:8px 10px; }
+}
+.power-wave { position:absolute;z-index:30;pointer-events:none;border-radius:50%;background:radial-gradient(ellipse,#fff6cacc,#e2acff88 30%,transparent 70%);animation:powerWave .65s ease-out both; }
+.wave-row { border-radius:8px;background:linear-gradient(0deg,transparent,#fff5ce,transparent); }
+.wave-column { border-radius:8px;background:linear-gradient(90deg,transparent,#fff5ce,transparent); }
+.wave-color { background:conic-gradient(transparent,#fff2a5aa,#bca1ffcc,transparent); }
+@keyframes powerWave { 0% { transform:scale(.35);opacity:0; } 25% { opacity:1; } 100% { transform:scale(1.5);opacity:0; } }
+.tour-card[data-side=above] .tour-arrow { top:auto;bottom:-19px; }
+.btn:focus-visible,.iconbtn:focus-visible,.gbtn:focus-visible { outline:2px solid var(--gold-hi);outline-offset:3px; }
+@media(max-width:350px) {
+ #hubTools .iconbtn { width:25px;min-width:25px;padding:4px 1px; }
+ #s_hub .topbar.menu-expanded > .iconbtn { min-width:36px;padding:5px; }
+ #s_hub .topbar.menu-expanded { gap:4px; }
+}

@@ -3084,14 +3084,14 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="journey.css?v=atlas-2">
-    <link rel="stylesheet" href="observatory.css?v=atlas-2">
+    <link rel="stylesheet" href="journey.css?v=combos-3">
+    <link rel="stylesheet" href="observatory.css?v=combos-3">
 </head>
 
 <body>
-    <script src="journey.js?v=atlas-2"></script>
-    <script src="save-files.js?v=atlas-2"></script>
-    <script src="match3.js?v=atlas-2"></script>
+    <script src="journey.js?v=combos-3"></script>
+    <script src="save-files.js?v=combos-3"></script>
+    <script src="match3.js?v=combos-3"></script><script src="level-tour.js?v=combos-3"></script>
     <script>
         (function() {
             var shown = false;
@@ -3188,10 +3188,10 @@
 
             <button class="iconbtn" id="btnCalendar" title="Ежедневные награды"><svg><use href="#i-gift"/></svg><span class="il">Дар</span><span class="dot" id="calDot" style="display:none"></span></button>
             <button class="iconbtn" id="btnHubMenu" title="Настройки и разделы" aria-label="Ещё: настройки и разделы" aria-controls="hubTools" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="il">Ещё</span></button>
-            <nav id="hubTools" class="hub-tools" hidden aria-label="Дополнительные разделы"><button class="iconbtn muteBtn" id="btnVol" title="Звук"><svg><use href="#i-vol"/></svg><span class="il">Звук</span></button><button class="iconbtn" id="btnProfile" title="Сменить знак"><svg><use href="#i-user"/></svg><span class="il">Знак</span></button><button class="iconbtn" id="btnShop" title="Лавка"><svg><use href="#i-bag"/></svg><span class="il">Лавка</span></button><button class="iconbtn" id="btnAch" title="Трофеи"><svg><use href="#i-trophy"/></svg><span class="il">Трофеи</span></button><button class="iconbtn" id="btnDaily" title="Ежедневный прогноз" style="display:none"><svg><use href="#i-clock"/></svg><span class="il">Прогноз</span></button></nav>
+            <nav id="hubTools" class="hub-tools" hidden aria-label="Дополнительные разделы" inert><button class="iconbtn muteBtn" id="btnVol" title="Звук"><svg><use href="#i-vol"/></svg><span class="il">Звук</span></button><button class="iconbtn" id="btnProfile" title="Сменить знак"><svg><use href="#i-user"/></svg><span class="il">Знак</span></button><button class="iconbtn" id="btnShop" title="Лавка"><svg><use href="#i-bag"/></svg><span class="il">Лавка</span></button><button class="iconbtn" id="btnAch" title="Трофеи"><svg><use href="#i-trophy"/></svg><span class="il">Трофеи</span></button><button class="iconbtn" id="btnDaily" title="Ежедневный прогноз" style="display:none"><svg><use href="#i-clock"/></svg><span class="il">Прогноз</span></button></nav>
 
         </div>
-<div class="hub-wrap">
+<section class="welcome-strip" aria-label="Помощь и серия входов"><span id="loginHint"></span><button class="btn" id="btnGuide">✧ Как играть</button></section><div class="hub-wrap">
             <aside class="hub-hero personal-observatory" aria-label="Личная обсерватория">
                 <section class="hero-panel observatory-panel" id="observatoryHost" aria-label="Ваш герой и спутник"></section>
                 <div class="hero-panel observatory-profile">
@@ -3237,7 +3237,7 @@
                     <button class="journey-card" id="btnAlchemy"><span class="mode-glyph">✶</span><b>Зал алхимии</b><span>Три в ряд · свободная игра · 10 пыли за победу</span></button>
                     <button class="journey-card" id="btnJournal"><span class="mode-glyph">☾</span><b>Предсказания</b><span id="journalHint"></span></button>
                 </div>
-                <div class="ritual-row"><div id="dailyQuest"></div><div id="loginHint"></div><button class="btn" id="btnGuide">Как играть</button></div>
+                <div class="ritual-row"><div id="dailyQuest"></div></div>
             </section>
             <div class="map-panel">
                 <div class="bigwheel-bg" id="hubWheelBg"></div>
@@ -3360,7 +3360,7 @@
                     persistent: !!opt.persistent,
                     previousFocus: document.activeElement
                 };
-                var firstControl = opt.cls === 'ft-modal' ? r.firstElementChild : (r.querySelector('button:not(:disabled),[tabindex="0"]') || r.firstElementChild);
+                var firstControl = (opt.cls === 'ft-modal' || opt.cls === 'trophies-modal') ? r.firstElementChild : (r.querySelector('button:not(:disabled),[tabindex="0"]') || r.firstElementChild);
                 firstControl.focus({ preventScroll: true });
                 ZM.qa('#modalRoot [data-close]').forEach(function(b) {
                     b.addEventListener('click', function() {
@@ -4237,7 +4237,7 @@
                             }, {
                                 rows: 6,
                                 cols: 6,
-                                targets: 3,
+                                targets: 2,
                                 swaps: 12,
                                 dur: 480,
                                 dual: false
@@ -4261,7 +4261,7 @@
                             }, {
                                 rows: 6,
                                 cols: 6,
-                                targets: 3,
+                                targets: 2,
                                 swaps: 13,
                                 dur: 460,
                                 dual: true
@@ -4278,14 +4278,14 @@
                             }, {
                                 rows: 3,
                                 cols: 5,
-                                targets: 3,
+                                targets: 2,
                                 swaps: 11,
                                 dur: 500,
                                 dual: true
                             }, {
                                 rows: 6,
                                 cols: 6,
-                                targets: 3,
+                                targets: 2,
                                 swaps: 14,
                                 dur: 440,
                                 dual: true
@@ -4302,14 +4302,14 @@
                             }, {
                                 rows: 3,
                                 cols: 5,
-                                targets: 3,
+                                targets: 2,
                                 swaps: 12,
                                 dur: 480,
                                 dual: true
                             }, {
                                 rows: 6,
                                 cols: 6,
-                                targets: 3,
+                                targets: 2,
                                 swaps: 16,
                                 dur: 420,
                                 dual: true
@@ -4425,8 +4425,8 @@
         })();
     </script>
 
-    <script src="predictions.js?v=atlas-2"></script>
-    <script src="observatory.js?v=atlas-2"></script>
+    <script src="predictions.js?v=combos-3"></script>
+    <script src="observatory.js?v=combos-3"></script>
     <script>Observatory.init(window.ZM);</script>
     <script>
         /* ═══ ДВИЖОК: аудио+музыка, фон, хаб-атлас, игра ═══ */
@@ -5444,7 +5444,7 @@
                 document.getElementById('missionCount').textContent = Math.min(G.cleared, G.needed) + ' / ' + G.needed;
                 var progress = document.getElementById('missionProgress');
                 progress.max = G.needed; progress.value = Math.min(G.cleared, G.needed);
-                document.getElementById('missionHint').textContent = G.cfg.goal && G.cfg.goal.type === 'seals' ? 'Линия снимает печать только на своей клетке' : G.cfg.goal && G.cfg.goal.type === 'collect' ? 'В цель идут только выбранные символы' : 'Комбинация 4+ дарит дополнительный ход';
+                document.getElementById('missionHint').textContent = G.cfg.goal && G.cfg.goal.type === 'seals' ? 'Совпадения и бонусы снимают печати в зоне действия' : G.cfg.goal && G.cfg.goal.type === 'collect' ? 'В цель идут только выбранные символы' : 'Комбинация 4+ дарит дополнительный ход';
             }
 
             function openJournal(category) {
@@ -5474,9 +5474,9 @@
 
             function openGuide() {
                 ZM.modalOpen('<h2>Три пути к предсказанию</h2><div class="guide-list">' +
-                    '<article><b>01 · Созвездие памяти</b><p>Запомните карты и открывайте одинаковые пары. Триады состоят из трёх карт; обманки не имеют пары. Подсказка помогает один раз бесплатно.</p></article>' +
-                    '<article><b>02 · Оракул</b><p>Запомните отмеченные карты. После тасовки найдите все нужные знаки. Каждый этап меняет расклад.</p></article>' +
-                    '<article><b>03 · Алхимия звёзд</b><p>Выберите два соседних символа и обменяйте их местами. Линии от трёх символов исчезают, четыре и больше дают дополнительный ход. Неудачный обмен не тратит ход. Можно выбирать символы нажатием или свайпом. В особых раскладах собирайте нужное светило либо снимайте лунные печати.</p></article>' +
+                    '<article><b>01 · Созвездие памяти</b><p>Запомните карты и открывайте одинаковые пары. Триады состоят из трёх карт; обманки не имеют пары. Подсказка помогает один раз бесплатно. На больших полях карты снова показываются каждые 15 секунд.</p></article>' +
+                    '<article><b>02 · Оракул</b><p>Запомните отмеченные карты — их не больше двух. После тасовки найдите все нужные знаки. Каждый этап меняет расклад.</p></article>' +
+                    '<article><b>03 · Алхимия звёзд</b><p>Выберите два соседних символа и обменяйте их местами. Линии от трёх символов исчезают, четыре и больше дают дополнительный ход. Неудачный обмен не тратит ход. Четыре в ряд создают луч, пять — призму цвета, Т- и Г-комбинации — бомбу. Обмен бонуса запускает его силу; бонусы запускают друг друга. Замки открываются одной соседней комбинацией, лёд — двумя. Можно выбирать символы нажатием или свайпом. В особых раскладах собирайте нужное светило либо снимайте лунные печати.</p></article>' +
                     '<article><b>Награды и возвращения</b><p>Первое прохождение уровня: 25 пыли, повторное: 10. Предсказание стоит 50 пыли или одну печать Оракула. Три победы за день дают 50 пыли и печать. В бесконечном небе каждый третий этап тоже приносит печать.</p></article>' +
                     '<article><b>Ваше личное небо</b><p>Прогресс хранится в этом браузере. Очистка данных сайта удаляет сохранение. В книге можно скачать копию и восстановить её в другом браузере. Перед заменой прогресса вы увидите подтверждение.</p></article>' +
                     '</div><div class="m-actions"><button class="btn primary" id="tutorialDone" data-close>Обучение просмотрено</button></div>');
@@ -6412,7 +6412,7 @@
                         '<span class="arw">' + ZM.ic('i-star') + d.reward + (d.extra ? '<small>' + Observatory.describeReward(d.extra) + '</small>' : '') + (done ? ' · выдано' : '') + '</span></div>';
                 }).join('');
                 ZM.modalOpen('<h2>Трофеи</h2><div class="msub">Память, книги, преображения и далёкие звёзды · ' + ZM.ACHDEFS.length + ' достижений<br>Нажмите на медальон, чтобы рассмотреть его.</div>' + rows +
-                    '<div class="m-actions"><button class="btn" data-close>Закрыть</button></div>');
+                    '<div class="m-actions"><button class="btn" data-close>Закрыть</button></div>',{cls:'trophies-modal'});
                 ZM.qa('[data-ach-id]').forEach(function(button){button.onclick=function(){
                     var def=ZM.ACHDEFS.find(function(d){return d.id===button.dataset.achId;}),done=!!ZM.save.ach[def.id];
                     ZM.modalOpen('<div class="trophy-portrait">'+Observatory.achievementArt(def.id,done)+'</div><h2>'+def.name+'</h2><div class="msub">'+(done?'Трофей получен':'Ещё одна звезда на вашем пути')+'</div><p class="trophy-description">'+def.desc+'</p><div class="trophy-reward">'+def.reward+' ★'+(def.extra?' · '+Observatory.describeReward(def.extra):'')+'</div><div class="m-actions"><button class="btn primary" id="backTrophies">К трофеям</button><button class="btn" data-close>Закрыть</button></div>');
@@ -6446,12 +6446,19 @@
                 sess = 0,
                 SEL = [];
 
+            function launchLevelGuide(game,begin) {
+                var mode=game.cfg.match3?'alchemy':game.cfg.oracle?'oracle':'memory';
+                if(ZM.save.levelGuides[mode]){begin();return;}
+                game.touring=true;
+                LevelTour.start(mode,function(){if(G!==game||game.dead)return;game.touring=false;begin();});
+            }
             function startLevel(globalIdx, options) {
                 options = options || {};
                 killLevel();
                 var si = Math.floor(globalIdx / ZM.PER_SIGN),
                     l = globalIdx % ZM.PER_SIGN,
                     cfg = options.cfg || ZM.LEVELS96[globalIdx];
+                if(cfg&&cfg.oracle)cfg=Object.assign({},cfg,{stages:cfg.stages.map(function(st){return Object.assign({},st,{targets:Math.min(2,st.targets)});})});
                 if (!cfg) {
                     ZM.toast('Этот уровень пока пишется звёздами', {
                         ic: 'i-warn'
@@ -6500,8 +6507,8 @@
                     ZM.showScreen('game');
                     var game = G;
                     game.match3 = Match3.mount(document.getElementById('board'), {
-                        target: cfg.target, moves: cfg.moves, goal: cfg.goal,
-                        active: function() { return G === game && !game.dead && !game.finished; },
+                        target: cfg.target, moves: cfg.moves, goal: cfg.goal, obstacles: cfg.obstacles,
+                        active: function() { return G === game && !game.dead && !game.finished && !game.touring; },
                         update: function(state) {
                             game.cleared = state.score;
                             game.moves = state.moves;
@@ -6513,7 +6520,7 @@
                         lose: alchemyFail
                     });
                     renderCombo(); renderTimer(); renderPairs(); updateHintUI();
-                    requestAnimationFrame(function() { if (G === game) layoutBoard(); });
+                    requestAnimationFrame(function() { if (G === game) {layoutBoard();launchLevelGuide(game,function(){});} });
                     tickLoop();
                     return;
                 }
@@ -6567,7 +6574,7 @@
                     requestAnimationFrame(function() {
                         if (G !== oracleGame || oracleGame.dead) return;
                         layoutBoard();
-                        beginOracleStage();
+                        launchLevelGuide(oracleGame,beginOracleStage);
                     });
                     tickLoop();
                     return;
@@ -6624,7 +6631,7 @@
                 requestAnimationFrame(function() {
                     if (G !== memoryGame || memoryGame.dead) return;
                     layoutBoard();
-                    beginPreview();
+                    launchLevelGuide(memoryGame,beginPreview);
                 });
                 tickLoop();
                 startBreath();
@@ -6812,7 +6819,7 @@
             function tickLoop() {
                 clearInterval(G._tick);
                 G._tick = setInterval(function() {
-                    if (!G || G.finished || G.dead || curScr !== 'game' || !G.running || document.hidden || document.getElementById('modalRoot').classList.contains('show')) return;
+                    if (!G || G.finished || G.dead || curScr !== 'game' || !G.running || G.touring || document.hidden || document.getElementById('modalRoot').classList.contains('show')) return;
                     if (G.frozen > 0) {
                         G.frozen -= .25;
                         renderTimer();
@@ -6832,12 +6839,12 @@
                     renderTimer();
                 }, 250);
             }
-            /* «дыхание поля» на досках 6x6 и 7x7: каждые 30 секунд — плавный показ всех карт */
+            /* «дыхание поля» на досках 6x6 и 7x7: каждые 15 секунд — плавный показ всех карт */
             function startBreath() {
                 clearInterval(G._breath);
                 if (!(G.cfg.rows >= 6 && G.cfg.cols >= 6)) return;
                 G._breath = setInterval(function() {
-                    if (!G || G.dead || G.finished || G.preview || curScr !== 'game') return;
+                    if (!G || G.dead || G.finished || G.touring || G.preview || curScr !== 'game') return;
                     if (document.body.classList.contains('peeking')) return;
                     var cells = Array.prototype.slice.call(document.getElementById('board').children),
                         s = G.sid;
@@ -6866,7 +6873,7 @@
                         });
                         document.body.classList.remove('peeking');
                     }, total);
-                }, 30000);
+                }, 15000);
             }
 
             function renderTimer() {
@@ -6947,7 +6954,7 @@
             }
 
             function onCell(i) {
-                if (curScr !== 'game' || !G || G.preview || G.finished || G.dead) return;
+                if (curScr !== 'game' || !G || G.touring || G.preview || G.finished || G.dead) return;
                 var cell = cellEl(i),
                     cd = G.deck[i],
                     gr = cd.grp;
@@ -7695,6 +7702,7 @@
             }
 
             function killLevel() {
+                LevelTour.cancel();
                 if (G) {
                     if (G.match3) G.match3.destroy();
                     clearInterval(G._tick);
@@ -7714,6 +7722,7 @@
                 }
                 document.body.classList.remove('peeking');
                 document.getElementById('board').classList.remove('faded', 'reveal-flash');
+                document.querySelectorAll('#board .peek').forEach(function(cell){cell.classList.remove('peek');});
                 removeOracleUI();
                 SEL = [];
                 G = null;
@@ -7933,11 +7942,15 @@
             });
             function closeHubMenu() {
                 document.getElementById('hubTools').hidden = true;
+                document.getElementById('hubTools').inert = true;
+                document.querySelector('#s_hub .topbar').classList.remove('menu-expanded');
                 document.getElementById('btnHubMenu').setAttribute('aria-expanded', 'false');
             }
             document.getElementById('btnHubMenu').addEventListener('click', function() {
                 var tools = document.getElementById('hubTools');
                 tools.hidden = !tools.hidden;
+                tools.inert=tools.hidden;
+                document.querySelector('#s_hub .topbar').classList.toggle('menu-expanded',!tools.hidden);
                 this.setAttribute('aria-expanded', String(!tools.hidden));
             });
             document.getElementById('hubTools').addEventListener('click', function(e) {

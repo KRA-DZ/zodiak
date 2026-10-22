@@ -77,7 +77,8 @@
             const stats=['tutorial','wardrobeBuys','backgroundChanges','bestCascade','gems','alchemyWins','oracleWins','memoryWins','predictions'];
             if(!Object.keys(o.stats).every(k=>stats.includes(k)&&int(o.stats[k])))fail();
         }
-        const fields = ['created','sign','birth','dust','inv','skins','skin','lvOpen','lvStars','ach','stats','horoUsed','daily','preds','predDay','predSign','wheelBonus','traits','calStart','calLast','calTaken','journeyVersion','journal','omens','endless','loginStreak','loginLast','ritual','frag','stars','observatory'];
+        if(s.levelGuides!=null&&(!flags(s.levelGuides)||!Object.keys(s.levelGuides).every(k=>['memory','oracle','alchemy'].includes(k))))fail();
+        const fields = ['created','sign','birth','dust','inv','skins','skin','lvOpen','lvStars','ach','stats','horoUsed','daily','preds','predDay','predSign','wheelBonus','traits','calStart','calLast','calTaken','journeyVersion','journal','omens','endless','loginStreak','loginLast','ritual','frag','stars','observatory','levelGuides'];
         const save = {};
         fields.forEach(k => { if (Object.hasOwn(s,k)) save[k] = s[k]; });
         for (const k of ['frag','stars']) if (save[k] != null && (!Array.isArray(save[k]) || save[k].length > 108 || !save[k].every(n => int(n)))) fail();

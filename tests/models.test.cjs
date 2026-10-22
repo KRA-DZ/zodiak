@@ -170,3 +170,49 @@ test('import accepts owned cosmetics and rejects unowned equipment or unknown it
         s=>s.observatory.stats.gems=-1,s=>s.observatory.hero='unknown'
     ]){const p=JSON.parse(JSON.stringify(base));mutate(p.save);assert.throws(()=>Saves.parse(JSON.stringify(p)));}
 });
+
+test('four-lines create oriented rays, five creates a prism and intersections create bombs',()=>{
+    const base=()=>Array.from({length:36},(_,i)=>(Math.floor(i/6)+i%6)%6);
+    let b=base();[6,7,8,9].forEach(i=>b[i]=5);b[10]=2;
+    assert.equal(M.combinationPlan(b,new Set(),[9]).spawns.get(9),'row');
+    b=base();[2,8,14,20].forEach(i=>b[i]=5);
+    assert.equal(M.combinationPlan(b,new Set(),[20]).spawns.get(20),'column');
+    b=base();[6,7,8,9,10].forEach(i=>b[i]=5);
+    assert.equal(M.combinationPlan(b,new Set(),[9]).spawns.get(9),'color');
+    b=base();[6,7,8,13,19].forEach(i=>b[i]=5);
+    assert.equal(M.combinationPlan(b).spawns.get(7),'bomb');
+    b=base();[0,1,2,24,25,26].forEach(i=>b[i]=4);
+    assert.equal(M.combinationPlan(b).spawns.size,0,'separate triples must not create a prism');
+});
+
+test('special effects chain without wrapping, choose a color and respect locked cells',()=>{
+    const b=Array.from({length:36},(_,i)=>i%6);
+    const rays=M.blast(b,[7],new Map([[7,'row'],[10,'column'],[22,'bomb']]));
+    for(const i of[6,7,8,9,10,11,4,16,22,28,34,21,23,27,29])assert.ok(rays.includes(i),'missing '+i);
+    assert.equal(new Set(rays).size,rays.length);
+    assert.deepEqual(M.blast(b,[0],new Map([[0,'bomb']])).sort((a,b)=>a-b),[0,1,6,7]);
+    const colors=M.blast(b,[7],new Map([[7,'color']]),new Set([10]),4);
+    for(const i of[4,16,22,28,34])assert.ok(colors.includes(i));assert.ok(!colors.includes(10));
+    assert.equal(M.blast(b,[7],new Map([[7,'color']]),new Set(),'all').length,36);
+});
+
+test('locks take one adjacent hit per cascade, ice takes two and gravity stays in segments',()=>{
+    const locks=new Map([[7,1],[10,2]]);
+    M.unlockAdjacent(locks,[6,8,9,11]);assert.equal(locks.has(7),false);assert.equal(locks.get(10),1);
+    M.unlockAdjacent(locks,[9]);assert.equal(locks.has(10),false);
+    const board=Array.from({length:36},(_,i)=>i%6);
+    const drop=M.collapsePlan(board,[0,18],()=>.5,new Set([12]));
+    assert.equal(drop.origins[12],12);assert.equal(drop.origins[6],6);assert.equal(drop.origins[0],null);
+    assert.equal(drop.origins[30],30);assert.equal(drop.origins[24],24);assert.equal(drop.origins[18],null);
+    const b=Array.from({length:36},(_,i)=>(Math.floor(i/6)+i%6)%6);[0,1,2].forEach(i=>b[i]=5);
+    assert.equal(M.combinationPlan(b,new Set([1])).found.length,0);
+    const move=M.findMove(b,null,null,new Set([0]),new Map([[0,'row'],[7,'bomb']]));
+    assert.ok(move&&!move.includes(0));
+});
+
+test('portable saves retain only valid visual-guide completion flags',()=>{
+    const save=packet();save.save.levelGuides={memory:true,oracle:false,alchemy:true};
+    assert.deepEqual(Saves.parse(JSON.stringify(save)).levelGuides,save.save.levelGuides);
+    save.save.levelGuides.unknown=true;assert.throws(()=>Saves.parse(JSON.stringify(save)));
+    delete save.save.levelGuides.unknown;save.save.levelGuides.memory='true';assert.throws(()=>Saves.parse(JSON.stringify(save)));
+});

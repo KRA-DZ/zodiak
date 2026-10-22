@@ -30,6 +30,7 @@ async function game(t, seed, settings = {}) {
                     win: finishWin, endless: startEndless, ritual: claimRitual, renderJourney: renderJourney, oracle: openOracleTable, reveal: ftReveal, journal: openJournal, calendar: openCalendar, guide: openGuide, map: useMap, power: usePower, click: onCell,
                     get state() { return G; }, get selection() { return SEL; }
                 };
+                ZM.save.levelGuides = {memory:true,oracle:true,alchemy:true};
                 ZM.ready = true;`);
             return route.fulfill({ contentType: 'text/html', body: html });
         }
@@ -535,6 +536,7 @@ test('mobile hub keeps secondary actions in a keyboard-accessible menu',async t=
     await page.evaluate(()=>ZM.modalForceClose());
     assert.equal(await page.locator('#hubTools').isVisible(),false);
     await page.locator('#btnHubMenu').click();
+    await page.waitForFunction(()=>document.getElementById('hubTools').clientWidth>0);
     assert.equal(await page.locator('#hubTools').isVisible(),true);
     await page.locator('#btnProfile').click();
     assert.equal(await page.locator('#hubTools').isVisible(),false);
@@ -782,4 +784,80 @@ test('oracle does not auto-focus Love and keeps an accessible keyboard focus ind
     assert.equal(await page.locator('.ft-card:focus-visible').count(),1);
     await page.locator('.ft-card[data-cat="career"]').click();
     assert.equal(await page.locator('.ft-card[data-cat="love"]:focus').count(),0);
+});
+
+test('first-visit visual guides pause every mode and persist completion without repeating',async t=>{
+    const page=await game(t);
+    for(const [mode,index]of[['memory',0],['oracle',null],['alchemy',7]]){
+        await page.evaluate(([mode,index])=>{ZM.save.levelGuides[mode]=false;testGame.kill();testGame.start(index==null?ZM.LEVELS96.findIndex(c=>c.oracle):index);},[mode,index]);
+        await page.clock.runFor(100);
+        assert.equal(await page.locator('#levelTour').count(),1);
+        const before=await page.evaluate(()=>testGame.state.elapsed);
+        await page.clock.runFor(5000);
+        assert.equal(await page.evaluate(()=>testGame.state.elapsed),before);
+        while(await page.locator('#levelTour').count())await page.locator('#tourNext').click();
+        assert.equal(await page.evaluate(mode=>ZM.save.levelGuides[mode],mode),true);
+        assert.equal(await page.evaluate(mode=>JSON.parse(localStorage.getItem('zodiacMemory.v3')).levelGuides[mode],mode),true);
+        await page.evaluate(()=>testGame.kill());
+    }
+    await page.reload();assert.equal(await page.evaluate(()=>ZM.save.levelGuides.alchemy),true);
+});
+
+test('oracle campaigns and endless never ask for more than two target cards',async t=>{
+    const page=await game(t);
+    assert.equal(await page.evaluate(()=>ZM.LEVELS96.filter(c=>c.oracle).every(c=>c.stages.every(s=>s.targets<=2))),true);
+    assert.equal(await page.evaluate(()=>Array.from({length:60},(_,i)=>Journey.endlessConfig(i+1)).filter(c=>c.oracle).every(c=>c.stages.every(s=>s.targets<=2))),true);
+    await page.evaluate(()=>testGame.start(1,{cfg:{oracle:true,par:100,stages:[{rows:3,cols:4,targets:3,swaps:2,dur:400}]}}));
+    assert.equal(await page.evaluate(()=>testGame.state.oracle.targets.length),2);
+});
+
+test('large memory fields reveal at fifteen seconds and clean up the interval on exit',async t=>{
+    const page=await game(t);const index=await page.evaluate(()=>ZM.LEVELS96.findIndex(c=>!c.oracle&&!c.match3&&c.rows>=6&&c.cols>=6));
+    await start(page,index);await skipPreview(page);
+    await page.clock.runFor(15050);
+    assert.equal(await page.evaluate(()=>document.body.classList.contains('peeking')),true);
+    await page.evaluate(()=>testGame.kill());await page.clock.runFor(16000);
+    assert.equal(await page.locator('.peek').count(),0);
+});
+
+test('special tile swaps trigger chains, respect obstacles and preserve a created bonus',async t=>{
+    const page=await game(t);
+    await page.evaluate(()=>{
+        testGame.kill();const host=document.getElementById('board');host.classList.add('match3-board');
+        const board=Array.from({length:36},(_,i)=>(Math.floor(i/6)+i%6)%6);
+        [6,7,8,15].forEach(i=>board[i]=5);board[9]=2;board[10]=0;
+        window.specialRound=Match3.mount(host,{initialBoard:board,target:999,moves:20,active:()=>true,update:()=>{},match:()=>{},win:()=>{},lose:()=>{}});
+        host.children[9].click();host.children[15].click();
+    });
+    await page.clock.runFor(25);
+    assert.equal(await page.evaluate(()=>specialRound.specials.get(9)),'row');
+    for(let i=0;i<20;i++)await page.clock.runFor(100);
+    await page.evaluate(()=>{
+        specialRound.destroy();const host=document.getElementById('board');
+        const board=Array.from({length:36},(_,i)=>(Math.floor(i/6)+i%6)%6);window.bonusMatched=0;
+        window.specialRound=Match3.mount(host,{initialBoard:board,specials:[[7,'row'],[10,'column']],obstacles:[[8,1],[16,2]],target:999,moves:20,active:()=>true,update:()=>{},match:n=>bonusMatched+=n,win:()=>{},lose:()=>{}});
+        host.children[8].click();
+    });
+    assert.equal(await page.evaluate(()=>specialRound.moves),20);
+    await page.evaluate(()=>{const tile=document.getElementById('board').children[8];tile.dispatchEvent(new PointerEvent('pointerdown',{pointerId:77,button:0,clientX:20,clientY:20}));tile.dispatchEvent(new PointerEvent('pointerup',{pointerId:77,button:0,clientX:20,clientY:70}));});
+    assert.equal(await page.evaluate(()=>specialRound.moves),20);
+    await page.evaluate(()=>{const h=document.getElementById('board');h.children[7].click();h.children[13].click();});
+    await page.clock.runFor(25);
+    assert.ok(await page.evaluate(()=>bonusMatched)>=6);
+    for(let i=0;i<20;i++)await page.clock.runFor(100);
+    assert.ok([19,20].includes(await page.evaluate(()=>specialRound.moves)));
+    await page.evaluate(()=>specialRound.destroy());
+});
+
+test('streak and guide lead the atlas, header opens inline and trophies avoid automatic focus',async t=>{
+    const page=await game(t);await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
+    assert.equal(await page.evaluate(()=>document.querySelector('.welcome-strip').getBoundingClientRect().top<document.querySelector('.map-panel').getBoundingClientRect().top),true);
+    await page.locator('#btnHubMenu').click();
+    assert.equal(await page.evaluate(()=>document.querySelector('.topbar').classList.contains('menu-expanded')),true);
+    assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('hubTools')).position),'static');
+    await page.locator('#btnHubMenu').click();
+    assert.equal(await page.locator('#hubTools').getAttribute('hidden'),'');
+    await page.locator('#openTrophies').click();
+    assert.equal(await page.evaluate(()=>document.activeElement.classList.contains('trophies-modal')),true);
+    assert.equal(await page.locator('.achievement-inspect:focus').count(),0);
 });

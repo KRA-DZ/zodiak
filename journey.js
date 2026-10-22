@@ -18,6 +18,7 @@
             if (!Array.isArray(save.lvStars) || save.lvStars.length !== 108) save.lvStars = new Array(108).fill(0);
             save.lvStars = save.lvStars.map(n => Number.isFinite(n) ? Math.max(0, Math.min(3, Math.floor(n))) : 0);
             save.lvOpen = save.lvOpen.map(n => Number.isFinite(n) ? Math.max(1, Math.min(9, Math.floor(n))) : 1);
+            if(!save.levelGuides||typeof save.levelGuides!=='object')save.levelGuides={};
             if (!Array.isArray(save.journal)) save.journal = [];
             save.journal = save.journal.filter(p => p && typeof p.text === 'string' && typeof p.day === 'string').slice(-100);
             if (!Number.isFinite(save.omens) || save.omens < 0) save.omens = 0;
@@ -43,7 +44,7 @@
             if (variant === 1) {
                 const shift = sign % 3;
                 const cells = [7, 10, 14, 21, 25, 28].map(i => i + (shift === 1 ? 1 : shift === 2 ? -1 : 0));
-                return { ...config, target: cells.length, moves: 24, par: 240, goal: { type: 'seals', cells } };
+                return { ...config, target: cells.length, moves: 24, par: 240, goal: { type: 'seals', cells }, obstacles:[[8,1],[9,2],[26,2],[27,1]] };
             }
             if (sign % 2) return { ...config, target: 16, moves: 24, goal: { type: 'collect', symbol: sign % 6 } };
             return config;
@@ -62,7 +63,7 @@
             }
             if (round % 3 === 2) return {
                 oracle: true, par: 180,
-                stages: [{ rows: 3, cols: 4, targets: Math.min(3, 1 + tier), swaps: 5 + tier, dur: Math.max(360, 620 - tier * 40), dual: tier > 2 }]
+                stages: [{ rows: 3, cols: 4, targets: Math.min(2, 1 + tier), swaps: 5 + tier, dur: Math.max(360, 620 - tier * 40), dual: tier > 2 }]
             };
             const pairs = 6 + tier * 2;
             return { rows: Math.ceil(pairs * 2 / 4), cols: 4, pairs, par: 100 + tier * 20 };

@@ -17,14 +17,15 @@
         }
         return [...out];
     }
-    function findMove(board, goal, remaining) {
+    function findMove(board, goal, remaining, blocked = new Set(), specials = new Map()) {
         let best = null, priority = -1;
         const cells = remaining || new Set(goal?.cells || []);
         for (let i = 0; i < 36; i++) for (const j of [i + 1, i + size]) {
-            if (!adjacent(i, j)) continue;
+            if (!adjacent(i, j) || blocked.has(i) || blocked.has(j)) continue;
+            if(specials.has(i)||specials.has(j))return [i,j];
             const copy = board.slice();
             [copy[i], copy[j]] = [copy[j], copy[i]];
-            const found = matches(copy);
+            const found = combinationPlan(copy,blocked).found;
             if (!found.length) continue;
             if (!goal) return [i, j];
             const progress = goal.type === 'collect' ? found.filter(k => copy[k] === goal.symbol).length : goal.type === 'seals' ? found.filter(k => cells.has(k)).length : found.length;
@@ -51,15 +52,17 @@
     }
     // Происхождение каждой фишки позволяет анимировать настоящее падение,
     // сохраняя порядок и DOM-элементы выживших символов.
-    function collapsePlan(board, cleared, random = Math.random) {
+    function collapsePlan(board, cleared, random = Math.random, blocked = new Set()) {
         const removed = new Set(cleared), next = [], origins = [];
-        for (let c = 0; c < size; c++) {
-            const column = [];
-            for (let r = size - 1; r >= 0; r--) if (!removed.has(r * size + c)) column.push(r * size + c);
-            for (let r = size - 1; r >= 0; r--) {
-                const i = r * size + c, origin = column.length ? column.shift() : null;
-                origins[i] = origin;
-                next[i] = origin == null ? Math.floor(random() * 6) : board[origin];
+        for(let c=0;c<6;c++){
+            let bottom=5;
+            while(bottom>=0){
+                const fixed=bottom*6+c;
+                if(blocked.has(fixed)){origins[fixed]=fixed;next[fixed]=board[fixed];bottom--;continue;}
+                let top=bottom;while(top>0&&!blocked.has((top-1)*6+c))top--;
+                const column=[];for(let r=bottom;r>=top;r--)if(!removed.has(r*6+c))column.push(r*6+c);
+                for(let r=bottom;r>=top;r--){const i=r*6+c,origin=column.length?column.shift():null;origins[i]=origin;next[i]=origin==null?Math.floor(random()*6):board[origin];}
+                bottom=top-1;
             }
         }
         return { board: next, origins };
@@ -76,6 +79,50 @@
         }
         return found.length;
     }
+    // Maximal lines determine bonuses; independent matches never masquerade as a five-line.
+    function combinationPlan(board, blocked = new Set(), preferred = []) {
+        const lines=[];
+        for(const step of [1,6])for(let i=0;i<36;i++){
+            if(blocked.has(i)||board[i]==null)continue;
+            const prev=i-step;
+            if(prev>=0&&(step===6||Math.floor(prev/6)===Math.floor(i/6))&&!blocked.has(prev)&&board[prev]===board[i])continue;
+            const cells=[i];
+            for(let j=i+step;j<36&&(step===6||Math.floor(j/6)===Math.floor(i/6))&&!blocked.has(j)&&board[j]===board[i];j+=step)cells.push(j);
+            if(cells.length>=3)lines.push({cells,step});
+        }
+        const found=[...new Set(lines.flatMap(l=>l.cells))],spawns=new Map(),used=new Set();
+        for(const line of lines.filter(l=>l.cells.length>=5)){
+            const at=preferred.find(i=>line.cells.includes(i))??line.cells[Math.floor(line.cells.length/2)];
+            spawns.set(at,'color');line.cells.forEach(i=>used.add(i));
+        }
+        for(const h of lines.filter(l=>l.step===1))for(const v of lines.filter(l=>l.step===6)){
+            const at=h.cells.find(i=>v.cells.includes(i));
+            if(at!=null&&!used.has(at)){spawns.set(at,'bomb');[...h.cells,...v.cells].forEach(i=>used.add(i));}
+        }
+        for(const line of lines.filter(l=>l.cells.length===4)){
+            if(line.cells.some(i=>used.has(i)))continue;
+            const at=preferred.find(i=>line.cells.includes(i))??line.cells[1];
+            spawns.set(at,line.step===1?'row':'column');line.cells.forEach(i=>used.add(i));
+        }
+        return {found,spawns};
+    }
+    function blast(board, initial, specials, blocked=new Set(), color=null) {
+        const found=new Set(initial.filter(i=>i>=0&&i<36&&!blocked.has(i))),queue=[...found],activated=new Set();
+        const add=i=>{if(i>=0&&i<36&&!blocked.has(i)&&!found.has(i)){found.add(i);queue.push(i);}};
+        while(queue.length){const i=queue.shift(),type=specials.get(i);if(!type||activated.has(i))continue;activated.add(i);
+            if(type==='row')for(let c=0;c<6;c++)add(Math.floor(i/6)*6+c);
+            if(type==='column')for(let r=0;r<6;r++)add(r*6+i%6);
+            if(type==='bomb')for(let r=Math.max(0,Math.floor(i/6)-1);r<=Math.min(5,Math.floor(i/6)+1);r++)for(let c=Math.max(0,i%6-1);c<=Math.min(5,i%6+1);c++)add(r*6+c);
+            if(type==='color')board.forEach((value,j)=>{if(color==='all'||value===(color??board[i]))add(j);});
+        }
+        return [...found];
+    }
+    function unlockAdjacent(locks, found) {
+        const hit=new Set();
+        for(const i of found)for(const j of locks.keys())if(adjacent(i,j))hit.add(j);
+        for(const i of hit){const layers=locks.get(i)-1;if(layers<=0)locks.delete(i);else locks.set(i,layers);}
+        return [...hit];
+    }
     function mount(host, options) {
         const symbols = ['☉', '☽', '♀', '♃', '✦', '☿'];
         const names = ['Солнце', 'Луна', 'Роза', 'Кристалл', 'Звезда', 'Комета'];
@@ -83,8 +130,11 @@
         const seals = new Set(goal.cells || []);
         // Essential tile motion is always smooth; decorative particles respect the system.
         const reducedDecorations = window.Observatory ? Observatory.reducedMotion() : window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        let board = newBoard(), tiles = [], selected = -1, score = 0, moves = options.moves;
+        let board = options.initialBoard ? options.initialBoard.slice() : newBoard(), tiles = [], selected = -1, score = 0, moves = options.moves;
         let busy = false, stopped = false, pointer = null, suppressClick = false;
+        let specials=new Map(options.specials||[]);
+        const locks=new Map(options.obstacles||[]);
+        const specialNames={row:'Луч по горизонтали',column:'Луч по вертикали',bomb:'Звёздная бомба',color:'Призма цвета'};
         const timers = new Set(), animations = new Set(), effects = new Set();
         const active = () => !stopped && options.active();
         function later(fn, ms) {
@@ -117,7 +167,7 @@
             });
         }
         function notify(message) {
-            options.update({ score, moves, goal, message: message || 'Обменяйте соседние символы. Линия от трёх зажжёт созвездие.' });
+            options.update({ score, moves, goal, message: message || '4 в ряд — луч; 5 — призма цвета; Т или Г — бомба. Обмен бонуса активирует его.' });
         }
         function label() {
             if (goal.type === 'collect') return 'Соберите ' + options.target + ' символов «' + names[goal.symbol] + '»';
@@ -129,8 +179,12 @@
                 tile.dataset.index = i;
                 tile.classList.toggle('selected', i === selected);
                 tile.classList.toggle('sealed', seals.has(i));
+                tile.dataset.special=specials.get(i)||'';tile.dataset.lock=locks.has(i)?(locks.get(i)>1?'ice':'lock'):'';
+                let mark=tile.querySelector('.gem-power');if(!mark){mark=document.createElement('span');mark.className='gem-power';tile.appendChild(mark);}
+                mark.textContent=locks.has(i)?(locks.get(i)>1?'❄':'🔒'):({row:'↔',column:'↕',bomb:'✹',color:'✺'}[specials.get(i)]||'');
+                tile.setAttribute('aria-disabled',String(locks.has(i)));
                 tile.setAttribute('aria-pressed', String(i === selected));
-                tile.setAttribute('aria-label', names[board[i]] + ', ряд ' + (Math.floor(i / 6) + 1) + ', столбец ' + (i % 6 + 1) + (seals.has(i) ? ', лунная печать' : ''));
+                tile.setAttribute('aria-label', names[board[i]] + ', ряд ' + (Math.floor(i / 6) + 1) + ', столбец ' + (i % 6 + 1) + (seals.has(i) ? ', лунная печать' : '') + (locks.has(i)?', заблокировано, слоёв: '+locks.get(i):specials.has(i)?', '+specialNames[specials.get(i)]:''));
             });
             host.classList.toggle('resolving', busy);
             host.setAttribute('aria-busy', String(busy));
@@ -145,7 +199,7 @@
                 select(+tile.dataset.index);
             });
             tile.addEventListener('pointerdown', e => {
-                if (!active() || busy || e.button > 0) return;
+                if (!active() || busy || e.button > 0 || locks.has(+tile.dataset.index)) return;
                 pointer = { index: +tile.dataset.index, x: e.clientX, y: e.clientY, id: e.pointerId };
                 try { tile.setPointerCapture(e.pointerId); } catch (_) {}
             });
@@ -201,14 +255,26 @@
                 }
             });
         }
+        function specialFlash(found){
+            if(reducedDecorations)return;
+            const zone=host.parentNode.getBoundingClientRect(),area=host.getBoundingClientRect();
+            found.filter(i=>specials.has(i)).slice(0,8).forEach(i=>{
+                const r=tiles[i].getBoundingClientRect(),type=specials.get(i),el=document.createElement('span');
+                el.className='power-wave wave-'+type;el.setAttribute('aria-hidden','true');
+                const horizontal=type==='row',vertical=type==='column';
+                Object.assign(el.style,{left:(horizontal?area.left:r.left)-zone.left+'px',top:(vertical?area.top:r.top)-zone.top+'px',width:(horizontal?area.width:r.width)+'px',height:(vertical?area.height:r.height)+'px'});
+                host.parentNode.appendChild(el);effects.add(el);later(()=>{el.remove();effects.delete(el);},650);
+            });
+        }
         function drop(found, callback) {
             host.dataset.phase = 'fall';
             const focused = host.contains(document.activeElement) ? document.activeElement : null;
             const focusIndex = focused ? +focused.dataset.index : -1;
-            const plan = collapsePlan(board, found), old = tiles.slice();
+            const plan = collapsePlan(board, found, Math.random, new Set(locks.keys())), old = tiles.slice();
             const oldPositions = old.map(tile => ({ x: parseFloat(tile.style.left), y: parseFloat(tile.style.top) }));
             const pitch = oldPositions[6].y - oldPositions[0].y;
             const newPerColumn = Array.from({ length: 6 }, (_, col) => plan.origins.filter((from, i) => i % 6 === col && from == null).length);
+            specials=new Map(plan.origins.flatMap((from,i)=>from!=null&&specials.has(from)?[[i,specials.get(from)]]:[]));
             board = plan.board;
             tiles = plan.origins.map((origin, i) => origin == null ? makeTile(board[i]) : old[origin]);
             old.forEach((tile, i) => { if (found.includes(i)) tile.getAnimations().forEach(a => { a.cancel(); animations.delete(a); }); });
@@ -231,21 +297,30 @@
                 callback();
             });
         }
-        function settle(chain, extraMove) {
-            const found = matches(board);
+        function settle(chain, extraMove, forced=[], chosenColor=null, preferred=[]) {
+            const plan=combinationPlan(board,new Set(locks.keys()),preferred);
+            // Existing bonuses detonate; newly created bonuses remain for a future turn.
+            const found=blast(board,[...plan.found,...forced],specials,new Set(locks.keys()),chosenColor);
+            const spawns=new Map([...plan.spawns].filter(([i])=>!specials.has(i)&&!forced.includes(i)));
+            spawns.forEach((type,i)=>{const at=found.indexOf(i);if(at>=0)found.splice(at,1);});
             if (!found.length) {
                 if (score >= options.target) { host.dataset.phase = 'complete'; options.win(); return; }
                 if (moves <= 0) { host.dataset.phase = 'failed'; options.lose(); return; }
                 busy = false; host.dataset.phase = 'idle';
-                if (!findMove(board)) {
-                    board = newBoard();
+                if (!findMove(board,goal,seals,new Set(locks.keys()),specials)) {
+                    for(let attempt=0;attempt<50;attempt++){board=newBoard();if(findMove(board,goal,seals,new Set(locks.keys()),specials))break;if(attempt===49)locks.clear();}
                     rebuild('Небо обновило расклад. Перетасовка бесплатна.');
                     tiles.forEach((tile, i) => animate(tile, [{ opacity: .1, transform: 'scale(.8)' }, { opacity: 1, transform: 'scale(1)' }], 300, i * 4));
                 } else { refresh(); notify('Хороший ход. ' + label() + '.'); }
                 return;
             }
             host.dataset.phase = 'clear';
-            if (found.length >= 4 && !extraMove) { moves++; extraMove = true; }
+            if (Math.max(found.length,plan.found.length) >= 4 && !extraMove) { moves++; extraMove = true; }
+            const unlocked=unlockAdjacent(locks,[...found,...spawns.keys()]);
+            unlocked.forEach(i=>{const tile=tiles[i];tile.classList.add('unlocking');later(()=>tile.classList.remove('unlocking'),500);});
+            specialFlash(found);
+            spawns.forEach((type,i)=>specials.set(i,type));
+            found.forEach(i=>specials.delete(i));
             const gained = missionProgress(goal, board, found, seals);
             score += gained;
             options.match(found.length, chain);
@@ -261,22 +336,28 @@
             notify(chain > 1 ? 'Каскад ×' + chain + ' · ' + label() : (extraMove ? 'Большое созвездие: +1 ход' : 'Созвездие собрано!'));
             waitForMotion(vanishing, () => drop(found, () => {
                 // Предохранитель на аномально длинный случайный каскад.
-                if (chain >= 20) { board = newBoard(); rebuild('Новый звёздный расклад'); }
+                if (chain >= 20) { board = newBoard(); specials.clear(); rebuild('Новый звёздный расклад'); }
                 settle(chain + 1, extraMove);
             }));
         }
         function select(i) {
             if (!active() || busy) return;
+            if(locks.has(i)){notify('Соберите комбинацию рядом: замок откроется за 1, лёд — за 2 попадания.');return;}
             if (selected === i) { selected = -1; refresh(); return; }
             if (selected < 0 || !adjacent(selected, i)) { selected = i; refresh(); return; }
             const a = selected;
+            if(locks.has(a)){selected=-1;refresh();return;}
             selected = -1; busy = true; host.dataset.phase = 'swap'; refresh();
             [tiles[a], tiles[i]].forEach(tile => {
                 animations.forEach(animation => { if (animation.effect?.target === tile) { animation.cancel(); animations.delete(animation); } });
             });
             const dx = tiles[i].offsetLeft - tiles[a].offsetLeft, dy = tiles[i].offsetTop - tiles[a].offsetTop;
             [board[a], board[i]] = [board[i], board[a]];
-            const valid = matches(board).length > 0;
+            const hasSpecial=specials.has(a)||specials.has(i),beforeA=specials.get(a),beforeI=specials.get(i);
+            specials.delete(a);specials.delete(i);if(beforeA)specials.set(i,beforeA);if(beforeI)specials.set(a,beforeI);
+            const forced=hasSpecial?[a,i]:[];
+            const chosenColor=beforeA==='color'&&beforeI==='color'?'all':beforeA==='color'?board[a]:beforeI==='color'?board[i]:null;
+            const valid = hasSpecial || combinationPlan(board,new Set(locks.keys())).found.length > 0;
             if (valid) moves--;
             const frames = (x, y) => [{ transform: 'translate(0,0)' }, { transform: 'translate(' + x + 'px,' + y + 'px)' }];
             const swaps = [animate(tiles[a], frames(dx, dy), 240, 0, true), animate(tiles[i], frames(-dx, -dy), 240, 0, true)];
@@ -297,7 +378,7 @@
                 [tiles[a], tiles[i]] = [tiles[i], tiles[a]];
                 host.replaceChildren(...tiles); placeTiles(); refresh();
                 focus?.focus({ preventScroll: true });
-                settle(1, false);
+                settle(1, false, forced, chosenColor, [i,a]);
             });
         }
         rebuild(label() + ' за ' + moves + ' ходов. Можно нажимать или смахивать символы.');
@@ -315,16 +396,18 @@
             },
             hint() {
                 if (busy || stopped) return;
-                const pair = findMove(board, goal, seals);
+                const pair = findMove(board, goal, seals, new Set(locks.keys()), specials);
                 if (pair) pair.forEach(i => tiles[i].classList.add('gem-hint'));
                 later(() => tiles.forEach(el => el.classList.remove('gem-hint')), 2200);
             },
+            get specials() { return new Map(specials); },
+            get obstacles() { return new Map(locks); },
             get board() { return board.slice(); },
             get busy() { return busy; },
             get moves() { return moves; }
         };
     }
-    const Match3 = { adjacent, matches, findMove, newBoard, collapse, collapsePlan, missionProgress, mount };
+    const Match3 = { adjacent, matches, findMove, newBoard, collapse, collapsePlan, missionProgress, combinationPlan, blast, unlockAdjacent, mount };
     root.Match3 = Match3;
     if (typeof module !== 'undefined') module.exports = Match3;
 })(typeof window === 'undefined' ? globalThis : window);
