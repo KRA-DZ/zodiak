@@ -3084,14 +3084,14 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="journey.css?v=paths-4">
-    <link rel="stylesheet" href="observatory.css?v=paths-4">
+    <link rel="stylesheet" href="journey.css?v=worlds-5">
+    <link rel="stylesheet" href="observatory.css?v=worlds-5"><link rel="stylesheet" href="worlds.css?v=worlds-5">
 </head>
 
 <body>
-    <script src="campaign.js?v=paths-4"></script><script src="journey.js?v=paths-4"></script>
-    <script src="save-files.js?v=paths-4"></script>
-    <script src="match3.js?v=paths-4"></script><script src="level-tour.js?v=paths-4"></script><script src="campaign-map.js?v=paths-4"></script>
+    <script src="campaign.js?v=worlds-5"></script><script src="journey.js?v=worlds-5"></script>
+    <script src="save-files.js?v=worlds-5"></script>
+    <script src="match3.js?v=worlds-5"></script><script src="level-tour.js?v=worlds-5"></script><script src="campaign-map.js?v=worlds-5"></script>
     <script>
         (function() {
             var shown = false;
@@ -3182,8 +3182,10 @@
     </section>
 
     <section class="screen" id="s_hub">
+        <div class="hub-command">
         <div class="topbar">
             <span class="logo"><span class="lwheel" id="logWheel"></span><span class="brand-full">Созвездие памяти</span><span class="brand-short">Созвездие</span></span>
+<div class="welcome-strip command-meta"><span id="loginHint"></span><button class="btn" id="btnGuide">✧ Как играть</button></div>
             <span class="dustchip" title="Звёздная пыль"><svg><use href="#i-star"/></svg><span id="dustTop">0</span></span>
 
             <button class="iconbtn" id="btnCalendar" title="Ежедневные награды"><svg><use href="#i-gift"/></svg><span class="il">Дар</span><span class="dot" id="calDot" style="display:none"></span></button>
@@ -3191,7 +3193,13 @@
             <nav id="hubTools" class="hub-tools" hidden aria-label="Дополнительные разделы" inert><button class="iconbtn muteBtn" id="btnVol" title="Звук"><svg><use href="#i-vol"/></svg><span class="il">Звук</span></button><button class="iconbtn" id="btnProfile" title="Сменить знак"><svg><use href="#i-user"/></svg><span class="il">Знак</span></button><button class="iconbtn" id="btnShop" title="Лавка"><svg><use href="#i-bag"/></svg><span class="il">Лавка</span></button><button class="iconbtn" id="btnAch" title="Трофеи"><svg><use href="#i-trophy"/></svg><span class="il">Трофеи</span></button><button class="iconbtn" id="btnDaily" title="Ежедневный прогноз" style="display:none"><svg><use href="#i-clock"/></svg><span class="il">Прогноз</span></button></nav>
 
         </div>
-<section class="welcome-strip" aria-label="Помощь и серия входов"><span id="loginHint"></span><button class="btn" id="btnGuide">✧ Как играть</button></section><div class="hub-wrap">
+<section class="command-actions" aria-label="Ваше путешествие">
+<button class="command-chip" id="btnContinue">✧ Продолжить<span id="continueHint" class="sr-only"></span></button>
+<button class="command-chip" id="btnEndless">∞ Бесконечное небо<span id="endlessHint" class="sr-only"></span></button>
+<button class="command-chip" id="btnAlchemy">✶ Свободная алхимия</button>
+<button class="command-chip" id="btnJournal">☾ Предсказания<span id="journalHint" class="sr-only"></span></button>
+<div id="dailyQuest" title="Три победы за день: 50 пыли и печать Оракула"></div>
+</section></div><div class="hub-wrap">
             <aside class="hub-hero personal-observatory" aria-label="Личная обсерватория">
                 <section class="hero-panel observatory-panel" id="observatoryHost" aria-label="Ваш герой и спутник"></section>
                 <div class="hero-panel observatory-profile">
@@ -3207,7 +3215,7 @@
                         <div class="stat"><b id="stColl">0/12</b><span>коллекция</span></div>
                         <div class="stat"><b id="stAch">0/5</b><span>трофеи</span></div>
                     </div>
-                    <div class="observatory-functions"><button class="observatory-link" id="openAtlas"><span class="mystic-icon" aria-hidden="true"></span><span><b>Звёздный атлас · три печати</b><small>12 карт зодиака · ваша коллекция</small></span><span>›</span></button>
+                    <div class="observatory-functions"><button class="observatory-link" id="openAtlas"><span class="mystic-icon" aria-hidden="true"></span><span><b>Альбом знаков</b><small>12 карт зодиака · ваша коллекция</small></span><span>›</span></button>
 <button class="observatory-link" id="openTraits"><span class="mystic-icon icon-zodiac" aria-hidden="true"></span><span><b>Характер знака</b><small>Откройте 10 граней своей натуры</small></span><span>›</span></button>
 <button class="observatory-link" id="openPredictions"><span class="mystic-icon icon-oracle" aria-hidden="true"></span><span><b>Предсказания звёзд</b><small>Любовь · карьера · финансы · здоровье</small></span><span>›</span></button>
 <button class="observatory-link" id="openTrophies"><span class="mystic-icon icon-trophy" aria-hidden="true"></span><span><b>Мои трофеи</b><small>Награды за ваши открытия</small></span><span>›</span></button>
@@ -3229,16 +3237,6 @@
                     <div id="predList"></div>
                 </div>
             </aside>
-            <section class="journey-bar" aria-label="Ваше путешествие">
-                <div class="journey-heading"><span class="eyebrow">ВАШ СЛЕД В НЕБЕ</span><h2>Куда поведут звёзды?</h2><p>Играйте в своём темпе. Пыль и открытые предсказания сохраняются.</p></div>
-                <div class="journey-actions">
-                    <button class="journey-card" id="btnContinue"><span class="mode-glyph">✧</span><b>Продолжить путь</b><span id="continueHint"></span></button>
-                    <button class="journey-card" id="btnEndless"><span class="mode-glyph">∞</span><b>Бесконечное небо</b><span id="endlessHint"></span></button>
-                    <button class="journey-card" id="btnAlchemy"><span class="mode-glyph">✶</span><b>Зал алхимии</b><span>Три в ряд · свободная игра · 10 пыли за победу</span></button>
-                    <button class="journey-card" id="btnJournal"><span class="mode-glyph">☾</span><b>Предсказания</b><span id="journalHint"></span></button>
-                </div>
-                <div class="ritual-row"><div id="dailyQuest"></div></div>
-            </section>
             <section class="campaign-map" id="campaignMap"></section><div class="map-panel" id="atlasPanel" hidden>
                 <div class="bigwheel-bg" id="hubWheelBg"></div>
                 <div class="atlas-stars" id="hubStars"></div>
@@ -4427,8 +4425,8 @@
         })();
     </script>
 
-    <script src="predictions.js?v=paths-4"></script>
-    <script src="observatory.js?v=paths-4"></script>
+    <script src="predictions.js?v=worlds-5"></script>
+    <script src="observatory.js?v=worlds-5"></script>
     <script>Observatory.init(window.ZM);</script>
     <script>
         /* ═══ ДВИЖОК: аудио+музыка, фон, хаб-атлас, игра ═══ */
@@ -5305,7 +5303,7 @@
                 document.getElementById('endlessHint').textContent = 'Этап ' + ZM.save.endless.round + ' · рекорд ' + ZM.save.endless.best + ' · три сменяющихся испытания';
                 document.getElementById('journalHint').textContent = ZM.save.journal.length + ' сохранённых посланий · печатей: ' + ZM.save.omens;
                 document.getElementById('loginHint').textContent = 'Серия входов: ' + ZM.save.loginStreak + ' · календарь: ' + Math.min(31, ZM.save.calTaken.length + 1) + '/31';
-                document.getElementById('dailyQuest').innerHTML = '<b>Ритуал дня · ' + q.wins + '/3</b><span>Завершите три любых уровня: 50 пыли и предсказание на выбор.</span>' +
+                document.getElementById('dailyQuest').innerHTML = '<b>✦ Ритуал дня · ' + q.wins + '/3</b><span class="ritual-prize">50 ★ + печать</span>' +
                     (q.claimed ? '<span class="ritual-done">Награда получена</span>' : q.wins >= 3 ? '<button class="btn primary" id="claimRitual">Забрать дар</button>' : '');
                 var btn = document.getElementById('claimRitual');
                 if (btn) btn.addEventListener('click', claimRitual);
@@ -6107,7 +6105,7 @@
                     card.style.setProperty('--awakening', done / ZM.PER_SIGN);
                     card.dataset.progress = Math.round(done / ZM.PER_SIGN * 100);
                     card.setAttribute('aria-label', sg.name + ' · ' + done + ' из ' + ZM.PER_SIGN + ' уровней · ' + card.dataset.progress + '%');
-                    card.className = 'zcard' + (collected ? ' done' : '');
+                    card.className = 'zcard collectible-card' + (collected ? ' done' : '');
                     /* обложка на всю карточку; прогресс — отдельной полосой под ней */
                     card.innerHTML = '<span class="atlas-card-heading"><b>' + sg.name + '</b><span>' + ZM.GLYPHS[si] + '</span></span><span class="zcover">' +
                         '<b class="zglyph">' + ZM.GLYPHS[si] + '</b>' +
@@ -6120,6 +6118,7 @@
                             '<span class="next">' + done + '/' + ZM.PER_SIGN + ' уровней ' + ZM.ic('i-arrow') + '</span>') +
                         '</span></span>';
                     card.addEventListener('click', function() {
+                        if(collected){openSignCard(si,false);return;}
                         if(si>Campaign.frontier(ZM.save)){ZM.toast('Сначала завершите любой путь предыдущего знака',{ic:'i-lock'});return;}
                         AE.pick();
                         ZM.modalForceClose(); ZM.save.campaignChapter=Math.min(si,Campaign.frontier(ZM.save)); ZM.persist(); CampaignMap.render();
@@ -6128,9 +6127,16 @@
                 });
             }
 
+            function openSignCard(si,celebrate){
+                var sg=ZM.SIGNS[si];
+                ZM.modalOpen('<h2>'+(celebrate?'Созвездие собрано!':sg.name+' · коллекционная карта')+'</h2><div class="msub">'+(celebrate?'Все три пути завершены · 30 / 30 уровней':'Карта из вашего альбома знаков')+'</div><div class="collection-stage"><div class="collection-turn'+(celebrate?' celebration':'')+'"><div class="collection-face collection-front"><div class="collection-card-title">'+sg.name+' <span>'+ZM.GLYPHS[si]+'</span></div><img src="'+ZM.COVERS[si]+'" alt="Коллекционная карта: '+sg.name+'"><div class="collection-card-caption">'+sg.elem+' · '+sg.ruler+'<small>✦ Память · Оракул · Алхимия ✦</small></div></div><div class="collection-face collection-back">✦<small>АЛЬБОМ ЗНАКОВ</small>'+ZM.GLYPHS[si]+'</div></div></div><p class="collection-note">'+(celebrate?'Карта добавлена в альбом. Её можно открыть в личной обсерватории.':'Все три печати сняты. Знак полностью раскрыт.')+'</p><div class="m-actions"><button class="btn primary" id="collectionAlbum">Открыть альбом</button><button class="btn" id="collectionContinue">К трём путям</button></div>',{cls:'collection-modal',persistent:celebrate});
+                function leave(album){ZM.modalForceClose();if(G){killLevel();enterHub(false);}if(album)openCampaignAtlas();}
+                document.getElementById('collectionAlbum').onclick=function(){leave(true);};
+                document.getElementById('collectionContinue').onclick=function(){leave(false);};
+            }
             function openCampaignAtlas(){
                 buildAtlas();
-                ZM.modalOpen('<h2>Звёздный атлас · три печати</h2><div class="msub">12 знаков · 3 пути по 10 уровней. Завершите путь, чтобы снять его печать.</div><div id="atlasModal"></div><div class="m-actions"><button class="btn" data-close>К трём путям</button></div>',{cls:'atlas-modal'});
+                ZM.modalOpen('<h2>Альбом знаков · три печати</h2><div class="msub">12 знаков · 3 пути по 10 уровней. Завершите путь, чтобы снять его печать.</div><div id="atlasModal"></div><div class="m-actions"><button class="btn" data-close>К трём путям</button></div>',{cls:'atlas-modal'});
                 var panel=document.getElementById('atlasPanel');panel.hidden=false;document.getElementById('atlasModal').appendChild(panel);
             }
             function openSignLevels(si) {
@@ -7891,6 +7897,7 @@
                         '. Составь свою звёздную карту!';
                     copyText(txt);
                 });
+                if(Campaign.collectCard(ZM.save,si)){ZM.persist();openSignCard(si,true);}
             }
 
             function copyText(txt) {

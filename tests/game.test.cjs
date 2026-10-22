@@ -453,6 +453,8 @@ test('mobile predictions are readable, cost is shown and atlas art fits its colu
     assert.ok(sizes.text.length>40);
     await page.evaluate(()=>ZM.modalForceClose());
     await page.evaluate(()=>ZM.modalForceClose());await page.locator('#openAtlas').click();
+    // Wait for the modal entrance transform before measuring its final mobile width.
+    await page.waitForFunction(()=>{const r=document.querySelector('#atlasModal .map-panel').getBoundingClientRect();return r.width>300&&r.left>=0&&r.right<=390;});
     const fit=await page.locator('#atlasModal .map-panel').evaluate(el=>{
         const b=el.getBoundingClientRect();return {left:b.left,right:b.right,width:b.width,images:el.querySelectorAll('.zcover img').length};
     });
@@ -706,9 +708,9 @@ test('generated assets decode and the atlas leads the mobile observatory',async 
             const image=new Image();image.src=src;await image.decode();decoded.push(image.naturalWidth>0);
         }
         const avatar=document.getElementById('observatoryHost').getBoundingClientRect();
-        const modes=document.querySelector('.journey-bar').getBoundingClientRect();
+        const modes=document.querySelector('.command-actions').getBoundingClientRect();
         const atlas=document.getElementById('campaignMap').getBoundingClientRect();
-        return {decoded,above:avatar.top<modes.top,atlasFirst:atlas.top<avatar.top,columns:document.querySelectorAll('.path-legend button').length,overflow:document.documentElement.scrollWidth>innerWidth};
+        return {decoded,above:modes.top<avatar.top,atlasFirst:atlas.top<avatar.top,columns:document.querySelectorAll('.path-legend button').length,overflow:document.documentElement.scrollWidth>innerWidth};
     });
     assert.ok(result.decoded.every(Boolean));assert.equal(result.above,true);assert.equal(result.atlasFirst,true);assert.equal(result.columns,3);assert.equal(result.overflow,false);
 });
@@ -860,7 +862,7 @@ test('streak and guide lead the atlas, header opens inline and trophies avoid au
 
 test('the intertwined map offers three independent starts and moves the atlas into the observatory',async t=>{
  const page=await game(t);await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
- assert.equal(await page.locator('.path-node').count(),30);assert.equal(await page.locator('.path-node.available').count(),3);assert.equal(await page.locator('.path-node.guardian').count(),6);
+ assert.equal(await page.locator('.path-node').count(),360);assert.equal(await page.locator('.path-node.available').count(),3);assert.equal(await page.locator('.path-node.guardian').count(),72);
  assert.equal(await page.locator('#atlasPanel').isVisible(),false);
  await page.locator('#openAtlas').click();assert.equal(await page.locator('#atlasModal .zcard').count(),12);assert.equal(await page.locator('.zodiac-seal').count(),36);
  await page.locator('#modalRoot [data-close]').click();assert.equal(await page.locator('#atlasPanel').isVisible(),false);
@@ -884,4 +886,37 @@ test('a late alchemy guardian renders voids that cannot be swapped or filled by 
  await page.evaluate(()=>{document.querySelector('.gem[data-void="true"]').click();});
  assert.equal(await page.evaluate(()=>testGame.state.match3.moves),before);
  assert.equal(await page.evaluate(()=>testGame.state.match3.board.filter(n=>n===null).length),2);
+});
+
+test('compact header contains all actions, hero stays unclipped and map matches the observatory height',async t=>{
+ const page=await game(t);await page.setViewportSize({width:1366,height:900});
+ await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
+ for(const id of['btnGuide','btnContinue','btnEndless','btnAlchemy','btnJournal','dailyQuest','loginHint'])assert.equal(await page.locator('.hub-command #'+id).count(),1);
+ assert.equal(await page.locator('.journey-bar').count(),0);
+ for(const hero of['female','male'])for(const outfit of['apprentice','astral','moon','forest']){
+  const metrics=await page.evaluate(([hero,outfit])=>{const s=Observatory.state();s.hero=hero;s.outfit=outfit;Observatory.render();const figure=document.querySelector('#observatoryHost .hero-figure').getBoundingClientRect(),host=document.getElementById('observatoryHost').getBoundingClientRect();return{fits:figure.top>=host.top&&figure.bottom<=host.bottom&&figure.height>130};},[hero,outfit]);assert.equal(metrics.fits,true,hero+' '+outfit);
+ }
+ const heights=await page.evaluate(()=>[document.getElementById('campaignMap').getBoundingClientRect().height,document.querySelector('.personal-observatory').getBoundingClientRect().height]);assert.ok(Math.abs(heights[0]-heights[1])<2);
+});
+
+test('continuous map scrolls through twelve illustrated regions while future levels stay locked',async t=>{
+ const page=await game(t);await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
+ assert.equal(await page.locator('.zodiac-region').count(),12);assert.equal(await page.locator('.path-node').count(),360);
+ const decoded=await page.evaluate(async()=>Promise.all([0,1,2].map(async i=>{const image=new Image();image.src='assets/zodiac-worlds-'+i+'.png';await image.decode();return image.naturalWidth>0;})));assert.ok(decoded.every(Boolean));
+ await page.locator('[data-chapter="11"]').click();await page.clock.runFor(100);
+ assert.match(await page.locator('.path-heading h2').innerText(),/Рыбы/);
+ assert.equal(await page.locator('[data-level="330"]').getAttribute('aria-disabled'),'true');
+ await page.locator('[data-level="330"]').click({force:true});assert.equal(await page.locator('#s_hub.active').count(),1);assert.equal(await page.evaluate(()=>Campaign.frontier(ZM.save)),0);
+ await page.locator('[data-chapter="0"]').click();await page.clock.runFor(100);assert.match(await page.locator('.path-heading h2').innerText(),/Овен/);
+});
+
+test('completing a zodiac shows its rotating card and stores it in the album without replaying the celebration',async t=>{
+ const page=await game(t);await page.evaluate(()=>{ZM.save.sign=0;for(let i=0;i<29;i++)ZM.save.lvStars[i]=1;testGame.start(29);testGame.win();});
+ assert.equal(await page.locator('.collection-turn.celebration').count(),1);
+ assert.deepEqual(await page.evaluate(()=>ZM.save.albumSeen),[0]);
+ assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('zodiacMemory.v3')).albumSeen),[0]);
+ await page.locator('#collectionAlbum').click();assert.equal(await page.locator('#atlasModal .zcard.done').count(),1);
+ await page.locator('#atlasModal .zcard.done').click();assert.equal(await page.locator('.collection-turn').count(),1);assert.equal(await page.locator('.collection-turn.celebration').count(),0);
+ await page.locator('#collectionContinue').click();
+ await page.evaluate(()=>{testGame.start(29);testGame.win();});assert.equal(await page.locator('.collection-turn.celebration').count(),0);assert.equal(await page.locator('#menuBtn').count(),1);
 });

@@ -16,10 +16,18 @@ function upgrade(save){
  if(!Array.isArray(save.lvStars)||save.lvStars.length!==360)save.lvStars=new Array(360).fill(0);
  save.lvStars=save.lvStars.map(n=>Number.isInteger(n)?Math.max(0,Math.min(3,n)):0);
  save.lvOpen=Array.from({length:12},(_,s)=>Math.max(1,...Array.from({length:30},(_,l)=>save.lvStars[s*30+l]?Math.min(30,l+2):1)));
+ if(!Array.isArray(save.albumSeen))save.albumSeen=[];
+ save.albumSeen=[...new Set(save.albumSeen.filter(n=>Number.isInteger(n)&&n>=0&&n<12))];
  if(!save.pathRewards||typeof save.pathRewards!=='object')save.pathRewards={};
  if(!Number.isInteger(save.campaignMode)||save.campaignMode<0||save.campaignMode>2)save.campaignMode=0;
  if(!Number.isInteger(save.campaignChapter)||save.campaignChapter<0||save.campaignChapter>11)save.campaignChapter=0;
  return save;
+}
+function collectCard(save,sign){
+ if(!Number.isInteger(sign)||sign<0||sign>11||!save.lvStars.slice(sign*30,sign*30+30).every(n=>n>0))return false;
+ if(!Array.isArray(save.albumSeen))save.albumSeen=[];
+ if(save.albumSeen.includes(sign))return false;
+ save.albumSeen.push(sign);return true;
 }
 function generate(){const levels=[];for(let sign=0;sign<12;sign++)for(let mode=0;mode<3;mode++)for(let step=0;step<10;step++){
  const n=step+1,boss=n%5===0,rest=[1,6].includes(n),tier=Math.min(3,Math.floor(sign/4));
@@ -33,5 +41,5 @@ function generate(){const levels=[];for(let sign=0;sign<12;sign++)for(let mode=0
  }
  levels.push(cfg);
 }return levels;}
-const Campaign={modes,names,colors,id,completed,frontier,available,next,upgrade,generate};root.Campaign=Campaign;if(typeof module!=='undefined')module.exports=Campaign;
+const Campaign={modes,names,colors,id,completed,frontier,available,next,upgrade,generate,collectCard};root.Campaign=Campaign;if(typeof module!=='undefined')module.exports=Campaign;
 })(typeof window==='undefined'?globalThis:window);

@@ -220,3 +220,12 @@ test('voids remain empty barriers to matching and split gravity into separate se
  const plan=M.collapsePlan(b,[0,18],()=>.5,new Set([12]));assert.equal(plan.board[12],null);assert.equal(plan.origins[12],12);assert.equal(plan.origins[18],null);assert.equal(plan.origins[0],null);
  assert.ok(!M.combinationPlan(b,new Set([12])).found.includes(12));
 });
+
+test('an album card is collected only after all thirty levels and celebrated once',()=>{
+ const save={stats:{},ach:{}};C.upgrade(save);
+ for(let i=0;i<29;i++)save.lvStars[i]=1;
+ assert.equal(C.collectCard(save,0),false);save.lvStars[29]=1;
+ assert.equal(C.collectCard(save,0),true);assert.equal(C.collectCard(save,0),false);
+ const p=packet();C.upgrade(p.save);p.save.albumSeen=[0];assert.deepEqual(Saves.parse(JSON.stringify(p)).albumSeen,[0]);
+ p.save.albumSeen=[0,0];assert.throws(()=>Saves.parse(JSON.stringify(p)));p.save.albumSeen=[12];assert.throws(()=>Saves.parse(JSON.stringify(p)));
+});

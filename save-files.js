@@ -81,7 +81,8 @@
         if(s.journeyVersion===2&&s.campaignVersion!==1)fail();
         if(s.campaignVersion!=null&&(s.campaignVersion!==1||s.lvStars.length!==360||!int(s.campaignMode,2)||!int(s.campaignChapter,11)))fail();
         if(s.pathRewards!=null&&(!flags(s.pathRewards)||!Object.keys(s.pathRewards).every(k=>/^(?:[0-9]|1[01]):[012]$/.test(k))))fail();
-        const fields = ['created','sign','birth','dust','inv','skins','skin','lvOpen','lvStars','ach','stats','horoUsed','daily','preds','predDay','predSign','wheelBonus','traits','calStart','calLast','calTaken','journeyVersion','journal','omens','endless','loginStreak','loginLast','ritual','frag','stars','observatory','levelGuides','campaignVersion','campaignMode','campaignChapter','pathRewards'];
+        if(s.albumSeen!=null&&(!Array.isArray(s.albumSeen)||s.albumSeen.length>12||!s.albumSeen.every(n=>int(n,11))||new Set(s.albumSeen).size!==s.albumSeen.length))fail();
+        const fields = ['created','sign','birth','dust','inv','skins','skin','lvOpen','lvStars','ach','stats','horoUsed','daily','preds','predDay','predSign','wheelBonus','traits','calStart','calLast','calTaken','journeyVersion','journal','omens','endless','loginStreak','loginLast','ritual','frag','stars','observatory','levelGuides','campaignVersion','campaignMode','campaignChapter','pathRewards','albumSeen'];
         const save = {};
         fields.forEach(k => { if (Object.hasOwn(s,k)) save[k] = s[k]; });
         for (const k of ['frag','stars']) if (save[k] != null && (!Array.isArray(save[k]) || save[k].length > 108 || !save[k].every(n => int(n)))) fail();
