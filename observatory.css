@@ -34,10 +34,6 @@
 .preview-aurora { color:#83ecd5; }.preview-petals { color:#f6a7d1; }.preview-comets { color:#a5caff; }
 .back-preview { display:flex;flex-direction:column;align-items:center;justify-content:center;width:90px;height:130px;border:2px solid #d9b7e7;border-radius:10px;font-size:2.5rem;background:repeating-linear-gradient(45deg,#191736 0 12px,#302847 12px 13px);color:#dfceff; }
 .back-preview small { font-size:.8rem; }.preview-roseglass { color:#f6d8ba;border-color:#e9bdce;background:radial-gradient(ellipse at 25% 15%,#eaa2b74d,transparent),linear-gradient(145deg,#572b4d,#241333); }
-.motion-setting { display:grid;gap:8px;margin-top:24px;padding-top:20px;border-top:1px solid var(--line); }
-.motion-setting label { font-size:.8rem;color:var(--gold-hi); }
-.motion-setting select { width:100%;padding:11px;border:1px solid var(--gold-dim);border-radius:9px;background:#0e1330;color:var(--ink);font:inherit;font-size:.8rem; }
-.motion-setting p { font-size:.72rem;line-height:1.6;color:var(--muted); }
 .setup-heroes { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px; }
 .setup-hero { display:flex;align-items:center;justify-content:center;gap:8px;padding:8px;border:1px solid var(--line);border-radius:12px;background:#121532;font-size:.78rem; }
 .setup-hero .figure-art { width:60px; }
@@ -114,3 +110,93 @@ body[data-motion=minimal]::before { content:'';position:fixed;inset:0;z-index:0;
 .preview-dawn { background:linear-gradient(145deg,#724151,#2c1c3d);color:#ffd7a6;border-color:#d9a882; }
 .preview-moss { background:linear-gradient(145deg,#3b614e,#132c29);color:#bde9bd;border-color:#8cbc9c; }
 .preview-abyss { background:linear-gradient(145deg,#183d66,#08182d);color:#9fc9e8;border-color:#6e9cbb; }
+
+/* Atlas is the main journey; all personal actions share one observatory. */
+.hub-wrap { width:min(1240px,96vw);display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:20px;align-items:start; }
+.hub-wrap > .map-panel { grid-column:1;grid-row:1;min-width:0;width:100%; }
+.hub-wrap > .hub-hero { display:flex;grid-column:2;grid-row:1 / span 2;min-width:0;gap:0;border:1px solid #c5a5e855;border-radius:24px;background:linear-gradient(155deg,#272043ed,#0e142deF);box-shadow:0 16px 48px #0004;overflow:hidden; }
+.personal-observatory > .hero-panel { border:0;border-radius:0;background:none;box-shadow:none;padding:18px; }
+.personal-observatory .observatory-profile { border-top:1px solid var(--line); }
+.personal-observatory .observatory-display { min-height:200px;padding-top:4px; }
+.personal-observatory .hero-figure { width:60%;max-width:165px; }
+.personal-observatory .pet-figure { right:10%;width:30%; }
+.personal-observatory .observatory-caption { margin:8px 0 12px; }
+.personal-observatory .observatory-progress { display:none; }
+.personal-observatory .statrow { margin:16px 0; }
+.personal-observatory .stat { min-width:0; }
+.personal-observatory .hm { line-height:1.6; }
+.personal-observatory .pred-panel[hidden] { display:none; }
+.personal-observatory .hwheel-panel { border-top:1px solid var(--line); }
+.hwheel-panel > summary { cursor:pointer;color:var(--gold-hi);font-size:.8rem;list-style:none;display:flex;justify-content:space-between; }
+.hwheel-panel:not([open]) > :not(summary) { display:none; }
+.hwheel-panel[open] > summary { margin-bottom:16px; }
+.hub-wrap > .journey-bar { grid-column:1;grid-row:2; }
+.journey-heading h2 { font-size:1.35rem; }
+.observatory-functions { display:grid;gap:9px; }
+.observatory-link { display:flex;align-items:center;gap:10px;width:100%;padding:11px 9px;text-align:left;border:1px solid #c5a5e838;border-radius:14px;background:linear-gradient(120deg,#b58be51c,#ffffff03);color:var(--gold-hi);cursor:pointer;transition:border-color .2s,background .2s,transform .2s; }
+.observatory-link:hover { transform:translateY(-2px);border-color:var(--gold);background:#a387cf20; }
+.observatory-link > span:nth-child(2) { flex:1;min-width:0;display:grid;gap:5px; }
+.observatory-link b { font-size:.78rem; }
+.observatory-link small { color:var(--muted);font-size:.64rem;line-height:1.5; }
+.mystic-icon { display:inline-block;flex-shrink:0;width:48px;height:48px;background-image:url('assets/mystic-emblems.png');background-size:300% 300%;background-position:var(--icon-x,0%) var(--icon-y,0%);filter:drop-shadow(0 2px 7px #d5afff33); }
+.icon-zodiac { --icon-x:0%;--icon-y:100%; }.icon-oracle { --icon-x:50%;--icon-y:0%; }.icon-trophy { --icon-x:100%;--icon-y:0%; }
+.zcards { grid-template-columns:repeat(4,minmax(0,1fr));gap:14px; }
+.zcard { min-width:0;animation:cardIn .5s both;border-radius:17px;background:#10142d; }
+.zcard::before { animation:none;border-radius:17px; }
+.zcard:hover { transform:translateY(-4px); }
+.zcover { aspect-ratio:236 / 400;overflow:hidden; }
+.zcover img { object-fit:contain;filter:saturate(calc(.08 + var(--awakening)*.92)) brightness(calc(.43 + var(--awakening)*.57));transition:filter 1.2s ease; }
+.zcover::after { content:'';position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 22px #d9b4f42b;opacity:var(--awakening);background:linear-gradient(0deg,#d5adf520,transparent 55%); }
+.atlas-card-heading { display:flex;justify-content:space-between;align-items:center;gap:4px;width:100%;padding:10px 12px;background:linear-gradient(110deg,#40305088,#181831);color:var(--gold-hi);font-size:.76rem; }
+.atlas-card-heading > span { font-size:1.2rem; }
+.zbar { padding:10px;width:100%; }
+.awakening-label { display:block;color:#dfc4ef;font-size:.6rem;text-align:left;margin-bottom:7px; }
+.zmeta .next { font-size:.6rem; }
+.zcard.done { box-shadow:0 0 18px #d4a5f337; }
+.zcard.done .zcover::after { animation:awakenPulse 4s ease-in-out infinite; }
+@keyframes awakenPulse { 50% { opacity:.4; } }
+.achievement-medallion { position:relative;display:grid;place-items:center;width:72px;height:72px;border-radius:50%;border:1px solid #8a7ba34d;background:radial-gradient(circle,#53416477,#15182d);filter:grayscale(.9);opacity:.55; }
+.achievement-medallion .mystic-icon { width:62px;height:62px; }
+.medallion-state { position:absolute;bottom:-5px;right:0;font-size:14px;background:#22203b;border:1px solid #927ca5;border-radius:50%;width:23px;height:23px;display:grid;place-items:center; }
+.achievement-medallion.earned { opacity:1;filter:none;border-color:#e6c87d;box-shadow:0 0 20px #d7b8ee38; }
+.achievement-medallion.earned::before { content:'';position:absolute;inset:-5px;border-radius:50%;border:1px dashed #e9d3fa66;animation:medallionOrbit 22s linear infinite; }
+.achievement-medallion.earned .mystic-icon { animation:badgeFloat 4s ease-in-out infinite; }
+@keyframes medallionOrbit { to { transform:rotate(360deg); } }
+@keyframes badgeFloat { 50% { transform:translateY(-3px);filter:drop-shadow(0 0 9px #f5d7ff77); } }
+.ach-row .ai { width:80px;height:80px;min-width:80px;background:none!important;border:0; }
+/* Programmatic focus must not paint a persistent square around an oracle card. */
+.ft-card:focus { outline:none; }
+.ft-card:focus-visible { outline:2px solid var(--gold-hi);outline-offset:4px;border-radius:18px; }
+@media(max-width:1000px) { .hub-wrap { grid-template-columns:minmax(0,1fr) 280px;gap:14px; }.zcards { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media(max-width:720px) {
+ .hub-wrap { grid-template-columns:minmax(0,1fr); }
+ .hub-wrap > .map-panel { grid-column:1;grid-row:1; }
+ .hub-wrap > .hub-hero { grid-column:1;grid-row:2; }
+ .hub-wrap > .journey-bar { grid-column:1;grid-row:3; }
+ .zcards { grid-template-columns:repeat(3,minmax(0,1fr));gap:9px; }
+ .atlas-card-heading { padding:7px;font-size:.65rem; }.atlas-card-heading > span { font-size:1rem; }
+ .zbar { padding:7px; }.awakening-label,.zmeta .next { font-size:.54rem; }
+ .personal-observatory #observatoryHost { display:grid;grid-template-columns:42% minmax(0,1fr);padding:16px; }
+ .personal-observatory #observatoryHost .observatory-top { grid-column:1 / -1; }
+ .personal-observatory #observatoryHost .observatory-display { min-height:170px;grid-column:1;grid-row:2 / span 2; }
+ .personal-observatory #observatoryHost .hero-figure { width:90%; }
+ .personal-observatory #observatoryHost .pet-figure { width:45%;right:-5%; }
+ .personal-observatory #observatoryHost .observatory-caption { grid-column:2;grid-row:2; }
+ .personal-observatory #observatoryHost > .btn { grid-column:2;grid-row:3; }
+ .ach-row .arw { padding-left:0; }
+}
+@media(prefers-reduced-motion:reduce) { .achievement-medallion.earned::before,.achievement-medallion.earned .mystic-icon,.zcard.done .zcover::after { animation:none; } }
+.ft-modal:focus { outline:none; }
+
+@media(min-width:1100px) { .zcards { grid-template-columns:repeat(6,minmax(0,1fr));gap:11px; }.atlas-card-heading { padding:8px;font-size:.67rem; }.zbar { padding:8px; }.awakening-label { font-size:.55rem; } }
+.zcover img { filter:saturate(calc(.12 + var(--awakening)*.88)) brightness(calc(.6 + var(--awakening)*.4)); }
+.ach-row { opacity:1; }
+.achievement-medallion:not(.earned) { opacity:.75; }
+.achievement-inspect { cursor:pointer; }
+.achievement-inspect:hover .achievement-medallion { transform:scale(1.06); }
+.trophy-portrait { display:flex;justify-content:center;margin:20px 0 35px; }
+.trophy-portrait .achievement-medallion { width:160px;height:160px; }.trophy-portrait .mystic-icon { width:145px;height:145px; }
+.trophy-description,.trophy-reward { text-align:center;line-height:1.8; }.trophy-reward { margin:20px;color:var(--gold-hi);font-size:.85rem; }
+.toast.ach .achievement-medallion { float:left;margin:0 18px 5px 0; }
+.observatory-shortcut { display:none; }
+@media(max-width:720px) { .observatory-shortcut { display:grid;gap:4px;width:100%;padding:10px 12px;border-radius:12px;border:1px solid #b39cce66;background:#49365855;color:var(--gold-hi);text-align:left;font:inherit;font-size:.75rem; }.observatory-shortcut span { font-size:.6rem;color:var(--muted); } }

@@ -26,7 +26,7 @@ async function game(t, seed, settings = {}) {
             // Test-only access to private state; the shipped game has no debug API.
             html = html.replace('            ZM.ready = true;', `
                 window.testGame = {
-                    start: startLevel, kill: killLevel, preview: beginPreview,
+                    start: startLevel, kill: killLevel, preview: beginPreview, hub: buildHub,
                     win: finishWin, endless: startEndless, ritual: claimRitual, renderJourney: renderJourney, oracle: openOracleTable, reveal: ftReveal, journal: openJournal, calendar: openCalendar, guide: openGuide, map: useMap, power: usePower, click: onCell,
                     get state() { return G; }, get selection() { return SEL; }
                 };
@@ -39,7 +39,11 @@ async function game(t, seed, settings = {}) {
         return route.fulfill({ status: 404, body: '' });
     });
     if (seed) await page.addInitScript(save => localStorage.setItem('zodiacMemory.v3', JSON.stringify(save)), seed);
-    if (!settings.realTime) await page.clock.install();
+    if (!settings.realTime) {
+        await page.clock.install();
+        // Deterministic model tests omit native animations; real-time tests verify falling frames.
+        await page.addInitScript(() => { Element.prototype.animate = undefined; });
+    }
     await page.goto('http://game.test/index.html');
     return page;
 }
@@ -577,8 +581,7 @@ test('previous journey can be restored after an import',async t=>{
 
 test('real animation keeps survivors moving downward and waits before the next cascade',async t=>{
     const page=await game(t,undefined,{realTime:true});
-    await page.evaluate(()=>Observatory.openWardrobe());
-    await page.locator('#motionPreference').selectOption('full');
+    assert.equal(await page.evaluate(()=>matchMedia('(prefers-reduced-motion:reduce)').matches),true);
     await page.evaluate(()=>{ZM.modalForceClose();testGame.start(7,{cfg:{match3:true,rows:6,cols:6,target:3,moves:8,par:180}});});
     await page.waitForTimeout(650);
     await page.evaluate(()=>{
@@ -692,7 +695,7 @@ test('locked or unaffordable cosmetics do not spend currency and legacy collecto
     assert.equal(await page.evaluate(()=>ZM.save.dust),dust);
 });
 
-test('generated assets decode and the mobile guardian is visible above the modes',async t=>{
+test('generated assets decode and the atlas leads the mobile observatory',async t=>{
     const page=await game(t);
     await page.setViewportSize({width:390,height:844});
     await page.locator('[data-hero="male"]').click();
@@ -701,14 +704,15 @@ test('generated assets decode and the mobile guardian is visible above the modes
     assert.equal(await page.evaluate(()=>Observatory.state().hero),'male');
     const result=await page.evaluate(async()=>{
         const decoded=[];
-        for(const src of['assets/observatory-atlas.png','assets/alchemy-icons.png','assets/moon-garden.png']){
+        for(const src of['assets/observatory-atlas.png','assets/alchemy-icons.png','assets/moon-garden.png','assets/mystic-emblems.png']){
             const image=new Image();image.src=src;await image.decode();decoded.push(image.naturalWidth>0);
         }
         const avatar=document.getElementById('observatoryHost').getBoundingClientRect();
         const modes=document.querySelector('.journey-bar').getBoundingClientRect();
-        return {decoded,above:avatar.top<modes.top,visible:avatar.top>=0&&avatar.bottom<844};
+        const atlas=document.querySelector('.map-panel').getBoundingClientRect();
+        return {decoded,above:avatar.top<modes.top,atlasFirst:atlas.top<avatar.top,columns:getComputedStyle(document.getElementById('zcards')).gridTemplateColumns.split(' ').length,overflow:document.documentElement.scrollWidth>innerWidth};
     });
-    assert.ok(result.decoded.every(Boolean));assert.equal(result.above,true);assert.equal(result.visible,true);
+    assert.ok(result.decoded.every(Boolean));assert.equal(result.above,true);assert.equal(result.atlasFirst,true);assert.equal(result.columns,3);assert.equal(result.overflow,false);
 });
 
 test('shop, all wardrobe sections and the complete trophy list open through visible controls',async t=>{
@@ -725,4 +729,57 @@ test('shop, all wardrobe sections and the complete trophy list open through visi
     await page.keyboard.press('Escape');
     await page.locator('#btnHubMenu').click();await page.locator('#btnAch').click();
     assert.equal(await page.locator('.ach-row').count(),22);
+});
+
+test('atlas awakening reflects completed levels, grows monotonically and survives reload',async t=>{
+    const page=await game(t);
+    await page.locator('#setupGo').click();await page.clock.runFor(800);
+    const stages=await page.evaluate(()=>{
+        ZM.modalForceClose();const results=[];
+        for(const count of[0,1,3,6,9]){
+            for(let i=0;i<9;i++)ZM.save.lvStars[i]=i<count?1:0;
+            testGame.hub();const card=document.querySelector('.zcard');
+            results.push({percent:+card.dataset.progress,filter:getComputedStyle(card.querySelector('img')).filter,complete:card.classList.contains('done')});
+        }
+        ZM.persist();return results;
+    });
+    assert.deepEqual(stages.map(s=>s.percent),[0,11,33,67,100]);
+    assert.equal(stages[0].complete,false);assert.equal(stages[4].complete,true);
+    assert.equal(new Set(stages.map(s=>s.filter)).size,5);
+    await page.reload();await page.clock.runFor(800);
+    assert.equal(await page.locator('.zcard').first().getAttribute('data-progress'),'100');
+});
+
+test('observatory traits remain usable after modal dismissal and trophies can be examined',async t=>{
+    const page=await game(t);await page.locator('#setupGo').click();await page.clock.runFor(800);
+    await page.evaluate(()=>{ZM.modalForceClose();ZM.save.dust=500;});
+    await page.locator('#openTraits').click();
+    await page.locator('#traitsBox [data-tr="0"]').click();
+    assert.equal(await page.locator('#traitsBox .trait.open').count(),1);
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('#traitsHome #traitsBox').count(),1);
+    await page.locator('#openTraits').click();
+    assert.equal(await page.locator('#traitsBox .trait.open').count(),1);
+    await page.locator('#modalRoot [data-close]').click();
+    await page.evaluate(()=>{ZM.save.ach.tutorial=true;});
+    await page.locator('#openTrophies').click();
+    await page.locator('[data-ach-id="tutorial"]').click();
+    assert.equal(await page.locator('.trophy-portrait .earned').count(),1);
+    await page.locator('#backTrophies').click();
+    assert.equal(await page.locator('.ach-row').count(),22);
+    await page.keyboard.press('Escape');
+    await page.evaluate(()=>Observatory.openWardrobe());
+    assert.equal(await page.locator('#motionPreference').count(),0);
+    assert.doesNotMatch(await page.locator('#modalRoot').innerText(),/Движение фишек/);
+});
+
+test('oracle does not auto-focus Love and keeps an accessible keyboard focus indicator',async t=>{
+    const page=await game(t);await page.evaluate(()=>testGame.oracle());
+    assert.equal(await page.evaluate(()=>document.activeElement.classList.contains('ft-modal')),true);
+    assert.equal(await page.locator('.ft-card:focus').count(),0);
+    await page.keyboard.press('Tab');
+    assert.equal(await page.evaluate(()=>document.activeElement.dataset.cat),'love');
+    assert.equal(await page.locator('.ft-card:focus-visible').count(),1);
+    await page.locator('.ft-card[data-cat="career"]').click();
+    assert.equal(await page.locator('.ft-card[data-cat="love"]:focus').count(),0);
 });

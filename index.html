@@ -3084,14 +3084,14 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="journey.css?v=observatory-1">
-    <link rel="stylesheet" href="observatory.css?v=observatory-1">
+    <link rel="stylesheet" href="journey.css?v=atlas-2">
+    <link rel="stylesheet" href="observatory.css?v=atlas-2">
 </head>
 
 <body>
-    <script src="journey.js?v=observatory-1"></script>
-    <script src="save-files.js?v=observatory-1"></script>
-    <script src="match3.js?v=observatory-1"></script>
+    <script src="journey.js?v=atlas-2"></script>
+    <script src="save-files.js?v=atlas-2"></script>
+    <script src="match3.js?v=atlas-2"></script>
     <script>
         (function() {
             var shown = false;
@@ -3192,9 +3192,9 @@
 
         </div>
 <div class="hub-wrap">
-            <div class="hub-hero">
+            <aside class="hub-hero personal-observatory" aria-label="Личная обсерватория">
                 <section class="hero-panel observatory-panel" id="observatoryHost" aria-label="Ваш герой и спутник"></section>
-                <div class="hero-panel">
+                <div class="hero-panel observatory-profile">
                     <div style="display:flex;gap:15px;align-items:center">
                         <div class="hg" id="heroGlyph"></div>
                         <div>
@@ -3207,24 +3207,28 @@
                         <div class="stat"><b id="stColl">0/12</b><span>коллекция</span></div>
                         <div class="stat"><b id="stAch">0/5</b><span>трофеи</span></div>
                     </div>
-                    <details class="traits-disclosure"><summary>Характер знака · 10 граней</summary><div id="traitsBox"></div></details>
+                    <div class="observatory-functions">
+<button class="observatory-link" id="openTraits"><span class="mystic-icon icon-zodiac" aria-hidden="true"></span><span><b>Характер знака</b><small>Откройте 10 граней своей натуры</small></span><span>›</span></button>
+<button class="observatory-link" id="openPredictions"><span class="mystic-icon icon-oracle" aria-hidden="true"></span><span><b>Предсказания звёзд</b><small>Любовь · карьера · финансы · здоровье</small></span><span>›</span></button>
+<button class="observatory-link" id="openTrophies"><span class="mystic-icon icon-trophy" aria-hidden="true"></span><span><b>Мои трофеи</b><small>Награды за ваши открытия</small></span><span>›</span></button>
+</div><div id="traitsHome" hidden><div id="traitsBox"></div></div>
                 </div>
-                <div class="hero-panel hwheel-panel" id="wheelPanel" title="Созвездие памяти">
+                <details class="hero-panel hwheel-panel" id="wheelPanel"><summary>Коллекция созвездий <span>✧</span></summary>
                     <div class="hwheel-box" id="hubWheel"></div>
                     <div class="hwheel-cap">
                         <div class="hn">Созвездие памяти</div>
                         <div class="hm" id="hubWheelCount">0/12 знаков</div>
                         <div class="hm hglow" id="hubWheelHint">соберите знаки — круг засияет</div>
                     </div>
-                </div>
-                <div class="hero-panel pred-panel">
+                </details>
+                <div class="hero-panel pred-panel" hidden>
                     <div class="pp-top">
                         <span class="lbl" style="margin:0">Предсказания звёзд</span>
                         <span id="ppDust"></span>
                     </div>
                     <div id="predList"></div>
                 </div>
-            </div>
+            </aside>
             <section class="journey-bar" aria-label="Ваше путешествие">
                 <div class="journey-heading"><span class="eyebrow">ВАШ СЛЕД В НЕБЕ</span><h2>Куда поведут звёзды?</h2><p>Играйте в своём темпе. Пыль и открытые предсказания сохраняются.</p></div>
                 <div class="journey-actions">
@@ -3240,9 +3244,9 @@
                 <div class="atlas-stars" id="hubStars"></div>
                 <div class="atlas-body" style="width:100%">
                     <div style="display:flex;align-items:center;gap:12px;width:100%;margin-bottom:4px;flex-wrap:wrap">
-                        <h2 class="atlas-title">Звёздный атлас</h2>
+                        <h2 class="atlas-title">Звёздный атлас</h2><button class="observatory-shortcut" id="observatoryShortcut">☾ Личная обсерватория <span>Характер · предсказания · трофеи ↓</span></button>
                     </div>
-                    <div class="atlas-sub" style="text-align:left;margin-bottom:12px">12 знаков · по 9 уровней: память, внимание и алхимия звёзд. Соберите все 9 уровней знака — его созвездие попадёт в коллекцию и зажжётся в круге памяти.</div>
+                    <div class="atlas-sub" style="text-align:left;margin-bottom:12px">Пробуждайте созвездия: каждый пройденный уровень возвращает карте цвет и сияние. 9 уровней — полностью раскрытый знак.</div>
                     <div class="zcards" id="zcards"></div>
                 </div>
             </div>
@@ -3356,7 +3360,7 @@
                     persistent: !!opt.persistent,
                     previousFocus: document.activeElement
                 };
-                var firstControl = r.querySelector('button:not(:disabled),[tabindex="0"]') || r.firstElementChild;
+                var firstControl = opt.cls === 'ft-modal' ? r.firstElementChild : (r.querySelector('button:not(:disabled),[tabindex="0"]') || r.firstElementChild);
                 firstControl.focus({ preventScroll: true });
                 ZM.qa('#modalRoot [data-close]').forEach(function(b) {
                     b.addEventListener('click', function() {
@@ -3370,6 +3374,8 @@
             };
             ZM.modalForceClose = function() {
                 var r = document.getElementById('modalRoot');
+                var traits = document.querySelector('#traitsModal #traitsBox');
+                if (traits) document.getElementById('traitsHome').appendChild(traits);
                 if (r) {
                     r.classList.remove('show');
                     r.innerHTML = '';
@@ -4419,8 +4425,8 @@
         })();
     </script>
 
-    <script src="predictions.js?v=observatory-1"></script>
-    <script src="observatory.js?v=observatory-1"></script>
+    <script src="predictions.js?v=atlas-2"></script>
+    <script src="observatory.js?v=atlas-2"></script>
     <script>Observatory.init(window.ZM);</script>
     <script>
         /* ═══ ДВИЖОК: аудио+музыка, фон, хаб-атлас, игра ═══ */
@@ -5724,6 +5730,7 @@
                 ZM.qa('.ft-card').forEach(function(c) {
                     c.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ftCardClick(c.getAttribute('data-cat')); } });
                     c.addEventListener('click', function() {
+                        c.focus({ preventScroll: true });
                         ftCardClick(c.getAttribute('data-cat'));
                     });
                     if (c.classList.contains('open')) ftTwinkle(c);
@@ -5897,7 +5904,7 @@
                     applySkin();
                 }
                 ZM.persist();
-                ZM.toast('<b>Достижение: «' + def.name + '»</b><small>+' + def.reward + ' звёздной пыли' +
+                ZM.toast(Observatory.achievementArt(def.id, true) + '<b>Достижение: «' + def.name + '»</b><small>+' + def.reward + ' звёздной пыли' +
                     (def.id === 'collector' ? ' и стиль «Небесный»' : '') + (def.extra ? ' · ' + Observatory.describeReward(def.extra) : '') + '</small>', {
                         cls: 'ach',
                         ic: 'i-trophy'
@@ -6094,13 +6101,16 @@
                         url = ZM.COVERS[si] || '',
                         card = document.createElement('button');
                     card.type = 'button';
+                    card.style.setProperty('--awakening', done / ZM.PER_SIGN);
+                    card.dataset.progress = Math.round(done / ZM.PER_SIGN * 100);
+                    card.setAttribute('aria-label', sg.name + ' · ' + done + ' из ' + ZM.PER_SIGN + ' уровней · ' + card.dataset.progress + '%');
                     card.className = 'zcard' + (collected ? ' done' : '');
                     /* обложка на всю карточку; прогресс — отдельной полосой под ней */
-                    card.innerHTML = '<span class="zcover">' +
+                    card.innerHTML = '<span class="atlas-card-heading"><b>' + sg.name + '</b><span>' + ZM.GLYPHS[si] + '</span></span><span class="zcover">' +
                         '<b class="zglyph">' + ZM.GLYPHS[si] + '</b>' +
                         (url ? '<img src="' + url + '" alt="' + sg.name + '" onerror="this.remove();">' : '') +
                         '</span>' +
-                        '<span class="zbar"><span class="zprog"><i style="width:' + Math.round(done / ZM.PER_SIGN * 100) + '%"></i></span>' +
+                        '<span class="zbar"><span class="awakening-label">' + (collected ? 'Созвездие пробуждено' : 'Пробуждение · ' + card.dataset.progress + '%') + '</span><span class="zprog"><i style="width:' + Math.round(done / ZM.PER_SIGN * 100) + '%"></i></span>' +
                         '<span class="zmeta">' +
                         (collected ?
                             '<span class="next">коллекция собрана ' + ZM.ic('i-check') + '</span>' :
@@ -6397,12 +6407,17 @@
                     var done = !!ZM.save.ach[d.id];
                     if (d.progress) prog[d.id] = d.progress();
                     var p = prog[d.id] ? '<span class="pcount" style="margin-left:6px">· ' + prog[d.id] + '</span>' : '';
-                    return '<div class="ach-row' + (done ? ' done' : '') + '"><span class="ai">' + ZM.ic(done ? 'i-trophy' : 'i-lock') + '</span>' +
+                    return '<div class="ach-row' + (done ? ' done' : '') + '"><button class="ai achievement-inspect" data-ach-id="' + d.id + '" aria-label="Рассмотреть трофей: ' + d.name + '">' + Observatory.achievementArt(d.id, done) + '</button>' +
                         '<span style="flex:1"><b>' + d.name + '</b><p>' + d.desc + p + '</p></span>' +
                         '<span class="arw">' + ZM.ic('i-star') + d.reward + (d.extra ? '<small>' + Observatory.describeReward(d.extra) + '</small>' : '') + (done ? ' · выдано' : '') + '</span></div>';
                 }).join('');
-                ZM.modalOpen('<h2>Трофеи</h2><div class="msub">Память, книги, преображения и далёкие звёзды · ' + ZM.ACHDEFS.length + ' достижений</div>' + rows +
+                ZM.modalOpen('<h2>Трофеи</h2><div class="msub">Память, книги, преображения и далёкие звёзды · ' + ZM.ACHDEFS.length + ' достижений<br>Нажмите на медальон, чтобы рассмотреть его.</div>' + rows +
                     '<div class="m-actions"><button class="btn" data-close>Закрыть</button></div>');
+                ZM.qa('[data-ach-id]').forEach(function(button){button.onclick=function(){
+                    var def=ZM.ACHDEFS.find(function(d){return d.id===button.dataset.achId;}),done=!!ZM.save.ach[def.id];
+                    ZM.modalOpen('<div class="trophy-portrait">'+Observatory.achievementArt(def.id,done)+'</div><h2>'+def.name+'</h2><div class="msub">'+(done?'Трофей получен':'Ещё одна звезда на вашем пути')+'</div><p class="trophy-description">'+def.desc+'</p><div class="trophy-reward">'+def.reward+' ★'+(def.extra?' · '+Observatory.describeReward(def.extra):'')+'</div><div class="m-actions"><button class="btn primary" id="backTrophies">К трофеям</button><button class="btn" data-close>Закрыть</button></div>');
+                    document.getElementById('backTrophies').onclick=openAch;
+                };});
             }
 
             function openProfile() {
@@ -7968,6 +7983,14 @@
                 enterHub(true);
             };
             Observatory.connect({ grantAch: grantAch, applySkin: applySkin, background: function() { BG.loadImages(); } });
+            document.getElementById('observatoryShortcut').onclick = function(){document.querySelector('.personal-observatory').scrollIntoView({behavior:'smooth',block:'start'});};
+            document.getElementById('openTraits').onclick = function() {
+                ZM.modalOpen('<h2>Характер знака · ' + ZM.SIGNS[ZM.save.sign].name + '</h2><div class="msub">У каждого созвездия есть свет и тень. Откройте свои 10 граней.</div><div id="traitsModal"></div><div class="m-actions"><button class="btn" data-close>В обсерваторию</button></div>');
+                document.getElementById('traitsModal').appendChild(document.getElementById('traitsBox'));
+                renderTraits();
+            };
+            document.getElementById('openPredictions').onclick = openOracleTable;
+            document.getElementById('openTrophies').onclick = openAch;
             ZM.ready = true;
             if (ZM.wantEnter) window.__ZM_ENTER();
             else if (ZM.save.sign != null) window.__ZM_ENTER();

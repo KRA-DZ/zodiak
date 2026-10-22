@@ -67,6 +67,10 @@
         const look=definition('outfits',s.outfit),pet=definition('pets',s.pet);
         return '<div class="observatory-display'+(recentWin?' celebrating':'')+'"><div class="figure-platform"></div>'+sprite(look.art[s.hero==='male'?1:0],look.name,'hero-figure')+(pet.art!=null?sprite(pet.art,pet.name,'pet-figure'):'')+'</div>';
     }
+    function achievementArt(id,done){
+        const types={master:7,speed:8,immortal:6,seven_visits:6,collector:0,first_book:0,perfect_book:0,archive12:1,four_topics:3,dresser:4,new_sky:6,familiar:5,endless10:8,endless25:8,endless50:8,cascade3:7,cascade5:7,alchemy10:7,oracle10:1,tutorial:0};
+        return '<span class="achievement-medallion'+(done?' earned':'')+'"><span class="mystic-icon" style="--icon-x:'+((types[id]??2)%3*50)+'%;--icon-y:'+Math.floor((types[id]??2)/3)*50+'%" aria-hidden="true"></span><span class="medallion-state">'+(done?'✦':'◇')+'</span></span>';
+    }
     function render(){
         if(!ZM)return;
         const s=state(),host=document.getElementById('observatoryHost');
@@ -83,7 +87,7 @@
         }
     }
     function applyPreferences(){
-        const s=state();document.body.dataset.effect=s.effect;document.body.dataset.motion=s.motion;document.body.dataset.scene=s.background;
+        const s=state();document.body.dataset.effect=s.effect;document.body.dataset.motion=reducedMotion()?'minimal':'full';document.body.dataset.scene=s.background;
         document.body.style.setProperty('--chosen-background','url("'+backgroundImage(false)+'")');
         render();
     }
@@ -159,12 +163,11 @@
         ZM.modalOpen('<h2>Обсерватория</h2><div class="msub">Создайте своего хранителя · '+ZM.save.dust+' ★</div><div class="hero-switch" aria-label="Выбор героя">'+['female','male'].map(h=>'<button class="btn'+((s.hero||'female')===h?' primary':'')+'" data-switch-hero="'+h+'">'+(h==='female'?'Волшебница':'Волшебник')+'</button>').join('')+'</div><div class="wardrobe-preview">'+portrait(s)+'</div><div class="wardrobe-tabs">'+Object.keys(names).map(k=>'<button class="btn'+(k===tab?' primary':'')+'" data-tab="'+k+'">'+names[k]+'</button>').join('')+'</div><div class="wardrobe-grid">'+catalog[tab].map(d=>{
             const has=owned(tab,d.id),active=equipped(tab,d.id),label=active?'Выбрано':has?'Применить':d.price==null?d.unlock:d.price+' ★';
             return '<article class="wardrobe-item'+(active?' equipped':'')+'">'+productArt(tab,d)+'<b>'+d.name+'</b><p>'+(d.desc||'Без изменений')+'</p><button class="btn'+(active?'':' primary')+'" data-item="'+d.id+'" '+(active||(!has&&(d.price==null||ZM.save.dust<d.price))?'disabled':'')+'>'+label+'</button></article>';
-        }).join('')+'</div><div class="motion-setting"><label for="motionPreference">Движение фишек</label><select id="motionPreference"><option value="system">Как в системе</option><option value="full">Плавное падение</option><option value="minimal">Минимум движения</option></select><p>Если система сокращает анимации, выберите «Плавное падение», чтобы видеть весь каскад.</p></div><p class="journey-note">Образы включают наряд, головной убор и волшебный предмет. Покупка общая для обоих героев. Повтор косметической награды превращается в 25 пыли.</p><div class="m-actions"><button class="btn primary" data-close>Вернуться к звёздам</button></div>',{cls:'wardrobe-modal'});
+        }).join('')+'</div><p class="journey-note">Образы включают наряд, головной убор и волшебный предмет. Покупка общая для обоих героев. Повтор косметической награды превращается в 25 пыли.</p><div class="m-actions"><button class="btn primary" data-close>Вернуться к звёздам</button></div>',{cls:'wardrobe-modal'});
         ZM.qa('[data-switch-hero]').forEach(b=>b.onclick=()=>{setHero(b.dataset.switchHero);openWardrobe(tab);});
         ZM.qa('[data-tab]').forEach(b=>b.onclick=()=>openWardrobe(b.dataset.tab));
         ZM.qa('[data-item]').forEach(b=>b.onclick=()=>{if(!state().hero)setHero('female');if(buy(tab,b.dataset.item)){openWardrobe(tab);}else ZM.toast('Не хватает звёздной пыли',{ic:'i-warn'});});
-        const motion=document.getElementById('motionPreference');motion.value=s.motion;
-        motion.onchange=()=>{state().motion=motion.value;ZM.persist();applyPreferences();};
+
     }
     function init(zm){
         ZM=zm;hydrate(ZM.save);
@@ -212,7 +215,7 @@
         if(ZM.save.ach.collector&&!state().collectorGift){giveReward(collector.extra);state().collectorGift=true;}
         ZM.persist();
     }
-    const Observatory={catalog,statKeys,hydrate,init,connect(h){hooks=h;applyPreferences();check();},state,render,setHero,equip,buy,owned,giveReward,describeReward,rewardArt,record,check,openWardrobe,backgroundImage,reducedMotion,progressOf};
+    const Observatory={catalog,statKeys,hydrate,init,connect(h){hooks=h;applyPreferences();check();},state,render,setHero,equip,buy,owned,giveReward,describeReward,rewardArt,record,check,openWardrobe,backgroundImage,reducedMotion,progressOf,achievementArt};
     root.Observatory=Observatory;
     if(typeof module!=='undefined')module.exports=Observatory;
 })(typeof window==='undefined'?globalThis:window);

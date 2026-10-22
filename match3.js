@@ -81,7 +81,8 @@
         const names = ['Солнце', 'Луна', 'Роза', 'Кристалл', 'Звезда', 'Комета'];
         const goal = options.goal || { type: 'score' };
         const seals = new Set(goal.cells || []);
-        const reduced = window.Observatory ? Observatory.reducedMotion() : window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        // Essential tile motion is always smooth; decorative particles respect the system.
+        const reducedDecorations = window.Observatory ? Observatory.reducedMotion() : window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         let board = newBoard(), tiles = [], selected = -1, score = 0, moves = options.moves;
         let busy = false, stopped = false, pointer = null, suppressClick = false;
         const timers = new Set(), animations = new Set(), effects = new Set();
@@ -92,7 +93,7 @@
             return id;
         }
         function animate(tile, frames, ms, delay = 0, hold = false) {
-            if (reduced || !tile.animate) return;
+            if (!tile.animate) return;
             const animation = tile.animate(frames, { duration: ms, delay, easing: 'cubic-bezier(.22,.68,.26,1)', fill: hold ? 'both' : 'backwards' });
             animations.add(animation);
             animation.onfinish = () => { if (!hold) animations.delete(animation); };
@@ -177,14 +178,14 @@
             if (focus >= 0) tiles[focus]?.focus({ preventScroll: true });
         }
         function praise(text) {
-            if (reduced) return;
+            if (reducedDecorations) return;
             const el = document.createElement('span');
             el.className = 'alchemy-praise'; el.textContent = text; el.setAttribute('aria-hidden', 'true');
             host.parentNode.appendChild(el); effects.add(el);
             later(() => { el.remove(); effects.delete(el); }, 1000);
         }
         function sparkle(found) {
-            if (reduced) return;
+            if (reducedDecorations) return;
             found.slice(0, 12).forEach(i => {
                 const tile = tiles[i], box = tile.getBoundingClientRect(), zone = host.parentNode.getBoundingClientRect();
                 for (let n = 0; n < 3; n++) {
