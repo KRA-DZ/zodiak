@@ -1,12 +1,13 @@
-/* Three independent paths, twelve shared zodiac chapters. No network state. */
+/* One trail of 120 stars, three optional modes per star. Stable save IDs. */
 (function(root){
 'use strict';
 const modes=['memory','oracle','alchemy'],names=['Память','Оракул','Алхимия'],colors=['#c4a2f3','#85dfd4','#f1a9c9'];
 function id(sign,mode,step){return sign*30+mode*10+step;}
 function completed(save,sign,mode){return save.lvStars.slice(id(sign,mode,0),id(sign,mode,0)+10).filter(n=>n>0).length;}
-function frontier(save){let chapter=0;while(chapter<11&&modes.some((_,m)=>completed(save,chapter,m)===10))chapter++;return chapter;}
-function available(save,index){if(!Number.isInteger(index)||index<0||index>=360)return false;const sign=Math.floor(index/30),mode=Math.floor(index%30/10),step=index%10;return sign<=frontier(save)&&(step===0||save.lvStars[index-1]>0||save.lvStars[index]>0);}
-function next(save,mode=0){const end=frontier(save);for(let sign=0;sign<=end;sign++)for(let step=0;step<10;step++){const k=id(sign,mode,step);if(!save.lvStars[k]&&available(save,k))return k;}return id(end,mode,9);}
+function visited(save,sign,step){return modes.some((_,m)=>save.lvStars[id(sign,m,step)]>0);}
+function frontier(save){let chapter=0;while(chapter<11&&Array.from({length:10},(_,step)=>visited(save,chapter,step)).every(Boolean))chapter++;return chapter;}
+function available(save,index){if(!Number.isInteger(index)||index<0||index>=360)return false;const sign=Math.floor(index/30),step=index%10;return save.lvStars[index]>0||(sign<=frontier(save)&&(step===0||visited(save,sign,step-1)||visited(save,sign,step)));}
+function next(save,mode=0){const end=frontier(save);for(let sign=0;sign<=end;sign++)for(let step=0;step<10;step++)if(!visited(save,sign,step)&&available(save,id(sign,mode,step)))return id(sign,mode,step);for(let sign=0;sign<12;sign++)for(let step=0;step<10;step++)for(const m of [mode,...[0,1,2].filter(m=>m!==mode)]){const k=id(sign,m,step);if(!save.lvStars[k]&&available(save,k))return k;}return id(11,mode,9);}
 function upgrade(save){
  if(save.campaignVersion!==1||!Array.isArray(save.lvStars)||save.lvStars.length!==360){
   save.lvStars=new Array(360).fill(0);save.lvOpen=new Array(12).fill(1);save.journeyVersion=2;save.campaignVersion=1;save.campaignMode=0;save.campaignChapter=0;save.pathRewards={};
@@ -41,5 +42,5 @@ function generate(){const levels=[];for(let sign=0;sign<12;sign++)for(let mode=0
  }
  levels.push(cfg);
 }return levels;}
-const Campaign={modes,names,colors,id,completed,frontier,available,next,upgrade,generate,collectCard};root.Campaign=Campaign;if(typeof module!=='undefined')module.exports=Campaign;
+const Campaign={nodesPerSign:10,visited,modes,names,colors,id,completed,frontier,available,next,upgrade,generate,collectCard};root.Campaign=Campaign;if(typeof module!=='undefined')module.exports=Campaign;
 })(typeof window==='undefined'?globalThis:window);

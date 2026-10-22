@@ -222,8 +222,8 @@ test('mobile setup, atlas and level selection work through visible controls', as
     await page.locator('#setupGo').click();
     await page.clock.runFor(500);
     await page.locator('#modalRoot [data-close]').click();
-    await page.locator('[data-level="0"]').click();
-    await page.locator('[data-level="0"]').click();
+    await page.locator('[data-node="0"]').click();
+    await page.locator('[data-play="0"]').click();
     await page.clock.runFor(4500);
     assert.equal(await page.locator('#s_game.active').count(), 1);
     assert.equal(await page.locator('#board .cell').count(), 16);
@@ -710,7 +710,7 @@ test('generated assets decode and the atlas leads the mobile observatory',async 
         const avatar=document.getElementById('observatoryHost').getBoundingClientRect();
         const modes=document.querySelector('.command-actions').getBoundingClientRect();
         const atlas=document.getElementById('campaignMap').getBoundingClientRect();
-        return {decoded,above:modes.top<avatar.top,atlasFirst:atlas.top<avatar.top,columns:document.querySelectorAll('.path-legend button').length,overflow:document.documentElement.scrollWidth>innerWidth};
+        return {decoded,above:modes.top<avatar.top,atlasFirst:atlas.top<avatar.top,columns:Campaign.modes.length,overflow:document.documentElement.scrollWidth>innerWidth};
     });
     assert.ok(result.decoded.every(Boolean));assert.equal(result.above,true);assert.equal(result.atlasFirst,true);assert.equal(result.columns,3);assert.equal(result.overflow,false);
 });
@@ -860,13 +860,13 @@ test('streak and guide lead the atlas, header opens inline and trophies avoid au
     assert.equal(await page.locator('.achievement-inspect:focus').count(),0);
 });
 
-test('the intertwined map offers three independent starts and moves the atlas into the observatory',async t=>{
+test('the compact trail offers three modes in every star and moves the atlas into the observatory',async t=>{
  const page=await game(t);await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
- assert.equal(await page.locator('.path-node').count(),360);assert.equal(await page.locator('.path-node.available').count(),3);assert.equal(await page.locator('.path-node.guardian').count(),72);
+ assert.equal(await page.locator('.star-node').count(),120);assert.equal(await page.locator('.star-node:not(.locked)').count(),1);assert.equal(await page.locator('.star-node.guardian').count(),24);
  assert.equal(await page.locator('#atlasPanel').isVisible(),false);
  await page.locator('#openAtlas').click();assert.equal(await page.locator('#atlasModal .zcard').count(),12);assert.equal(await page.locator('.zodiac-seal').count(),36);
  await page.locator('#modalRoot [data-close]').click();assert.equal(await page.locator('#atlasPanel').isVisible(),false);
- await page.locator('[data-level="20"]').click();await page.locator('[data-level="20"]').click();await page.clock.runFor(100);
+ await page.locator('[data-node="0"]').click();assert.equal(await page.locator('.picker-mode').count(),3);await page.locator('[data-play="20"]').click();await page.clock.runFor(100);
  assert.equal(await page.locator('.gem').count(),36);assert.equal(await page.evaluate(()=>testGame.state.cfg.campaignMode),2);
 });
 test('the tenth level removes only its own seal, rewards it once and opens the next shared chapter',async t=>{
@@ -901,12 +901,12 @@ test('compact header contains all actions, hero stays unclipped and map matches 
 
 test('continuous map scrolls through twelve illustrated regions while future levels stay locked',async t=>{
  const page=await game(t);await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
- assert.equal(await page.locator('.zodiac-region').count(),12);assert.equal(await page.locator('.path-node').count(),360);
- const decoded=await page.evaluate(async()=>Promise.all([0,1,2].map(async i=>{const image=new Image();image.src='assets/zodiac-worlds-'+i+'.png';await image.decode();return image.naturalWidth>0;})));assert.ok(decoded.every(Boolean));
+ assert.equal(await page.locator('.zodiac-region').count(),12);assert.equal(await page.locator('.star-node').count(),120);
+ const decoded=await page.evaluate(async()=>Promise.all(['aries','taurus','gemini','cancer','leo','virgo','libra','scorpio','sagittarius','capricorn','aquarius','pisces'].map(async sign=>{const image=new Image();image.src='assets/route-'+sign+'.webp';await image.decode();return image.naturalWidth>=1024&&image.naturalHeight>=1536;})));assert.ok(decoded.every(Boolean));
  await page.locator('[data-chapter="11"]').click();await page.clock.runFor(100);
  assert.match(await page.locator('.path-heading h2').innerText(),/Рыбы/);
- assert.equal(await page.locator('[data-level="330"]').getAttribute('aria-disabled'),'true');
- await page.locator('[data-level="330"]').click({force:true});assert.equal(await page.locator('#s_hub.active').count(),1);assert.equal(await page.evaluate(()=>Campaign.frontier(ZM.save)),0);
+ assert.equal(await page.locator('[data-node="110"]').getAttribute('aria-disabled'),'true');
+ await page.locator('[data-node="110"]').click({force:true});assert.equal(await page.locator('#s_hub.active').count(),1);assert.equal(await page.evaluate(()=>Campaign.frontier(ZM.save)),0);
  await page.locator('[data-chapter="0"]').click();await page.clock.runFor(100);assert.match(await page.locator('.path-heading h2').innerText(),/Овен/);
 });
 
@@ -919,4 +919,29 @@ test('completing a zodiac shows its rotating card and stores it in the album wit
  await page.locator('#atlasModal .zcard.done').click();assert.equal(await page.locator('.collection-turn').count(),1);assert.equal(await page.locator('.collection-turn.celebration').count(),0);
  await page.locator('#collectionContinue').click();
  await page.evaluate(()=>{testGame.start(29);testGame.win();});assert.equal(await page.locator('.collection-turn.celebration').count(),0);assert.equal(await page.locator('#menuBtn').count(),1);
+});
+
+test('a star remembers three mode checks and a single win opens all choices in the next star',async t=>{
+ const page=await game(t);await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
+ await page.evaluate(()=>{testGame.start(20);testGame.win();});
+ await page.locator('#menuBtn').click();await page.clock.runFor(100);
+ assert.equal(await page.locator('[data-node="0"] .checked').count(),1);
+ assert.equal(await page.locator('[data-node="1"]').getAttribute('aria-disabled'),'false');
+ await page.locator('[data-node="0"]').click();assert.equal(await page.locator('.picker-mode.done').count(),1);
+ assert.equal(await page.locator('[data-play="20"] .picker-status').innerText(),'✓ Пройдено');
+ await page.locator('.picker-close').click();await page.locator('[data-node="1"]').click();
+ assert.deepEqual(await page.locator('[data-play]').evaluateAll(nodes=>nodes.map(n=>Number(n.dataset.play))),[1,11,21]);
+ await page.locator('[data-play="1"]').click();await page.clock.runFor(4500);
+ assert.equal(await page.locator('#board .cell').count(),16);
+});
+
+test('alchemy chooser has no automatic first-item frame and the observatory scrolls without a bar',async t=>{
+ const page=await game(t);await page.setViewportSize({width:1366,height:700});await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
+ await page.locator('#btnAlchemy').click();
+ assert.equal(await page.locator('.journey-card:focus').count(),0);
+ assert.equal(await page.evaluate(()=>document.activeElement.classList.contains('modal')),true);
+ await page.keyboard.press('Tab');assert.equal(await page.locator('.journey-card:focus-visible').count(),1);
+ await page.evaluate(()=>ZM.modalForceClose());
+ const scroll=await page.evaluate(()=>{const panel=document.querySelector('.personal-observatory');panel.scrollTop=200;return{bar:getComputedStyle(panel).scrollbarWidth,top:panel.scrollTop,overflow:panel.scrollHeight>panel.clientHeight};});
+ assert.equal(scroll.bar,'none');assert.equal(scroll.overflow,true);assert.ok(scroll.top>0);
 });

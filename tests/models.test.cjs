@@ -202,13 +202,21 @@ test('portable saves retain only valid visual-guide completion flags',()=>{
 });
 
 const C=require('../campaign.js');
-test('paths unlock independently and a completed path unlocks a shared next zodiac chapter',()=>{
+test('any completed mode opens the next star, including mixed modes across a zodiac',()=>{
  const save={stats:{},ach:{}};C.upgrade(save);
  assert.ok(C.available(save,0)&&C.available(save,10)&&C.available(save,20));assert.equal(C.available(save,1),false);assert.equal(C.available(save,30),false);
- save.lvStars[0]=1;assert.ok(C.available(save,1));assert.equal(C.available(save,11),false);
+ save.lvStars[0]=1;assert.ok(C.available(save,1));assert.ok(C.available(save,11)&&C.available(save,21));
  for(let i=20;i<30;i++)save.lvStars[i]=1;
  assert.equal(C.frontier(save),1);assert.ok(C.available(save,30)&&C.available(save,40)&&C.available(save,50));assert.equal(C.available(save,60),false);
  assert.equal(C.next(save,2),50);assert.equal(C.completed(save,0,2),10);assert.equal(C.completed(save,0,0),1);
+});
+test('mixed modes advance the trail while complete collection still requires all thirty games',()=>{
+ const save={stats:{},ach:{}};C.upgrade(save);
+ for(let step=0;step<10;step++)save.lvStars[C.id(0,step%3,step)]=1;
+ assert.equal(C.frontier(save),1);assert.equal(C.next(save,2),50);
+ assert.ok([30,40,50].every(id=>C.available(save,id)));assert.equal(C.collectCard(save,0),false);
+ const before=save.lvStars.slice();C.upgrade(save);assert.deepEqual(save.lvStars,before);
+ assert.ok([0,10,20,9,19,29].every(id=>C.available(save,id)));
 });
 test('new campaign saves round-trip all 360 stars, chapter selection and claimed seal gifts',()=>{
  const p=packet();C.upgrade(p.save);p.save.lvStars[359]=3;p.save.pathRewards['11:2']=true;

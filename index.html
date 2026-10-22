@@ -3084,14 +3084,14 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="journey.css?v=worlds-5">
-    <link rel="stylesheet" href="observatory.css?v=worlds-5"><link rel="stylesheet" href="worlds.css?v=worlds-5">
+    <link rel="stylesheet" href="journey.css?v=trail-6">
+    <link rel="stylesheet" href="observatory.css?v=trail-6"><link rel="stylesheet" href="worlds.css?v=trail-6">
 </head>
 
 <body>
-    <script src="campaign.js?v=worlds-5"></script><script src="journey.js?v=worlds-5"></script>
-    <script src="save-files.js?v=worlds-5"></script>
-    <script src="match3.js?v=worlds-5"></script><script src="level-tour.js?v=worlds-5"></script><script src="campaign-map.js?v=worlds-5"></script>
+    <script src="campaign.js?v=trail-6"></script><script src="journey.js?v=trail-6"></script>
+    <script src="save-files.js?v=trail-6"></script>
+    <script src="match3.js?v=trail-6"></script><script src="level-tour.js?v=trail-6"></script><script src="campaign-map.js?v=trail-6"></script>
     <script>
         (function() {
             var shown = false;
@@ -3358,7 +3358,7 @@
                     persistent: !!opt.persistent,
                     previousFocus: document.activeElement
                 };
-                var firstControl = (opt.cls === 'ft-modal' || opt.cls === 'trophies-modal') ? r.firstElementChild : (r.querySelector('button:not(:disabled),[tabindex="0"]') || r.firstElementChild);
+                var firstControl = opt.focusFirst ? (r.querySelector('button:not(:disabled),[tabindex="0"]') || r.firstElementChild) : r.firstElementChild;
                 firstControl.focus({ preventScroll: true });
                 ZM.qa('#modalRoot [data-close]').forEach(function(b) {
                     b.addEventListener('click', function() {
@@ -4425,8 +4425,8 @@
         })();
     </script>
 
-    <script src="predictions.js?v=worlds-5"></script>
-    <script src="observatory.js?v=worlds-5"></script>
+    <script src="predictions.js?v=trail-6"></script>
+    <script src="observatory.js?v=trail-6"></script>
     <script>Observatory.init(window.ZM);</script>
     <script>
         /* ═══ ДВИЖОК: аудио+музыка, фон, хаб-атлас, игра ═══ */
@@ -5478,6 +5478,7 @@
                     '<article><b>01 · Созвездие памяти</b><p>Запомните карты и открывайте одинаковые пары. Триады состоят из трёх карт; обманки не имеют пары. Подсказка помогает один раз бесплатно. На больших полях карты снова показываются каждые 15 секунд.</p></article>' +
                     '<article><b>02 · Оракул</b><p>Запомните отмеченные карты — их не больше двух. После тасовки найдите все нужные знаки. Каждый этап меняет расклад.</p></article>' +
                     '<article><b>03 · Алхимия звёзд</b><p>Выберите два соседних символа и обменяйте их местами. Линии от трёх символов исчезают, четыре и больше дают дополнительный ход. Неудачный обмен не тратит ход. Четыре в ряд создают луч, пять — призму цвета, Т- и Г-комбинации — бомбу. Обмен бонуса запускает его силу; бонусы запускают друг друга. Замки открываются одной соседней комбинацией, лёд — двумя. Можно выбирать символы нажатием или свайпом. В особых раскладах собирайте нужное светило либо снимайте лунные печати.</p></article>' +
+                    '<article><b>Звёздная тропа</b><p>Нажмите на звёздочку и выберите режим. Любая победа открывает следующую звёздочку. Три отметки под кругом показывают пройденные режимы. Закройте все три режима в десяти звёздочках знака, чтобы добавить его карту в альбом.</p></article>' +
                     '<article><b>Награды и возвращения</b><p>Первое прохождение уровня: 25 пыли, повторное: 10. Предсказание стоит 50 пыли или одну печать Оракула. Три победы за день дают 50 пыли и печать. В бесконечном небе каждый третий этап тоже приносит печать.</p></article>' +
                     '<article><b>Ваше личное небо</b><p>Прогресс хранится в этом браузере. Очистка данных сайта удаляет сохранение. В книге можно скачать копию и восстановить её в другом браузере. Перед заменой прогресса вы увидите подтверждение.</p></article>' +
                     '</div><div class="m-actions"><button class="btn primary" id="tutorialDone" data-close>Обучение просмотрено</button></div>');
@@ -6119,7 +6120,7 @@
                         '</span></span>';
                     card.addEventListener('click', function() {
                         if(collected){openSignCard(si,false);return;}
-                        if(si>Campaign.frontier(ZM.save)){ZM.toast('Сначала завершите любой путь предыдущего знака',{ic:'i-lock'});return;}
+                        if(si>Campaign.frontier(ZM.save)){ZM.toast('Сначала пройдите по одному режиму в каждой звёздочке предыдущего знака',{ic:'i-lock'});return;}
                         AE.pick();
                         ZM.modalForceClose(); ZM.save.campaignChapter=Math.min(si,Campaign.frontier(ZM.save)); ZM.persist(); CampaignMap.render();
                     });
@@ -6129,14 +6130,14 @@
 
             function openSignCard(si,celebrate){
                 var sg=ZM.SIGNS[si];
-                ZM.modalOpen('<h2>'+(celebrate?'Созвездие собрано!':sg.name+' · коллекционная карта')+'</h2><div class="msub">'+(celebrate?'Все три пути завершены · 30 / 30 уровней':'Карта из вашего альбома знаков')+'</div><div class="collection-stage"><div class="collection-turn'+(celebrate?' celebration':'')+'"><div class="collection-face collection-front"><div class="collection-card-title">'+sg.name+' <span>'+ZM.GLYPHS[si]+'</span></div><img src="'+ZM.COVERS[si]+'" alt="Коллекционная карта: '+sg.name+'"><div class="collection-card-caption">'+sg.elem+' · '+sg.ruler+'<small>✦ Память · Оракул · Алхимия ✦</small></div></div><div class="collection-face collection-back">✦<small>АЛЬБОМ ЗНАКОВ</small>'+ZM.GLYPHS[si]+'</div></div></div><p class="collection-note">'+(celebrate?'Карта добавлена в альбом. Её можно открыть в личной обсерватории.':'Все три печати сняты. Знак полностью раскрыт.')+'</p><div class="m-actions"><button class="btn primary" id="collectionAlbum">Открыть альбом</button><button class="btn" id="collectionContinue">К трём путям</button></div>',{cls:'collection-modal',persistent:celebrate});
+                ZM.modalOpen('<h2>'+(celebrate?'Созвездие собрано!':sg.name+' · коллекционная карта')+'</h2><div class="msub">'+(celebrate?'Все три пути завершены · 30 / 30 уровней':'Карта из вашего альбома знаков')+'</div><div class="collection-stage"><div class="collection-turn'+(celebrate?' celebration':'')+'"><div class="collection-face collection-front"><div class="collection-card-title">'+sg.name+' <span>'+ZM.GLYPHS[si]+'</span></div><img src="'+ZM.COVERS[si]+'" alt="Коллекционная карта: '+sg.name+'"><div class="collection-card-caption">'+sg.elem+' · '+sg.ruler+'<small>✦ Память · Оракул · Алхимия ✦</small></div></div><div class="collection-face collection-back">✦<small>АЛЬБОМ ЗНАКОВ</small>'+ZM.GLYPHS[si]+'</div></div></div><p class="collection-note">'+(celebrate?'Карта добавлена в альбом. Её можно открыть в личной обсерватории.':'Все три печати сняты. Знак полностью раскрыт.')+'</p><div class="m-actions"><button class="btn primary" id="collectionAlbum">Открыть альбом</button><button class="btn" id="collectionContinue">К звёздной тропе</button></div>',{cls:'collection-modal',persistent:celebrate});
                 function leave(album){ZM.modalForceClose();if(G){killLevel();enterHub(false);}if(album)openCampaignAtlas();}
                 document.getElementById('collectionAlbum').onclick=function(){leave(true);};
                 document.getElementById('collectionContinue').onclick=function(){leave(false);};
             }
             function openCampaignAtlas(){
                 buildAtlas();
-                ZM.modalOpen('<h2>Альбом знаков · три печати</h2><div class="msub">12 знаков · 3 пути по 10 уровней. Завершите путь, чтобы снять его печать.</div><div id="atlasModal"></div><div class="m-actions"><button class="btn" data-close>К трём путям</button></div>',{cls:'atlas-modal'});
+                ZM.modalOpen('<h2>Альбом знаков · три печати</h2><div class="msub">12 знаков · по 10 звёздочек с тремя режимами. Закройте все 10 игр одного режима, чтобы снять его печать.</div><div id="atlasModal"></div><div class="m-actions"><button class="btn" data-close>К звёздной тропе</button></div>',{cls:'atlas-modal'});
                 var panel=document.getElementById('atlasPanel');panel.hidden=false;document.getElementById('atlasModal').appendChild(panel);
             }
             function openSignLevels(si) {
