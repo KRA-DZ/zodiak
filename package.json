@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "test": "node --test tests/*.test.cjs"
+    "test": "node --test tests/*.test.cjs",
+    "build:yandex": "python3 scripts/build_yandex.py"
   },
   "devDependencies": {
     "playwright": "1.62.1"

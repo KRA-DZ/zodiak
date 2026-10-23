@@ -124,3 +124,11 @@ observatory-atlas.png как прямым визуальным референс�
 Границы кадров записаны в `WardrobeContent.artwork`; CSS сохраняет их
 пропорции без обрезания. PNG-оригиналы генерации оставлены в рабочей среде,
 для публикации используется WebP с качеством 90.
+
+## Локальные шрифты · 2026-10-23
+
+Manrope и Cormorant Garamond, переменные TTF из google/fonts, каталог `ofl`.
+Файлы и оригинальные SIL Open Font License находятся в `assets/fonts`.
+Загрузка с Google Fonts заменена локальными `@font-face`, включая кириллицу.
+Источники: https://github.com/google/fonts/tree/main/ofl/manrope и
+https://github.com/google/fonts/tree/main/ofl/cormorantgaramond.

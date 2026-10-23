@@ -141,3 +141,19 @@ body::after { display:none; }
 :is(.level-hero,.personal-observatory) .observatory-display>.pet-figure { width:var(--portrait-pet);max-width:none;right:auto;left:calc(50% + var(--portrait-hero) * .5 - var(--portrait-pet) * .75); }
 @media(max-width:760px) { .level-hero .observatory-display { --portrait-hero:min(80%,150px);--portrait-pet:min(38%,80px); } }
 @media(max-width:720px) { .personal-observatory .observatory-display { --portrait-hero:min(80%,160px); } }
+
+/* One aligned desktop grid: heading and field on the left, guardian on the right. */
+@media(min-width:761px) {
+ #s_game.active { display:grid;grid-template-columns:minmax(0,826px) 250px;grid-template-rows:auto minmax(0,1fr) auto;column-gap:24px;justify-content:center;align-items:start; }
+ #s_game .game-stage { display:contents; }
+ #s_game .game-head,#s_game.is-alchemy .game-head { grid-column:1;grid-row:1;width:100%;max-width:none;align-items:stretch;margin:0 0 10px; }
+ #s_game .hud-l { flex:1; }.hud-r { align-self:stretch; }
+ #s_game .game-playfield { grid-column:1;grid-row:2;height:100%;width:100%; }
+ #s_game .mission-panel { width:100%;max-width:none;margin:0 0 6px; }
+ #s_game .game-guide { width:100%;max-width:none;text-align:left;margin:0;padding:6px 2px; }
+ #s_game .board-zone { align-items:flex-start;padding-top:12px; }
+ #s_game .level-guardian { grid-column:2;grid-row:1 / span 2;align-self:start;margin:0;max-height:calc(100dvh - 24px);width:100%; }
+ #s_game .game-foot { grid-column:1;grid-row:3;width:100%;max-width:none; }
+}
+body.platform-paused #s_game { pointer-events:none; }
+body.platform-paused #s_game::after { content:'Пауза';position:fixed;inset:0;display:grid;place-items:center;background:#080c24b0;color:#f5dda1;font-size:2rem;z-index:80;backdrop-filter:blur(3px); }

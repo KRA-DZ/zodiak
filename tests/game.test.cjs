@@ -21,6 +21,7 @@ async function game(t, seed, settings = {}) {
         const url = new URL(route.request().url());
         if (url.hostname !== 'game.test') return route.abort();
         const name = path.basename(url.pathname);
+        if(name==='sdk.js'&&settings.sdkScript)return route.fulfill({contentType:'application/javascript',body:"window.platformCalls=[];window.platformEvents={};window.YaGames={init:async()=>({features:{LoadingAPI:{ready:()=>platformCalls.push('ready')},GameplayAPI:{start:()=>platformCalls.push('start'),stop:()=>platformCalls.push('stop')}},on:(name,fn)=>platformEvents[name]=fn})};"});
         if (name === 'index.html') {
             let html = fs.readFileSync(process.env.GAME_SOURCE || path.join(root, name), 'utf8');
             // Test-only access to private state; the shipped game has no debug API.
@@ -39,13 +40,14 @@ async function game(t, seed, settings = {}) {
         if (fs.existsSync(file)) return route.fulfill({ path: file });
         return route.fulfill({ status: 404, body: '' });
     });
+    if (settings.sdk) await page.addInitScript(() => { window.platformCalls=[];window.platformEvents={};window.YaGames={init:async()=>({features:{LoadingAPI:{ready:()=>platformCalls.push('ready')},GameplayAPI:{start:()=>platformCalls.push('start'),stop:()=>platformCalls.push('stop')}},on:(name,fn)=>platformEvents[name]=fn})}; });
     if (seed) await page.addInitScript(save => { if(!localStorage.getItem('zodiacMemory.v3'))localStorage.setItem('zodiacMemory.v3', JSON.stringify(save)); }, settings.legacyEconomy?seed:{...seed,economyVersion:2});
     if (!settings.realTime) {
         await page.clock.install();
         // Deterministic model tests omit native animations; real-time tests verify falling frames.
         await page.addInitScript(() => { Element.prototype.animate = undefined; });
     }
-    await page.goto('http://game.test/index.html');
+    await page.goto(settings.url||'http://game.test/index.html');
     return page;
 }
 
@@ -989,7 +991,7 @@ test('album keeps complete original art and places smaller seals and progress ou
  const page=await game(t);await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
  for(const width of [1366,390]){
   await page.setViewportSize({width,height:950});await page.evaluate(()=>document.getElementById('openAtlas').click());
-  const result=await page.evaluate(async()=>{await Promise.all([...document.querySelectorAll('.zcover img')].map(im=>im.decode()));const card=document.querySelector('.zcard'),img=card.querySelector('img'),r=img.getBoundingClientRect(),seals=card.querySelector('.card-seals').getBoundingClientRect(),progress=card.querySelector('.zbar').getBoundingClientRect();return{ratio:r.width/r.height,natural:img.naturalWidth/img.naturalHeight,sealsBelow:seals.top>=r.bottom,progressBelow:progress.top>=seals.bottom,sealsInside:card.querySelector('.zcover .zodiac-seal')!==null,size:card.querySelector('.zodiac-seal').getBoundingClientRect().width,fit:getComputedStyle(img).objectFit,overflow:document.documentElement.scrollWidth>innerWidth};});
+  const result=await page.evaluate(async()=>{await Promise.all([...document.querySelectorAll('.zcover img')].map(im=>im.decode()));const card=document.querySelector('.zcard'),img=card.querySelector('img'),r=img.getBoundingClientRect(),seals=card.querySelector('.card-seals').getBoundingClientRect(),progress=card.querySelector('.zbar').getBoundingClientRect();return{ratio:r.width/r.height,natural:img.naturalWidth/img.naturalHeight,sealsBelow:seals.top+.5>=r.bottom,progressBelow:progress.top+.5>=seals.bottom,sealsInside:card.querySelector('.zcover .zodiac-seal')!==null,size:card.querySelector('.zodiac-seal').getBoundingClientRect().width,fit:getComputedStyle(img).objectFit,overflow:document.documentElement.scrollWidth>innerWidth};});
   assert.ok(Math.abs(result.ratio-result.natural)<.001);assert.equal(result.fit,'contain');assert.equal(result.sealsBelow,true);assert.equal(result.progressBelow,true);assert.equal(result.sealsInside,false);assert.ok(result.size<=34);assert.equal(result.overflow,false);
   await page.locator('#modalRoot [data-close]').click();
  }
@@ -1007,6 +1009,7 @@ test('mobile swipes switch whole zodiac pages without opening a level from a tra
 
 test('moon seals stay on the same DOM tile during gravity and a successful exchange',async t=>{
  const page=await game(t);await start(page,20);
+ await page.evaluate(()=>{let seed=1;Math.random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};});
  await page.evaluate(()=>{
   testGame.state.match3.destroy();const host=document.getElementById('board'),board=Array.from({length:36},(_,i)=>(Math.floor(i/6)+i%6)%6);
   window.moonTest=Match3.mount(host,{initialBoard:board,rows:6,cols:6,moves:20,target:1,goal:{type:'seals',cells:[0]},specials:[[24,'row']],active:()=>true,update:()=>{},match:()=>{},win:()=>{},lose:()=>{}});
@@ -1065,4 +1068,42 @@ test('guardian follows equipped appearance, tracks mission and live star conditi
  assert.match(await page.locator('#guardianForecast').innerText(),/★☆☆/);assert.equal(await page.locator('#guardianStar2.met').count(),0);
  await start(page,10);assert.match(await page.locator('#guardianTarget').innerText(),/отмеченные карты/);
  for(const width of [1366,390]){await page.setViewportSize({width,height:844});await page.clock.runFor(300);const fit=await page.evaluate(()=>{const b=document.getElementById('board').getBoundingClientRect(),p=document.querySelector('.level-guardian').getBoundingClientRect();return{overflow:document.documentElement.scrollWidth>innerWidth,overlap:b.left<p.right&&b.right>p.left&&b.top<p.bottom&&b.bottom>p.top};});assert.equal(fit.overflow,false);assert.equal(fit.overlap,false);}
+});
+
+
+test('Yandex bridge reports readiness once, brackets play and pauses/resumes SDK overlays without losing a pending delay',async t=>{
+ const page=await game(t,null,{sdkScript:true,url:'http://game.test/index.html?yandex=1'});await page.clock.runFor(500);
+ assert.deepEqual(await page.evaluate(()=>platformCalls),['ready']);
+ await start(page,20);await page.clock.runFor(100);
+ assert.deepEqual(await page.evaluate(()=>platformCalls),['ready','start']);
+ await page.evaluate(()=>{window.delayed=false;GamePlatform.delay(()=>delayed=true,500);platformEvents.game_api_pause();});
+ const before=await page.evaluate(()=>testGame.state.elapsed);await page.clock.runFor(3000);
+ assert.equal(await page.evaluate(()=>window.delayed),false);assert.equal(await page.evaluate(()=>testGame.state.elapsed),before);
+ assert.equal(await page.evaluate(()=>GamePlatform.paused),true);assert.equal(await page.locator('body.platform-paused').count(),1);
+ await page.evaluate(()=>platformEvents.game_api_resume());await page.clock.runFor(501);
+ assert.equal(await page.evaluate(()=>window.delayed),true);assert.deepEqual(await page.evaluate(()=>platformCalls),['ready','start','stop','start']);
+ await page.evaluate(()=>ZM.modalOpen('<h2>Пауза меню</h2>'));await page.clock.runFor(1);assert.equal(await page.evaluate(()=>platformCalls.at(-1)),'stop');
+ await page.evaluate(()=>ZM.modalForceClose());await page.clock.runFor(1);assert.equal(await page.evaluate(()=>platformCalls.at(-1)),'start');
+ await page.evaluate(()=>testGame.kill());assert.equal(await page.evaluate(()=>platformCalls.at(-1)),'stop');
+ await page.evaluate(()=>{ZM.save.levelGuides.alchemy=false;testGame.start(20);});await page.clock.runFor(100);assert.equal(await page.locator('#levelTour').count(),1);assert.equal(await page.evaluate(()=>platformCalls.at(-1)),'stop');
+ await page.locator('#tourSkip').click();assert.equal(await page.evaluate(()=>platformCalls.at(-1)),'start');
+ await page.reload();await page.clock.runFor(500);assert.equal(await page.evaluate(()=>platformCalls.filter(x=>x==='ready').length),1);
+});
+test('focus pause preserves memory preview and task cancellation survives resume',async t=>{
+ const page=await game(t);await start(page,0);
+ await page.evaluate(()=>{window.cancelledFired=false;const task=GamePlatform.delay(()=>cancelledFired=true,100);GamePlatform.pause('test');GamePlatform.cancel(task);});
+ await page.clock.runFor(10000);assert.equal(await page.evaluate(()=>testGame.state.preview),true);
+ await page.evaluate(()=>GamePlatform.resume('test'));await page.clock.runFor(8000);
+ assert.equal(await page.evaluate(()=>testGame.state.preview),false);assert.equal(await page.evaluate(()=>cancelledFired),false);
+ await page.evaluate(()=>dispatchEvent(new Event('blur')));const before=await page.evaluate(()=>testGame.state.elapsed);await page.clock.runFor(2000);assert.equal(await page.evaluate(()=>testGame.state.elapsed),before);
+ await page.evaluate(()=>dispatchEvent(new Event('focus')));await page.clock.runFor(1000);assert.ok(await page.evaluate(()=>testGame.state.elapsed)>before);
+});
+
+
+test('Yandex SDK network failure leaves the standalone game playable and startup fonts are local',async t=>{
+ const page=await game(t,null,{url:'http://game.test/index.html?yandex=1'});await page.clock.runFor(500);
+ assert.equal(await page.evaluate(()=>GamePlatform.state.sdk),'unavailable');await start(page,20);
+ assert.equal(await page.locator('#board .gem').count(),36);
+ assert.equal(await page.locator('link[href*="fonts.googleapis"]').count(),0);
+ assert.equal(await page.evaluate(()=>document.fonts.check('16px Manrope')),true);
 });

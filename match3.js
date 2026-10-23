@@ -118,7 +118,7 @@
         const timers = new Set(), animations = new Set(), effects = new Set();
         const active = () => !stopped && options.active();
         function later(fn, ms) {
-            const id = setTimeout(() => { timers.delete(id); if (active()) fn(); }, ms);
+            const id = (root.GamePlatform?root.GamePlatform.delay:setTimeout)(() => { timers.delete(id); if (active()) fn(); }, ms);
             timers.add(id);
             return id;
         }
@@ -376,7 +376,7 @@
             layout: placeTiles,
             destroy() {
                 stopped = true; pointer = null; resizeObserver?.disconnect();
-                timers.forEach(clearTimeout); timers.clear();
+                timers.forEach(root.GamePlatform?root.GamePlatform.cancel:clearTimeout); timers.clear();
                 animations.forEach(a => a.cancel()); animations.clear();
                 effects.forEach(el => el.remove()); effects.clear();
                 host.classList.remove('resolving'); host.removeAttribute('aria-busy'); delete host.dataset.phase;delete host.dataset.size;delete host.dataset.shape;

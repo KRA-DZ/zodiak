@@ -1,0 +1,27 @@
+name: Package for Yandex Games
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+      - run: python3 scripts/build_yandex.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yandex-games-package
+          path: |
+            dist/zodiak-yandex.zip
+            dist/package-report.json
+          if-no-files-found: error
