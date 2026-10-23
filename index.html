@@ -7,7 +7,8 @@
     <title>Созвездие памяти</title>
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="assets/fonts/fonts.css">
-    <script src="platform.js?v=lean-16"></script>
+    <script src="i18n.js?v=locales-17"></script>
+    <script src="platform.js?v=locales-17"></script>
     <style>
          :root {
             --bg0: #07091c;
@@ -2979,14 +2980,14 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="journey.css?v=lean-16">
-    <link rel="stylesheet" href="observatory.css?v=lean-16"><link rel="stylesheet" href="worlds.css?v=lean-16">
+    <link rel="stylesheet" href="journey.css?v=locales-17">
+    <link rel="stylesheet" href="observatory.css?v=locales-17"><link rel="stylesheet" href="worlds.css?v=locales-17">
 </head>
 
 <body>
-    <script src="ad-rewards.js?v=lean-16"></script><script src="level-goals.js?v=lean-16"></script><script src="wardrobe-content.js?v=lean-16"></script><script src="economy.js?v=lean-16"></script><script src="campaign.js?v=lean-16"></script><script src="journey.js?v=lean-16"></script>
-    <script src="save-files.js?v=lean-16"></script>
-    <script src="match3.js?v=lean-16"></script><script src="level-tour.js?v=lean-16"></script><script src="campaign-map.js?v=lean-16"></script>
+    <script src="ad-rewards.js?v=locales-17"></script><script src="level-goals.js?v=locales-17"></script><script src="wardrobe-content.js?v=locales-17"></script><script src="economy.js?v=locales-17"></script><script src="campaign.js?v=locales-17"></script><script src="journey.js?v=locales-17"></script>
+    <script src="save-files.js?v=locales-17"></script>
+    <script src="match3.js?v=locales-17"></script><script src="level-tour.js?v=locales-17"></script><script src="campaign-map.js?v=locales-17"></script>
     <script>
         (function() {
             var shown = false;
@@ -3012,11 +3013,11 @@
             });
             document.addEventListener('selectstart', function(e) {
                 var t = e.target;
-                if (t && t.tagName !== 'INPUT' && t.tagName !== 'TEXTAREA') e.preventDefault();
+                if (t && t.tagName !== 'INPUT' && t.tagName !== 'TEXTAREA' && t.tagName !== 'SELECT' && t.tagName !== 'OPTION') e.preventDefault();
             });
             document.addEventListener('mousedown', function(e) {
                 var t = e.target;
-                if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || (t.closest && t.closest('input,textarea')))) return;
+                if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.tagName === 'OPTION' || (t.closest && t.closest('input,textarea,select,option')))) return;
                 e.preventDefault();
             }, {
                 passive: false
@@ -3290,7 +3291,7 @@
                 if (!_modal) return;
                 if (e.key === 'Escape' && !_modal.persistent) { e.preventDefault(); ZM.modalClose(); return; }
                 if (e.key !== 'Tab') return;
-                var controls = ZM.qa('#modalRoot button:not(:disabled),#modalRoot input:not([type=file]),#modalRoot [tabindex="0"]').filter(function(el) { return el.getClientRects().length > 0; });
+                var controls = ZM.qa('#modalRoot button:not(:disabled),#modalRoot input:not([type=file]),#modalRoot select:not(:disabled),#modalRoot [tabindex="0"]').filter(function(el) { return el.getClientRects().length > 0; });
                 if (!controls.length) { e.preventDefault(); return; }
                 var first = controls[0], last = controls[controls.length - 1];
                 if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
@@ -4321,8 +4322,8 @@
         })();
     </script>
 
-    <script src="predictions.js?v=lean-16"></script>
-    <script src="observatory.js?v=lean-16"></script>
+    <script src="predictions.js?v=locales-17"></script>
+    <script src="observatory.js?v=locales-17"></script>
     <script>Observatory.init(window.ZM);</script>
     <script>
         /* ═══ ДВИЖОК: аудио+музыка, фон, хаб-атлас, игра ═══ */
@@ -5353,7 +5354,7 @@
                 ZM.modalOpen('<h2>Книга предсказаний</h2><button class="btn primary" id="journalOracle">Получить предсказание</button><div class="msub">Последние 100 открытых посланий. Ваши записи хранятся в этом браузере.</div>' + filters +
                     '<div class="journal-list">' + (entries.length ? entries.map(function(p) {
                         var sg = ZM.SIGNS[p.sign], meta = PRED_META[p.cat];
-                        return '<article class="journal-entry"><span class="eyebrow">' + escapeHTML(p.day) + ' · ' + (sg ? sg.name : '') + ' · ' + (meta ? meta.name : '') + '</span><p>' + escapeHTML(p.text) + '</p></article>';
+                        return '<article class="journal-entry" data-forecast-sign="'+p.sign+'" data-forecast-cat="'+p.cat+'"><span class="eyebrow">' + escapeHTML(p.day) + ' · ' + (sg ? sg.name : '') + ' · ' + (meta ? meta.name : '') + '</span><p>' + escapeHTML(p.text) + '</p></article>';
                     }).join('') : '<p class="journey-note">Книга пока молчит. Завершайте испытания, собирайте пыль и раскрывайте карты в столе гадалки.</p>') + '</div>' +
                     '<details class="save-tools"><summary>Перенести или сохранить путешествие</summary><div class="m-actions"><button class="btn" id="exportJourney">Скачать копию</button><button class="btn" id="importJourney">Загрузить копию</button><button class="btn" id="undoImport" hidden>Вернуть прежний прогресс</button></div><input type="file" id="importFile" accept="application/json,.json" hidden><p id="importError" role="alert"></p></details><div class="m-actions"><button class="btn primary" data-close>Закрыть книгу</button></div>');
                 document.getElementById('journalOracle').addEventListener('click', openOracleTable);
@@ -5446,7 +5447,7 @@
                 ZM.persist();
                 refreshDailyBtn();
                 ZM.modalOpen('<h2>Ежедневный прогноз</h2>' +
-                    '<div class="msub">' + new Date().toLocaleDateString('ru-RU', {
+                    '<div class="msub" data-locale-date="'+new Date().toISOString()+'">' + new Date().toLocaleDateString(I18n.language, {
                         weekday: 'long',
                         day: 'numeric',
                         month: 'long'
@@ -7691,7 +7692,7 @@
                     var txt = '\u00ABСозвездие памяти\u00BB — ' + ZM.SIGNS[si].name + ', уровень ' + (lvIdx + 1) + ': ' +
                         ZM.STAR.repeat(stars) + ' (' + stars + ' из 3), время ' + ZM.fmt(elapsed) +
                         '. Составь свою звёздную карту!';
-                    copyText(txt);
+                    copyText(I18n.translate(txt));
                 });
                 if(Campaign.collectCard(ZM.save,si)){ZM.persist();openSignCard(si,true);}
             }
@@ -7798,6 +7799,7 @@
             };
             document.getElementById('openPredictions').onclick = openOracleTable;
             document.getElementById('openTrophies').onclick = openAch;
+            I18n.attach(ZM);
             ZM.ready = true;
             GamePlatform.ready();
             if (ZM.wantEnter) window.__ZM_ENTER();

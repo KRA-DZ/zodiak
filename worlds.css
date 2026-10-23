@@ -156,4 +156,14 @@ body::after { display:none; }
  #s_game .game-foot { grid-column:1;grid-row:3;width:100%;max-width:none; }
 }
 body.platform-paused #s_game { pointer-events:none; }
-body.platform-paused #s_game::after { content:'Пауза';position:fixed;inset:0;display:grid;place-items:center;background:#080c24b0;color:#f5dda1;font-size:2rem;z-index:80;backdrop-filter:blur(3px); }
+body.platform-paused #s_game::after { content:var(--pause-label,'Пауза');position:fixed;inset:0;display:grid;place-items:center;background:#080c24b0;color:#f5dda1;font-size:2rem;z-index:80;backdrop-filter:blur(3px); }
+.language-setting { display:grid;gap:7px;font-size:.78rem;color:var(--muted);text-align:left; }.language-setting select { width:100%;min-height:42px;border:1px solid var(--gold-dim);border-radius:10px;background:#10142e;color:var(--ink);padding:8px 12px;font:inherit; }
+#setupLanguage { margin:15px 0; }.language-modal { width:min(440px,96vw); }
+html:not([lang=ru]) .command-chip,html:not([lang=ru]) .btn { white-space:normal;overflow-wrap:anywhere; }
+html:not([lang=ru]) .level-guardian { padding-left:12px;padding-right:12px; }
+html:not([lang=ru]) .goal-text { line-height:1.5; }.goal-detail { overflow-wrap:anywhere; }
+html:not([lang=ru]) #hubTools { max-width:450px; }html:not([lang=ru]) #hubTools[hidden] { max-width:0; }
+#hubTools .iconbtn { flex:0 0 auto; }.language-setting option[data-no-i18n] { font:inherit; }
+@media(max-width:760px) { html:not([lang=ru]) .hub-command .logo { font-size:clamp(.7rem,3vw,1rem); }html:not([lang=ru]) .command-actions { gap:5px; }html:not([lang=ru]) .command-chip { font-size:.65rem; }html:not([lang=ru]) .guardian-goals { min-width:0; }html:not([lang=ru]) .goal-text { font-size:.65rem; } }
+
+html[lang=en] { --pause-label:'Paused'; }html[lang=tr] { --pause-label:'Duraklatıldı'; }

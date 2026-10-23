@@ -7,7 +7,14 @@ OUT = ROOT / 'dist'
 SUFFIXES = {'.html', '.js', '.css', '.png', '.jpg', '.jpeg', '.webp', '.svg', '.woff2', '.woff', '.ttf'}
 files = sorted(p for p in ROOT.iterdir() if p.is_file() and p.suffix in SUFFIXES)
 files += sorted(p for p in (ROOT / 'assets').rglob('*') if p.is_file() and (p.suffix in SUFFIXES or p.name.endswith('-OFL.txt')))
+files += sorted((ROOT / 'locales').glob('*.tsv'))
 assert ROOT / 'index.html' in files
+assert ROOT / 'i18n.js' in files
+locale = ROOT / 'locales' / 'ui.tsv'
+assert locale in files, 'Missing interface translations'
+rows = [line.split('|') for line in locale.read_text().splitlines() if line]
+assert rows and all(len(row) == 3 and all(row) for row in rows), 'Incomplete RU/EN/TR translation'
+assert len({row[0] for row in rows}) == len(rows), 'Duplicate translation key'
 html = (ROOT / 'index.html').read_text()
 assert 'GamePlatform.ready()' in html and 'platform.js?' in html
 assert 'fonts.googleapis.com' not in html
@@ -32,7 +39,7 @@ with zipfile.ZipFile(archive) as z:
     assert 'index.html' in z.namelist()
     assert not any(n.startswith(('/', '../')) or 'node_modules' in n or n.startswith(('tests/','artwork-source/')) for n in z.namelist())
 report = {'archive': archive.name, 'files': len(files), 'bytes': archive.stat().st_size,
-          'root_entry': 'index.html', 'sdk': 'platform.js -> /sdk.js on Yandex hosts',
+          'root_entry': 'index.html', 'languages': ['ru', 'en', 'tr'], 'sdk': 'platform.js -> /sdk.js on Yandex hosts',
           'external_startup_fonts': False, 'tests_in_archive': False, 'artwork_sources_in_archive': False}
 (OUT / 'package-report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
 print(json.dumps(report, ensure_ascii=False))

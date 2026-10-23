@@ -12,7 +12,7 @@ before(async () => {
 after(async () => { await browser?.close(); });
 
 async function game(t, seed, settings = {}) {
-    const page = await browser.newPage({ reducedMotion: 'reduce' });
+    const page = await browser.newPage({ reducedMotion: 'reduce',locale:settings.locale||'ru-RU' });
     t.after(() => page.close());
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
@@ -42,6 +42,8 @@ async function game(t, seed, settings = {}) {
     });
     if (settings.sdk) await page.addInitScript(() => { window.platformCalls=[];window.platformEvents={};window.YaGames={init:async()=>({features:{LoadingAPI:{ready:()=>platformCalls.push('ready')},GameplayAPI:{start:()=>platformCalls.push('start'),stop:()=>platformCalls.push('stop')}},on:(name,fn)=>platformEvents[name]=fn})}; });
     if(settings.rewarded)await page.addInitScript(()=>{window.adRequests=0;window.YaGames={init:async()=>({features:{LoadingAPI:{ready(){}},GameplayAPI:{start(){},stop(){}}},on(){},adv:{showRewardedVideo({callbacks}){window.adCallbacks=callbacks;window.adRequests++;callbacks.onOpen();}}})};});
+    if(settings.sdkLanguage)await page.addInitScript(lang=>{window.platformCalls=[];window.YaGames={init:async()=>({environment:{i18n:{lang}},features:{LoadingAPI:{ready:()=>platformCalls.push('ready')},GameplayAPI:{start(){},stop(){}}},on(){}})};},settings.sdkLanguage);
+    if(settings.language)await page.addInitScript(value=>{if(!localStorage.getItem('zodiacMemory.language'))localStorage.setItem('zodiacMemory.language',value);},settings.language);
     if (seed) await page.addInitScript(save => { if(!localStorage.getItem('zodiacMemory.v3'))localStorage.setItem('zodiacMemory.v3', JSON.stringify(save)); }, settings.legacyEconomy?seed:{...seed,economyVersion:2});
     if (!settings.realTime) {
         await page.clock.install();
@@ -1128,4 +1130,64 @@ test('ad offerings are absent without SDK and an exhausted hint exposes a labell
  const plain=await game(t);await plain.evaluate(()=>Observatory.openWardrobe('rewards'));assert.equal(await plain.locator('[data-ad]').count(),0);await plain.close();
  const page=await game(t,null,{rewarded:true});await start(page,20);await page.evaluate(()=>{testGame.state.hintFree=false;ZM.save.inv.hint=0;testGame.guardian();document.getElementById('btnHint').click();});assert.equal(await page.locator('[data-ad="hint"]').count(),1);
  await page.locator('[data-ad="hint"]').click();await page.evaluate(()=>{adCallbacks.onRewarded();adCallbacks.onClose();});assert.equal(await page.evaluate(()=>ZM.save.inv.hint),1);
+});
+
+test('SDK interface language selects Russian, English or Turkish independently of browser locale',async t=>{
+ for(const [lang,title] of [['ru','Созвездие памяти'],['en','Constellation of Memory'],['tr','Hafıza Takımyıldızı']]){
+  const page=await game(t,null,{sdkLanguage:lang,locale:'de-DE'});await page.evaluate(()=>I18n.ready);await page.clock.runFor(100);
+  assert.equal(await page.locator('html').getAttribute('lang'),lang);assert.equal(await page.title(),title);
+  assert.equal(await page.locator('#setupLanguage select').inputValue(),'auto');
+  assert.deepEqual(await page.evaluate(()=>platformCalls),['ready']);
+ }
+});
+
+test('manual language survives reload, wins over SDK, and auto restores SDK language',async t=>{
+ const page=await game(t,null,{sdkLanguage:'en',locale:'ru-RU'});await page.evaluate(()=>I18n.ready);
+ await page.locator('#setupLanguage select').selectOption('tr');assert.equal(await page.title(),'Hafıza Takımyıldızı');
+ await page.reload();await page.evaluate(()=>I18n.ready);assert.equal(await page.locator('html').getAttribute('lang'),'tr');
+ await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());await page.locator('#btnHubMenu').click();await page.locator('#btnLanguage').click();assert.equal(await page.evaluate(()=>!!document.activeElement.closest('.language-modal')),true);
+ assert.equal(await page.locator('.language-modal select').inputValue(),'tr');
+ await page.locator('.language-modal select').selectOption('auto');assert.equal(await page.title(),'Constellation of Memory');
+ assert.equal(await page.locator('.language-modal h2').textContent(),'Interface language');
+ await page.locator('.language-modal select').selectOption('ru');assert.equal(await page.locator('.language-modal h2').textContent(),'Язык интерфейса');
+ await page.locator('.language-modal [data-close]').focus();await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>document.activeElement.matches('.language-modal select')),true);
+});
+
+test('browser language works without SDK and unsupported languages fall back to English',async t=>{
+ for(const [locale,lang] of [['tr-TR','tr'],['ru-RU','ru'],['fr-FR','en']]){
+  const page=await game(t,null,{locale});await page.evaluate(()=>I18n.ready);assert.equal(await page.locator('html').getAttribute('lang'),lang);
+ }
+});
+
+async function visibleRussian(page){return page.evaluate(()=>{const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),texts=[];let node;while(node=walker.nextNode())if(!node.parentElement.closest('script,style,[data-no-i18n]')&&node.parentElement.getClientRects().length&&/[А-Яа-яЁё]/.test(node.textContent))texts.push(node.textContent.trim());return texts;});}
+
+test('language changes preserve active games, rewards and journal records across all modes',async t=>{
+ const page=await game(t);await page.evaluate(()=>I18n.ready);
+ for(const index of [0,10,20]){
+  await start(page,index);
+  const before=await page.evaluate(()=>{window.localeGame=testGame.state;return JSON.stringify(ZM.save);});
+  for(const lang of ['en','tr','ru']){
+   await page.evaluate(lang=>I18n.set(lang),lang);await page.clock.runFor(32);
+   assert.equal(await page.evaluate(()=>testGame.state===localeGame&&!testGame.state.finished),true);
+   assert.equal(await page.evaluate(()=>JSON.stringify(ZM.save)),before);
+   if(lang!=='ru')assert.deepEqual(await visibleRussian(page),[]);
+  }
+ }
+ await page.evaluate(()=>{testGame.kill();const text=ZM.WEEKLY[ZM.SIGNS[0].name]['Любовь'][0];ZM.save.journal=[{day:ZM.todayISO(),sign:0,cat:'love',text}];testGame.journal();});
+ const original=await page.locator('.journal-entry p').textContent();
+ for(const lang of ['en','tr']){await page.evaluate(lang=>I18n.set(lang),lang);await page.clock.runFor(32);assert.deepEqual(await visibleRussian(page),[]);assert.ok((await page.locator('.journal-entry p').textContent()).length>70);}
+ await page.evaluate(()=>I18n.set('ru'));assert.equal(await page.locator('.journal-entry p').textContent(),original);assert.equal(await page.evaluate(()=>ZM.save.journal[0].text),original);
+});
+
+test('translated hub, wardrobe, rewards, help and level tours fit desktop and phone',async t=>{
+ const page=await game(t,null,{rewarded:true});await page.evaluate(()=>I18n.ready);
+ await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
+ for(const lang of ['en','tr'])for(const width of [1366,390]){
+  await page.setViewportSize({width,height:950});await page.evaluate(lang=>{I18n.set(lang);testGame.hub();},lang);await page.clock.runFor(32);
+  assert.deepEqual(await visibleRussian(page),[]);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+  await page.locator('[data-node="0"]').click();await page.clock.runFor(32);assert.deepEqual(await visibleRussian(page),[]);assert.equal(await page.evaluate(()=>{const r=document.querySelector('.node-picker').getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+.5;}),true);await page.locator('.picker-close').click();
+  for(const tab of ['cases','outfits','pets','rewards']){await page.evaluate(tab=>Observatory.openWardrobe(tab),tab);await page.clock.runFor(32);assert.deepEqual(await visibleRussian(page),[],lang+' '+tab);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await page.evaluate(()=>ZM.modalForceClose());}
+  await page.evaluate(()=>testGame.guide());await page.clock.runFor(32);assert.deepEqual(await visibleRussian(page),[]);await page.evaluate(()=>ZM.modalForceClose());
+  for(const mode of ['memory','oracle','alchemy']){await page.evaluate(mode=>LevelTour.start(mode,()=>{}),mode);for(let n=0;n<(mode==='alchemy'?4:3);n++){await page.clock.runFor(32);assert.deepEqual(await visibleRussian(page),[]);assert.equal(await page.evaluate(()=>{const r=document.querySelector('.tour-card').getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+.5&&r.top>=0&&r.bottom<=innerHeight+.5;}),true);await page.locator('#tourNext').click();}}
+ }
 });
