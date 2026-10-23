@@ -167,3 +167,9 @@ html:not([lang=ru]) #hubTools { max-width:450px; }html:not([lang=ru]) #hubTools[
 @media(max-width:760px) { html:not([lang=ru]) .hub-command .logo { font-size:clamp(.7rem,3vw,1rem); }html:not([lang=ru]) .command-actions { gap:5px; }html:not([lang=ru]) .command-chip { font-size:.65rem; }html:not([lang=ru]) .guardian-goals { min-width:0; }html:not([lang=ru]) .goal-text { font-size:.65rem; } }
 
 html[lang=en] { --pause-label:'Paused'; }html[lang=tr] { --pause-label:'Duraklatıldı'; }
+.cloud-modal { width:min(700px,96vw); }.cloud-copies { display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0; }.cloud-copy { min-width:0;border:1px solid var(--line);border-radius:14px;padding:14px;background:#0c1028; }.cloud-copy h3 { color:var(--gold); }.cloud-copy p { margin:8px 0;font-size:.85rem; }
+#btnCloud[data-cloud-state=conflict] { color:#ffe49b;box-shadow:inset 0 0 0 1px #e0b85b; }#setupCloud { margin-bottom:12px; }
+html:not([lang=ru]) #hubTools { max-width:540px; }html:not([lang=ru]) #hubTools[hidden] { max-width:0; }
+@media(max-width:420px) { .cloud-copies { gap:6px; }.cloud-copy { padding:10px; }.cloud-copy h3 { font-size:.9rem; }.cloud-copy p { font-size:.75rem; } }
+#btnHubMenu[data-cloud-conflict=true] { box-shadow:inset 0 0 0 1px #e0b85b;color:#ffe49b; }
+#hubTools { max-width:540px; }

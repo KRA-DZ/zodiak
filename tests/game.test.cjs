@@ -44,6 +44,12 @@ async function game(t, seed, settings = {}) {
     if(settings.rewarded)await page.addInitScript(()=>{window.adRequests=0;window.YaGames={init:async()=>({features:{LoadingAPI:{ready(){}},GameplayAPI:{start(){},stop(){}}},on(){},adv:{showRewardedVideo({callbacks}){window.adCallbacks=callbacks;window.adRequests++;callbacks.onOpen();}}})};});
     if(settings.sdkLanguage)await page.addInitScript(lang=>{window.platformCalls=[];window.YaGames={init:async()=>({environment:{i18n:{lang}},features:{LoadingAPI:{ready:()=>platformCalls.push('ready')},GameplayAPI:{start(){},stop(){}}},on(){}})};},settings.sdkLanguage);
     if(settings.language)await page.addInitScript(value=>{if(!localStorage.getItem('zodiacMemory.language'))localStorage.setItem('zodiacMemory.language',value);},settings.language);
+    if(settings.cloud)await page.addInitScript(config=>{
+        window.cloudCalls=[];window.cloudAuthorized=config.authorized!==false;window.cloudReadError=!!config.readError;window.cloudWriteError=!!config.writeError;window.cloudHoldWrite=false;
+        if(!localStorage.getItem('mock.cloud.initialized')){localStorage.setItem('mock.cloud.initialized','1');if(config.packet)localStorage.setItem('mock.cloud.data',JSON.stringify(config.packet));}
+        window.mockPlayer={isAuthorized:()=>cloudAuthorized,getUniqueID:()=>config.account||'test-account',getData:async keys=>{cloudCalls.push(['read',keys]);if(cloudReadError)throw Error('offline');return JSON.parse(localStorage.getItem('mock.cloud.data')||'{}');},setData:async(data,flush)=>{cloudCalls.push(['write',data,flush]);if(cloudWriteError)throw Error('offline');if(cloudHoldWrite)await new Promise(resolve=>window.releaseCloudWrite=resolve);localStorage.setItem('mock.cloud.data',JSON.stringify(data));}};
+        window.YaGames={init:async()=>({features:{LoadingAPI:{ready(){}},GameplayAPI:{start(){},stop(){}}},on(){},getPlayer:async options=>{cloudCalls.push(['player',options]);return mockPlayer;},auth:{openAuthDialog:async()=>{cloudCalls.push(['auth']);if(config.authError)throw Error('cancel');cloudAuthorized=true;}}})};
+    },settings.cloud);
     if (seed) await page.addInitScript(save => { if(!localStorage.getItem('zodiacMemory.v3'))localStorage.setItem('zodiacMemory.v3', JSON.stringify(save)); }, settings.legacyEconomy?seed:{...seed,economyVersion:2});
     if (!settings.realTime) {
         await page.clock.install();
@@ -1190,4 +1196,105 @@ test('translated hub, wardrobe, rewards, help and level tours fit desktop and ph
   await page.evaluate(()=>testGame.guide());await page.clock.runFor(32);assert.deepEqual(await visibleRussian(page),[]);await page.evaluate(()=>ZM.modalForceClose());
   for(const mode of ['memory','oracle','alchemy']){await page.evaluate(mode=>LevelTour.start(mode,()=>{}),mode);for(let n=0;n<(mode==='alchemy'?4:3);n++){await page.clock.runFor(32);assert.deepEqual(await visibleRussian(page),[]);assert.equal(await page.evaluate(()=>{const r=document.querySelector('.tour-card').getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+.5&&r.top>=0&&r.bottom<=innerHeight+.5;}),true);await page.locator('#tourNext').click();}}
  }
+});
+
+async function cloudUntil(page,condition){
+ for(let i=0;i<100;i++){try{if(await page.evaluate(condition))return;}catch(e){if(!/context was destroyed|navigation|ZM is not defined|CloudSave is not defined/.test(e.message))throw e;}await page.clock.runFor(100);}
+ assert.fail('cloud condition did not settle: '+String(condition)+' '+JSON.stringify(await page.evaluate(()=>({status:CloudSave.status,calls:window.cloudCalls?.map(c=>c[0]),modal:document.querySelector('#modalRoot h2')?.textContent}))));
+}
+
+test('authorized Yandex players upload validated progress and coalesce repeated changes',async t=>{
+ const page=await game(t,null,{cloud:{}});await cloudUntil(page,()=>CloudSave.status==='synced');
+ assert.equal(await page.evaluate(()=>cloudCalls.filter(c=>c[0]==='write').length),1);
+ assert.deepEqual(await page.evaluate(()=>cloudCalls.find(c=>c[0]==='player')[1]),{scopes:false});
+ await page.evaluate(()=>{for(let i=0;i<10;i++){ZM.save.dust++;ZM.persist();}});
+ await page.clock.runFor(29000);assert.equal(await page.evaluate(()=>cloudCalls.filter(c=>c[0]==='write').length),1);
+ await page.clock.runFor(1500);await cloudUntil(page,()=>cloudCalls.filter(c=>c[0]==='write').length===2);
+ assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('mock.cloud.data')).zodiacMemoryCloud.save.dust),10);
+ assert.equal(await page.evaluate(()=>cloudCalls.filter(c=>c[0]==='write').every(c=>c[2]===true)),true);
+});
+
+test('a fresh browser restores the whole cloud save without writing its empty progress over it',async t=>{
+ const source=await game(t);const save=await source.evaluate(()=>{ZM.save.dust=171;ZM.save.lvStars[0]=3;ZM.save.sign=0;ZM.save.observatory.owned.pets.cat=true;ZM.save.observatory.pet='cat';ZM.save.ach.familiar=true;ZM.save.adRewards={day:ZM.todayISO(),counts:{hint:1,dust:2,outfit:1},chosenUsed:true,target:'starreader',progress:2};return ZM.save;});
+ const packet={zodiacMemoryCloud:{version:1,id:'remote-progress',updatedAt:Date.now(),save}};
+ const page=await game(t,null,{cloud:{packet}});await cloudUntil(page,()=>ZM.save.dust===171&&CloudSave.connected);
+ assert.equal(await page.evaluate(()=>ZM.save.lvStars[0]),3);assert.equal(await page.evaluate(()=>ZM.save.observatory.pet),'cat');assert.equal(await page.evaluate(()=>ZM.save.adRewards.progress),2);
+ assert.ok(await page.evaluate(()=>!!localStorage.getItem('zodiacMemory.beforeCloud')));
+ assert.equal(await page.evaluate(()=>cloudCalls.filter(c=>c[0]==='write').every(c=>c[1].zodiacMemoryCloud.save.dust===171&&c[1].zodiacMemoryCloud.save.lvStars[0]===3)),true);
+});
+
+test('divergent saves require an explicit choice and a newer remote revision is never silently overwritten',async t=>{
+ const source=await game(t);const save=await source.evaluate(()=>{ZM.save.sign=0;ZM.save.dust=70;ZM.save.lvStars[0]=3;return ZM.save;});
+ const packet={zodiacMemoryCloud:{version:1,id:'remote-branch-a',updatedAt:Date.now(),save}};
+ const page=await game(t,{...save,dust:25},{cloud:{packet}});await cloudUntil(page,()=>CloudSave.status==='conflict');await page.clock.runFor(800);
+ assert.equal(await page.evaluate(()=>cloudCalls.filter(c=>c[0]==='write').length),0);await page.evaluate(()=>{ZM.modalForceClose();CloudSave.open();});
+ assert.match(await page.locator('.cloud-copies').textContent(),/70/);assert.match(await page.locator('.cloud-copies').textContent(),/25/);
+ await page.evaluate(()=>{const data=JSON.parse(localStorage.getItem('mock.cloud.data'));data.zodiacMemoryCloud.id='remote-branch-b';data.zodiacMemoryCloud.save.dust=80;localStorage.setItem('mock.cloud.data',JSON.stringify(data));});
+ await page.locator('#cloudLocal').click();await cloudUntil(page,()=>document.querySelector('.cloud-copies')?.textContent.includes('80'));
+ assert.equal(await page.evaluate(()=>cloudCalls.filter(c=>c[0]==='write').length),0);
+ await page.locator('#cloudLocal').click();await page.clock.runFor(31000);await cloudUntil(page,()=>CloudSave.status==='synced');
+ assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('mock.cloud.data')).zodiacMemoryCloud.save.dust),25);
+});
+
+test('guest play never opens authorization automatically; cancellation leaves local progress intact',async t=>{
+ const page=await game(t,null,{cloud:{authorized:false,authError:true}});await cloudUntil(page,()=>CloudSave.status==='guest');
+ assert.equal(await page.evaluate(()=>cloudCalls.some(c=>['auth','read','write'].includes(c[0]))),false);
+ await page.evaluate(()=>{ZM.save.dust=42;ZM.persist();CloudSave.open();});await page.locator('#cloudLogin').click();await cloudUntil(page,()=>CloudSave.status==='guest');
+ assert.equal(await page.evaluate(()=>ZM.save.dust),42);assert.equal(await page.evaluate(()=>cloudCalls.filter(c=>c[0]==='auth').length),1);
+ await start(page);assert.equal(await page.evaluate(()=>!!testGame.state),true);
+});
+
+test('network errors and malformed cloud packets never overwrite either save',async t=>{
+ for(const config of [{readError:true},{packet:{zodiacMemoryCloud:{version:9}}}]){
+  const page=await game(t,null,{cloud:config});await cloudUntil(page,()=>['error','invalid'].includes(CloudSave.status));
+  await page.evaluate(()=>{ZM.save.dust=33;ZM.persist();});await page.clock.runFor(31000);
+  assert.equal(await page.evaluate(()=>cloudCalls.filter(c=>c[0]==='write').length),0);assert.equal(await page.evaluate(()=>ZM.save.dust),33);
+ }
+});
+
+test('cloud changes made during an in-flight upload remain pending and cannot start a parallel write',async t=>{
+ const page=await game(t,null,{cloud:{}});await cloudUntil(page,()=>CloudSave.status==='synced');
+ await page.evaluate(()=>{window.cloudHoldWrite=true;ZM.save.dust=5;ZM.persist();});await page.clock.runFor(31000);await cloudUntil(page,()=>!!window.releaseCloudWrite);
+ await page.evaluate(()=>{ZM.save.dust=9;ZM.persist();CloudSave.sync();window.cloudHoldWrite=false;releaseCloudWrite();});await cloudUntil(page,()=>CloudSave.status==='pending');
+ await page.clock.runFor(31000);await cloudUntil(page,()=>CloudSave.status==='synced');
+ assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('mock.cloud.data')).zodiacMemoryCloud.save.dust),9);
+ assert.equal(await page.evaluate(()=>cloudCalls.filter(c=>c[0]==='write').length),3);
+});
+
+test('cloud controls and conflict summaries are localized and fit a phone',async t=>{
+ const source=await game(t);const save=await source.evaluate(()=>{ZM.save.sign=0;ZM.save.dust=80;return ZM.save;});
+ const page=await game(t,{...save,dust:5},{cloud:{packet:{zodiacMemoryCloud:{version:1,id:'localized-remote',updatedAt:Date.now(),save}}}});await cloudUntil(page,()=>CloudSave.status==='conflict');await page.clock.runFor(800);await page.setViewportSize({width:390,height:844});
+ for(const lang of ['en','tr']){await page.evaluate(lang=>{ZM.modalForceClose();I18n.set(lang);CloudSave.open();},lang);await page.clock.runFor(32);assert.deepEqual(await visibleRussian(page),[]);assert.equal(await page.evaluate(()=>{const r=document.querySelector('.cloud-modal').getBoundingClientRect();return r.left>=0&&r.right<=innerWidth;}),true);}
+});
+
+test('choosing a cloud conflict restores exactly one branch and keeps the previous local backup',async t=>{
+ const source=await game(t);const save=await source.evaluate(()=>{ZM.save.sign=0;ZM.save.dust=90;return ZM.save;});
+ const page=await game(t,{...save,dust:12},{cloud:{packet:{zodiacMemoryCloud:{version:1,id:'chosen-cloud',updatedAt:Date.now(),save}}}});await cloudUntil(page,()=>CloudSave.status==='conflict');await page.clock.runFor(800);await page.evaluate(()=>{ZM.modalForceClose();CloudSave.open();});
+ await page.locator('#cloudRemote').click();await cloudUntil(page,()=>ZM.save.dust===90&&CloudSave.connected);
+ assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('zodiacMemory.beforeCloud')).dust),12);
+ assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('mock.cloud.data')).zodiacMemoryCloud.save.dust),90);
+});
+
+test('voluntary authorization enables cloud saving without an automatic auth dialog',async t=>{
+ const page=await game(t,null,{cloud:{authorized:false}});await cloudUntil(page,()=>CloudSave.status==='guest');
+ await page.evaluate(()=>{ZM.save.dust=28;ZM.persist();CloudSave.open();});await page.locator('#cloudLogin').click();await cloudUntil(page,()=>CloudSave.status==='synced');
+ assert.equal(await page.evaluate(()=>cloudCalls.filter(c=>c[0]==='auth').length),1);
+ assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('mock.cloud.data')).zodiacMemoryCloud.save.dust),28);
+});
+
+test('failed cloud writes retain local progress and retry only after the cooldown',async t=>{
+ const page=await game(t,null,{cloud:{writeError:true}});await cloudUntil(page,()=>CloudSave.status==='error');
+ await page.evaluate(()=>{ZM.save.dust=39;ZM.persist();window.cloudWriteError=false;CloudSave.sync();});await page.clock.runFor(29000);
+ assert.equal(await page.evaluate(()=>cloudCalls.filter(c=>c[0]==='write').length),1);
+ await page.clock.runFor(2000);await cloudUntil(page,()=>CloudSave.status==='synced');
+ assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('mock.cloud.data')).zodiacMemoryCloud.save.dust),39);
+});
+
+test('an SDK write timeout cannot launch a concurrent write and late confirmation keeps newer edits pending',async t=>{
+ const page=await game(t,null,{cloud:{}});await cloudUntil(page,()=>CloudSave.status==='synced');
+ await page.evaluate(()=>{window.cloudHoldWrite=true;ZM.save.dust=5;ZM.persist();});await page.clock.runFor(31000);await cloudUntil(page,()=>!!window.releaseCloudWrite);
+ await page.clock.runFor(8100);await cloudUntil(page,()=>CloudSave.status==='error');
+ await page.evaluate(()=>{ZM.save.dust=11;ZM.persist();CloudSave.sync();});assert.equal(await page.evaluate(()=>cloudCalls.filter(c=>c[0]==='write').length),2);
+ await page.evaluate(()=>{window.cloudHoldWrite=false;releaseCloudWrite();});await cloudUntil(page,()=>CloudSave.status==='pending');await page.clock.runFor(31000);await cloudUntil(page,()=>CloudSave.status==='synced');
+ assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('mock.cloud.data')).zodiacMemoryCloud.save.dust),11);
 });

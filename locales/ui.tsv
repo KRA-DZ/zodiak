@@ -876,3 +876,27 @@
 Пропустить|Skip|Atla
 Созвездие|Constellation|Takımyıldızı
 Обсерватория|Observatory|Gözlemevi
+Облако|Cloud|Bulut
+Выбрать прогресс|Choose progress|İlerleme seç
+Облачный прогресс|Cloud progress|Bulut ilerlemesi
+Проверяем облачное сохранение…|Checking cloud progress…|Bulut kaydı kontrol ediliyor…
+Войдите в Яндекс, чтобы сохранять прогресс между устройствами.|Sign in to Yandex to keep your progress across devices.|İlerlemenizi cihazlar arasında korumak için Yandex’e giriş yapın.
+Прогресс сохранён в облаке.|Progress saved to the cloud.|İlerleme buluta kaydedildi.
+Изменения сохранены в браузере и ожидают отправки в облако.|Changes are saved in this browser and waiting to sync.|Değişiklikler bu tarayıcıya kaydedildi ve buluta gönderilmeyi bekliyor.
+Найдены разные сохранения. Выберите, какое продолжить.|Different saves were found. Choose which one to continue.|Farklı kayıtlar bulundu. Hangisiyle devam edeceğinizi seçin.
+Облако недоступно. Прогресс сохранён в этом браузере. Повторите позже.|Cloud unavailable. Progress is saved in this browser. Try again later.|Buluta ulaşılamıyor. İlerleme bu tarayıcıya kaydedildi. Daha sonra tekrar deneyin.
+Облачная копия не поддерживается или повреждена. Она не перезаписана; локальная игра доступна.|The cloud save is unsupported or damaged. It has not been overwritten; you can still play locally.|Bulut kaydı desteklenmiyor veya hasarlı. Üzerine yazılmadı; yerel olarak oynamaya devam edebilirsiniz.
+Копия слишком большая для облака. Скачайте её из книги предсказаний.|The save is too large for the cloud. Download a backup from the prediction book.|Kayıt bulut için çok büyük. Kehanet kitabından bir yedek indirin.
+Облачные сохранения доступны в Яндекс Играх.|Cloud saves are available on Yandex Games.|Bulut kayıtları Yandex Games’te kullanılabilir.
+В этом браузере|In this browser|Bu tarayıcıda
+В облаке Яндекса|In the Yandex cloud|Yandex bulutunda
+Пройдено игр|Games completed|Tamamlanan oyun
+Звёзды атласа|Atlas stars|Atlas yıldızları
+Предметов коллекции|Collection items|Koleksiyon eşyası
+Выбранная копия заменит другую. Валюта и предметы не суммируются. Перед восстановлением облака останется резервная копия в браузере.|The selected save replaces the other one. Currency and items are not added together. A browser backup is kept before restoring the cloud save.|Seçilen kayıt diğerinin yerini alır. Para ve eşyalar toplanmaz. Bulut kaydı geri yüklenmeden önce tarayıcıda bir yedek tutulur.
+Продолжить местную копию|Keep browser progress|Tarayıcı kaydıyla devam et
+Восстановить из облака|Restore cloud progress|Bulut kaydını geri yükle
+Без входа в аккаунт игра сохраняется в браузере. Облако переносит путешествие между устройствами. После изменений дождитесь подтверждения сохранения; частые записи объединяются.|Without signing in, the game saves in your browser. The cloud carries your journey across devices. Wait for save confirmation after changes; frequent updates are batched.|Giriş yapmadan oyun tarayıcınıza kaydedilir. Bulut yolculuğunuzu cihazlar arasında taşır. Değişikliklerden sonra kayıt onayını bekleyin; sık güncellemeler birleştirilir.
+Войти в Яндекс|Sign in to Yandex|Yandex’e giriş yap
+Синхронизировать|Sync progress|İlerlemeyi eşitle
+Скачать копию до восстановления|Download pre-restore backup|Geri yükleme öncesi yedeği indir

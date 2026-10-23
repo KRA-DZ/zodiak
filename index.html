@@ -7,8 +7,8 @@
     <title>Созвездие памяти</title>
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="assets/fonts/fonts.css">
-    <script src="i18n.js?v=locales-17"></script>
-    <script src="platform.js?v=locales-17"></script>
+    <script src="i18n.js?v=cloud-18"></script>
+    <script src="platform.js?v=cloud-18"></script>
     <style>
          :root {
             --bg0: #07091c;
@@ -2980,14 +2980,15 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="journey.css?v=locales-17">
-    <link rel="stylesheet" href="observatory.css?v=locales-17"><link rel="stylesheet" href="worlds.css?v=locales-17">
+    <link rel="stylesheet" href="journey.css?v=cloud-18">
+    <link rel="stylesheet" href="observatory.css?v=cloud-18"><link rel="stylesheet" href="worlds.css?v=cloud-18">
 </head>
 
 <body>
-    <script src="ad-rewards.js?v=locales-17"></script><script src="level-goals.js?v=locales-17"></script><script src="wardrobe-content.js?v=locales-17"></script><script src="economy.js?v=locales-17"></script><script src="campaign.js?v=locales-17"></script><script src="journey.js?v=locales-17"></script>
-    <script src="save-files.js?v=locales-17"></script>
-    <script src="match3.js?v=locales-17"></script><script src="level-tour.js?v=locales-17"></script><script src="campaign-map.js?v=locales-17"></script>
+    <script src="ad-rewards.js?v=cloud-18"></script><script src="level-goals.js?v=cloud-18"></script><script src="wardrobe-content.js?v=cloud-18"></script><script src="economy.js?v=cloud-18"></script><script src="campaign.js?v=cloud-18"></script><script src="journey.js?v=cloud-18"></script>
+    <script src="save-files.js?v=cloud-18"></script>
+    <script src="cloud-save.js?v=cloud-18"></script>
+    <script src="match3.js?v=cloud-18"></script><script src="level-tour.js?v=cloud-18"></script><script src="campaign-map.js?v=cloud-18"></script>
     <script>
         (function() {
             var shown = false;
@@ -3520,6 +3521,7 @@
             ZM.persist = function() {
                 try {
                     localStorage.setItem(KEY, JSON.stringify(ZM.save));
+                    window.CloudSave?.changed();
                 } catch (e) {}
             };
             ZM.persist();
@@ -4322,8 +4324,8 @@
         })();
     </script>
 
-    <script src="predictions.js?v=locales-17"></script>
-    <script src="observatory.js?v=locales-17"></script>
+    <script src="predictions.js?v=cloud-18"></script>
+    <script src="observatory.js?v=cloud-18"></script>
     <script>Observatory.init(window.ZM);</script>
     <script>
         /* ═══ ДВИЖОК: аудио+музыка, фон, хаб-атлас, игра ═══ */
@@ -7802,6 +7804,10 @@
             I18n.attach(ZM);
             ZM.ready = true;
             GamePlatform.ready();
+            CloudSave.init(ZM, {
+                canRestore: function() { return (!G || G.dead) && !document.getElementById('levelTour') && (!document.querySelector('#modalRoot.show') || !!document.querySelector('.cloud-modal')); },
+                restore: function(save) { killLevel(); ZM.save = save; location.reload(); }
+            });
             if (ZM.wantEnter) window.__ZM_ENTER();
             else if (ZM.save.sign != null) window.__ZM_ENTER();
         })();

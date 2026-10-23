@@ -20,7 +20,7 @@ async function init(){
   if(!root.YaGames)await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='/sdk.js';script.onload=resolve;script.onerror=()=>reject(new Error('SDK unavailable'));const timeout=setTimeout(()=>reject(new Error('SDK timeout')),10000);script.addEventListener('load',()=>clearTimeout(timeout),{once:true});document.head.appendChild(script);});
   sdk=await root.YaGames.init();state.sdk='connected';root.I18n?.platformLanguage(sdk.environment?.i18n?.lang||navigator.language);
   sdk.on?.('game_api_pause',()=>pause('sdk'));sdk.on?.('game_api_resume',()=>resume('sdk'));
-  maybeReady();
+  maybeReady();return sdk;
  }catch(e){state.sdk='unavailable';}
 }
 let adBusy=false;
@@ -45,5 +45,5 @@ const guard=e=>{if(reasons.size){e.preventDefault();e.stopImmediatePropagation()
 for(const event of ['pointerdown','pointerup','click','keydown','touchstart'])document.addEventListener(event,guard,{capture:true,passive:false});
 function loaded(){const fonts=Promise.all([document.fonts?.ready||Promise.resolve(),root.I18n?.ready||Promise.resolve()]);Promise.resolve(fonts).catch(()=>{}).then(()=>{assetsReady=true;maybeReady();});new MutationObserver(sync).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});if(document.hidden)pause('visibility');}
 if(document.readyState==='complete')loaded();else addEventListener('load',loaded,{once:true});
-init();
+root.GamePlatform.sdkReady=init();
 })(window);

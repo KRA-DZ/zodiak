@@ -10,6 +10,7 @@ files += sorted(p for p in (ROOT / 'assets').rglob('*') if p.is_file() and (p.su
 files += sorted((ROOT / 'locales').glob('*.tsv'))
 assert ROOT / 'index.html' in files
 assert ROOT / 'i18n.js' in files
+assert ROOT / 'cloud-save.js' in files
 locale = ROOT / 'locales' / 'ui.tsv'
 assert locale in files, 'Missing interface translations'
 rows = [line.split('|') for line in locale.read_text().splitlines() if line]
@@ -40,6 +41,7 @@ with zipfile.ZipFile(archive) as z:
     assert not any(n.startswith(('/', '../')) or 'node_modules' in n or n.startswith(('tests/','artwork-source/')) for n in z.namelist())
 report = {'archive': archive.name, 'files': len(files), 'bytes': archive.stat().st_size,
           'root_entry': 'index.html', 'languages': ['ru', 'en', 'tr'], 'sdk': 'platform.js -> /sdk.js on Yandex hosts',
+          'cloud_saves': 'Yandex authorized player; local fallback',
           'external_startup_fonts': False, 'tests_in_archive': False, 'artwork_sources_in_archive': False}
 (OUT / 'package-report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
 print(json.dumps(report, ensure_ascii=False))
