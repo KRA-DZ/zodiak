@@ -3084,14 +3084,14 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="journey.css?v=seasons-11">
-    <link rel="stylesheet" href="observatory.css?v=seasons-11"><link rel="stylesheet" href="worlds.css?v=seasons-11">
+    <link rel="stylesheet" href="journey.css?v=guardian-12">
+    <link rel="stylesheet" href="observatory.css?v=guardian-12"><link rel="stylesheet" href="worlds.css?v=guardian-12">
 </head>
 
 <body>
-    <script src="wardrobe-content.js?v=seasons-11"></script><script src="economy.js?v=seasons-11"></script><script src="campaign.js?v=seasons-11"></script><script src="journey.js?v=seasons-11"></script>
-    <script src="save-files.js?v=seasons-11"></script>
-    <script src="match3.js?v=seasons-11"></script><script src="level-tour.js?v=seasons-11"></script><script src="campaign-map.js?v=seasons-11"></script>
+    <script src="level-goals.js?v=guardian-12"></script><script src="wardrobe-content.js?v=guardian-12"></script><script src="economy.js?v=guardian-12"></script><script src="campaign.js?v=guardian-12"></script><script src="journey.js?v=guardian-12"></script>
+    <script src="save-files.js?v=guardian-12"></script>
+    <script src="match3.js?v=guardian-12"></script><script src="level-tour.js?v=guardian-12"></script><script src="campaign-map.js?v=guardian-12"></script>
     <script>
         (function() {
             var shown = false;
@@ -3278,10 +3278,22 @@
                 <div class="pairs"><b id="gPV">0/6</b><span id="gPLabel">групп</span></div>
             </div>
         </div>
-        <section id="missionPanel" class="mission-panel" hidden aria-label="Цель уровня"><div class="mission-heading"><span class="mission-emblem" aria-hidden="true">✦</span><div><span class="eyebrow">ЦЕЛЬ РАСКЛАДА</span><h2 id="missionTitle"></h2></div><b id="missionCount"></b></div><progress id="missionProgress" max="1" value="0" aria-label="Прогресс цели"></progress><span id="missionHint"></span></section>
-        <p id="gameGuide" class="game-guide" role="status" aria-live="polite"></p>
-        <div class="board-zone">
-            <div class="board" id="board"></div>
+        <div class="game-stage">
+            <div class="game-playfield">
+                <section id="missionPanel" class="mission-panel" hidden aria-label="Цель уровня"><div class="mission-heading"><span class="mission-emblem" aria-hidden="true">✦</span><div><span class="eyebrow">ЦЕЛЬ РАСКЛАДА</span><h2 id="missionTitle"></h2></div><b id="missionCount"></b></div><progress id="missionProgress" max="1" value="0" aria-label="Прогресс цели"></progress><span id="missionHint"></span></section>
+                <p id="gameGuide" class="game-guide" role="status" aria-live="polite"></p>
+                <div class="board-zone"><div class="board" id="board"></div></div>
+            </div>
+            <aside class="level-guardian" aria-label="Хранитель и условия звёзд">
+                <div id="levelHero" class="level-hero"></div>
+                <div class="guardian-goals"><h2 id="guardianTarget"></h2>
+                    <div class="guardian-count" id="guardianCount"></div>
+                    <progress id="guardianProgress" max="1" value="0" aria-label="Выполнение задания"></progress>
+                    <p id="guardianForecast" role="status" aria-live="polite"></p>
+                    <ol id="guardianStars" class="guardian-stars"></ol>
+                    <small id="guardianNote">Звёзды закрепятся после победы. Условия могут измениться по ходу игры.</small>
+                </div>
+            </aside>
         </div>
         <div class="game-foot" id="gFoot"></div>
     </section>
@@ -4427,8 +4439,8 @@
         })();
     </script>
 
-    <script src="predictions.js?v=seasons-11"></script>
-    <script src="observatory.js?v=seasons-11"></script>
+    <script src="predictions.js?v=guardian-12"></script>
+    <script src="observatory.js?v=guardian-12"></script>
     <script>Observatory.init(window.ZM);</script>
     <script>
         /* ═══ ДВИЖОК: аудио+музыка, фон, хаб-атлас, игра ═══ */
@@ -6658,7 +6670,32 @@
             }
 
 
+            function renderGuardian() {
+                if (!G || G.dead) return;
+                var view = LevelGoals.snapshot(G);
+                document.getElementById('guardianTarget').textContent = view.target;
+                document.getElementById('guardianCount').textContent = view.current + ' / ' + view.total;
+                var bar = document.getElementById('guardianProgress'); bar.max = view.total; bar.value = view.current;
+                var special = G.practice || G.endless;
+                var forecast = document.getElementById('guardianForecast');
+                var text = special ? 'Награда за победу: ' + (G.practice ? 14 : Economy.endlessReward(G.endless)) + ' ★ пыли' : (view.complete ? 'Итог: ' : 'При победе сейчас: ') + '★'.repeat(view.forecast) + '☆'.repeat(3-view.forecast);
+                if (forecast.textContent !== text) forecast.textContent = text;
+                document.getElementById('guardianStars').hidden = !!special;
+                document.getElementById('guardianNote').textContent = special ? 'В этом режиме награда — звёздная пыль; звёзды атласа не начисляются.' : 'Звёзды закрепятся после победы. Условия могут измениться по ходу игры.';
+                view.rows.forEach(function(row,i) {
+                    var el = document.getElementById('guardianStar'+i); if (!el) return;
+                    el.classList.toggle('met', row.met);
+                    el.classList.toggle('secured', view.complete && view.forecast >= i+1);
+                    el.querySelector('.goal-star').textContent = row.met ? '★' : '☆';
+                    el.querySelector('.goal-text').textContent = row.text;
+                    el.querySelector('.goal-detail').textContent = row.detail + (row.met ? ' · выполнено' : '');
+                });
+            }
+
             function buildGameUI() {
+                document.getElementById('levelHero').innerHTML = Observatory.heroPortrait();
+                document.getElementById('guardianStars').innerHTML = [0,1,2].map(function(i) { return '<li id="guardianStar'+i+'"><span class="goal-star" aria-hidden="true">☆</span><div><b class="goal-text"></b><span class="goal-detail"></span></div></li>'; }).join('');
+                renderGuardian();
                 document.getElementById('gLvlNum').textContent = G.practice ? 'Зал алхимии · ' + ZM.SIGNS[G.sign].name : G.endless ? 'Бесконечное небо · этап ' + G.endless : ZM.SIGNS[G.sign].name + ' · ' + (Number.isInteger(G.cfg.campaignMode)?Campaign.names[G.cfg.campaignMode]+' '+(G.sign*10+G.cfg.campaignStep+1):'уровень '+(G.lvIdx+1)) + (G.cfg.boss || G.cfg.campaignBoss ? ' · Хранитель' : '');
                 var M = '',
                     parts = [
@@ -6746,6 +6783,7 @@
                 b.style.height = (G.cfg.rows * ch + (G.cfg.rows - 1) * gap) + 'px';
             }
             window.addEventListener('resize', layoutBoard);
+            new ResizeObserver(function() { requestAnimationFrame(layoutBoard); }).observe(document.querySelector('#s_game .board-zone'));
 
             // Отложенные действия принадлежат конкретной попытке уровня.
             function levelTimeout(callback, delay) {
@@ -6898,6 +6936,7 @@
 
             function renderTimer() {
                 if (!G) return;
+                renderGuardian();
                 var t = document.getElementById('gTimer'),
                     v = document.getElementById('gTV');
                 if (G.cfg.match3) {
@@ -6931,6 +6970,7 @@
 
             function renderPairs() {
                 document.getElementById('gPV').textContent = G.cleared + '/' + G.needed;
+                renderGuardian();
             }
 
             function updateHintUI() {
@@ -7779,13 +7819,6 @@
                 });
             }
 
-            function starsFor(elapsed, misses, par) {
-                var under = elapsed <= par;
-                if (under && (misses === 0 || elapsed <= par * .7)) return 3;
-                if (under) return 2;
-                return 1;
-            }
-
             function finishWin() {
                 if (!G || G.finished) return;
                 G.finished = true;
@@ -7803,7 +7836,7 @@
                     elapsed = Math.round(G.elapsed),
                     misses = G.misses,
                     streakEnd = Math.max(1, Math.min(G.streak, 5));
-                var stars = cfg.match3 ? (G.moves >= Math.ceil(cfg.moves * .3) ? 3 : G.moves > 0 ? 2 : 1) : starsFor(elapsed, misses, cfg.par),
+                var stars = LevelGoals.rating(cfg,elapsed,misses,G.moves),
                     under = elapsed <= cfg.par,
                     half = elapsed <= cfg.par * .5;
                 if (misses <= 5) ZM.save.stats.lowMissRun++;

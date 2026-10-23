@@ -257,7 +257,7 @@
         if(ZM.save.ach.collector&&!state().collectorGift){giveReward(collector.extra);state().collectorGift=true;}
         ZM.persist();
     }
-    const Observatory={catalog,statKeys,hydrate,init,connect(h){hooks=h;applyPreferences();check();},state,render,setHero,equip,buy,owned,giveReward,describeReward,rewardArt,record,check,openWardrobe,openCase,backgroundImage,reducedMotion,progressOf,achievementArt};
+    const Observatory={heroPortrait(){return portrait(state());},catalog,statKeys,hydrate,init,connect(h){hooks=h;applyPreferences();check();},state,render,setHero,equip,buy,owned,giveReward,describeReward,rewardArt,record,check,openWardrobe,openCase,backgroundImage,reducedMotion,progressOf,achievementArt};
     root.Observatory=Observatory;
     if(typeof module!=='undefined')module.exports=Observatory;
 })(typeof window==='undefined'?globalThis:window);

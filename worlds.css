@@ -85,3 +85,52 @@ body::after { display:none; }
 .atlas-modal .map-panel { padding:0;background:none; }.atlas-modal .atlas-body > div:not(.zcards),.atlas-modal .atlas-sub,.atlas-modal .bigwheel-bg,.atlas-modal .atlas-stars { display:none!important; }.atlas-modal .zcards { gap:13px;align-items:start; }.atlas-modal .zcard { animation:none; }.atlas-modal .zcover { display:block;aspect-ratio:auto;flex:none;background:#080c1e; }.atlas-modal .zcover img { position:static;display:block;width:100%;height:auto;object-fit:contain;object-position:center; }.atlas-modal .zcover::after { background:none;box-shadow:inset 0 0 12px #d9b4f422; }.atlas-modal .card-seals { position:static;inset:auto;width:100%;gap:10px;align-items:center;padding:8px 4px 3px;z-index:auto;background:#14172b; }.atlas-modal .zodiac-seal { flex:0 0 34px;width:34px; }.atlas-modal .zodiac-seal.fallen span { font-size:1rem; }.atlas-modal .zbar { padding:8px 9px; }.atlas-modal .awakening-label { font-size:.58rem; }.collection-front img { object-fit:contain;object-position:center;background:#0e1225; }
 @media(max-width:720px) { .chapter-heading { padding:9px 12px 7px; }.chapter-caption .eyebrow { display:none; }.chapter-heading .path-observatory { display:block;grid-row:2;grid-column:2;position:static;float:none;margin:0;padding:4px 6px;font-size:.55rem; }.chapter-paging { grid-row:1; }.chapter-heading h2 { font-size:1rem; }.chapter-heading #pathDetails { font-size:.56rem; }.chapter-heading .path-chapters { gap:3px; }.chapter-heading .chapter-dot { flex-basis:24px;height:24px;font-size:.85rem; }.chapter-footer small { max-width:100px;font-size:.55rem; }.atlas-modal .zcards { grid-template-columns:repeat(2,minmax(0,1fr));gap:10px; }.atlas-modal .zodiac-seal { flex-basis:29px;width:29px; }.atlas-modal .card-seals { gap:6px; } }
 .zodiac-seal { background-image:url('assets/path-seals-dark.webp'); }.zodiac-seal.fallen { background-image:none; }
+
+/* The board and its guardian share the available height, without shrinking mobile tiles. */
+.game-stage { width:min(1100px,100%);flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:24px; }
+.game-playfield { display:flex;flex-direction:column;align-items:center;min-width:0;min-height:0; }
+.level-guardian { align-self:center;max-height:100%;overflow:auto;scrollbar-width:none;border:1px solid #bda1d34a;border-radius:22px;background:linear-gradient(155deg,#29203bd9,#11162ee8);padding:10px 16px 16px; }
+.level-guardian::-webkit-scrollbar { display:none; }
+.level-hero .observatory-display { min-height:170px;max-width:215px;margin:auto;padding-top:0; }
+.level-hero .hero-figure { width:68%;max-width:150px; }
+.level-hero .pet-figure { width:34%;right:0;max-width:80px; }
+.guardian-goals h2 { font-size:.92rem;text-align:center;line-height:1.5;color:var(--gold-hi);margin:8px 0; }
+.guardian-count { text-align:center;font-size:.95rem;color:var(--gold-hi); }
+.guardian-goals progress { display:block;width:100%;height:7px;margin:10px 0;accent-color:var(--gold); }
+#guardianForecast { text-align:center;color:var(--gold-hi);font-size:.76rem;min-height:1.4em; }
+.guardian-stars { list-style:none;display:grid;gap:10px;margin:12px 0;padding:0; }
+.guardian-stars li { display:flex;align-items:center;gap:10px;color:var(--muted); }
+.goal-star { font-size:1.7rem;flex:0 0 25px;color:#7c7695;transition:color .3s,text-shadow .3s; }
+.guardian-stars .met .goal-star { color:var(--gold);text-shadow:0 0 12px #efc87755; }
+.guardian-stars .secured .goal-star { text-shadow:0 0 18px #f6dc90aa; }
+.goal-text { display:block;font-size:.72rem;line-height:1.45;font-weight:500; }
+.goal-detail { display:block;font-size:.64rem;line-height:1.5;margin-top:3px; }
+.guardian-goals>small { display:block;font-size:.61rem;line-height:1.6;color:var(--muted); }
+.personal-observatory .hero-figure { position:relative;left:-10px; }
+.personal-observatory .pet-figure { right:calc(10% + 10px); }
+@media(max-width:760px) {
+ .game-stage { display:flex;flex-direction:column;gap:8px; }
+ .game-playfield { flex:1;min-height:210px; }
+ .level-guardian { align-self:stretch;max-height:none;overflow:visible;display:grid;grid-template-columns:65px minmax(0,1fr);gap:9px;padding:8px 10px;border-radius:14px;flex:0 0 auto; }
+ .level-hero { align-self:center; }.level-hero .observatory-display { min-height:74px;padding:0; }.level-hero .hero-figure { width:90%; }.level-hero .pet-figure { width:38%; }
+ .guardian-goals h2 { font-size:.72rem;text-align:left;margin:0; }.guardian-count { font-size:.66rem;text-align:left; }
+ .guardian-goals progress { height:5px;margin:4px 0; }#guardianForecast { text-align:left;font-size:.68rem;margin:3px 0;min-height:0; }
+ .guardian-stars { grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:5px 0; }.guardian-stars li { display:block; }.goal-star { font-size:1.1rem;float:left;margin-right:3px; }.goal-text { font-size:.59rem; }.goal-detail { font-size:.56rem; }.guardian-goals>small { font-size:.55rem;line-height:1.35; }
+}
+@media(max-width:760px) and (max-height:700px) { .game-stage { min-height:410px; }.level-guardian .goal-detail { display:none; } }
+.game-playfield .board { flex-shrink:0; }
+@media(max-width:760px) {
+ #s_game .mission-panel { padding:7px 10px; }
+ #s_game .mission-panel #missionHint { display:none; }
+ #s_game .mission-panel .mission-heading h2 { font-size:.75rem; }
+ #s_game .game-guide { font-size:.64rem;line-height:1.4;min-height:0;padding:3px 4px;margin:4px 0; }
+}
+@media(max-width:760px) {
+ .guardian-stars { grid-template-columns:1fr;gap:4px;margin:7px 0; }
+ .guardian-stars li { display:flex;gap:6px;align-items:flex-start; }
+ .goal-star { float:none;margin:0;font-size:1.1rem;flex-basis:18px;line-height:1.2; }
+ .goal-text { font-size:.68rem;line-height:1.4; }
+ .goal-detail { font-size:.62rem;margin-top:1px; }
+ .guardian-stars li:not(:last-child) .goal-detail { display:none; }
+ .guardian-goals>small { font-size:.6rem; }
+}

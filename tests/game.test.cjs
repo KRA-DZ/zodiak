@@ -27,7 +27,7 @@ async function game(t, seed, settings = {}) {
             html = html.replace('            ZM.ready = true;', `
                 window.testGame = {
                     start: startLevel, kill: killLevel, preview: beginPreview, hub: buildHub,
-                    win: finishWin, endless: startEndless, ritual: claimRitual, renderJourney: renderJourney, oracle: openOracleTable, reveal: ftReveal, journal: openJournal, calendar: openCalendar, guide: openGuide, map: useMap, power: usePower, click: onCell,
+                    guardian:renderGuardian, win: finishWin, endless: startEndless, ritual: claimRitual, renderJourney: renderJourney, oracle: openOracleTable, reveal: ftReveal, journal: openJournal, calendar: openCalendar, guide: openGuide, map: useMap, power: usePower, click: onCell,
                     get state() { return G; }, get selection() { return SEL; }
                 };
                 ZM.save.levelGuides = {memory:true,oracle:true,alchemy:true};
@@ -1053,4 +1053,16 @@ test('seasonal chest reveals an equippable outfit, persists its independent coun
  await page.reload();assert.equal(await page.evaluate(()=>Observatory.state().outfit),outfit);
  const images=await page.evaluate(async()=>Promise.all([...new Set(WardrobeContent.outfits.map(d=>d.image))].map(async src=>{const im=new Image();im.src=src;await im.decode();return im.naturalWidth>1000&&im.naturalHeight>1000;})));
  assert.equal(images.length,8);assert.ok(images.every(Boolean));assert.equal(await page.getByText('Колёсико или свайп — по одному знаку',{exact:true}).count(),0);
+});
+
+test('guardian follows equipped appearance, tracks mission and live star conditions across all modes',async t=>{
+ const page=await game(t);await start(page,20);await page.clock.runFor(1000);
+ assert.equal(await page.locator('#levelHero .hero-figure').count(),1);assert.equal(await page.locator('#guardianStars li').count(),3);
+ await page.evaluate(()=>{const g=testGame.state;g.moves=7;g.cleared=3;g.needed=6;testGame.guardian();});
+ assert.match(await page.locator('#guardianCount').innerText(),/3 \/ 6/);assert.match(await page.locator('#guardianForecast').innerText(),/★★☆/);
+ await page.evaluate(()=>{const g=testGame.state;g.cleared=6;g.moves=8;testGame.guardian();});assert.equal(await page.locator('.guardian-stars .secured').count(),3);
+ await start(page,0);await page.evaluate(()=>{testGame.state.elapsed=151;testGame.state.misses=1;testGame.state.running=true;testGame.state.preview=false;});await page.clock.runFor(300);
+ assert.match(await page.locator('#guardianForecast').innerText(),/★☆☆/);assert.equal(await page.locator('#guardianStar2.met').count(),0);
+ await start(page,10);assert.match(await page.locator('#guardianTarget').innerText(),/отмеченные карты/);
+ for(const width of [1366,390]){await page.setViewportSize({width,height:844});await page.clock.runFor(300);const fit=await page.evaluate(()=>{const b=document.getElementById('board').getBoundingClientRect(),p=document.querySelector('.level-guardian').getBoundingClientRect();return{overflow:document.documentElement.scrollWidth>innerWidth,overlap:b.left<p.right&&b.right>p.left&&b.top<p.bottom&&b.bottom>p.top};});assert.equal(fit.overflow,false);assert.equal(fit.overlap,false);}
 });
