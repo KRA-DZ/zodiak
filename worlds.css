@@ -106,8 +106,6 @@ body::after { display:none; }
 .goal-text { display:block;font-size:.72rem;line-height:1.45;font-weight:500; }
 .goal-detail { display:block;font-size:.64rem;line-height:1.5;margin-top:3px; }
 .guardian-goals>small { display:block;font-size:.61rem;line-height:1.6;color:var(--muted); }
-.personal-observatory .hero-figure { position:relative;left:-10px; }
-.personal-observatory .pet-figure { right:calc(10% + 10px); }
 @media(max-width:760px) {
  .game-stage { display:flex;flex-direction:column;gap:8px; }
  .game-playfield { flex:1;min-height:210px; }
@@ -134,3 +132,12 @@ body::after { display:none; }
  .guardian-stars li:not(:last-child) .goal-detail { display:none; }
  .guardian-goals>small { font-size:.6rem; }
 }
+
+/* Center the solo hero, or balance the overlapping duo with a hero-first bias. */
+.level-hero .observatory-display { --portrait-hero:min(68%,150px);--portrait-pet:min(34%,80px); }
+.personal-observatory .observatory-display { --portrait-hero:min(57%,150px);--portrait-pet:min(30%,125px); }
+:is(.level-hero,.personal-observatory) .observatory-display>.hero-figure { width:var(--portrait-hero);max-width:none;position:relative;left:0; }
+:is(.level-hero,.personal-observatory) .observatory-display.has-pet>.hero-figure { left:calc(var(--portrait-pet) * -.2); }
+:is(.level-hero,.personal-observatory) .observatory-display>.pet-figure { width:var(--portrait-pet);max-width:none;right:auto;left:calc(50% + var(--portrait-hero) * .5 - var(--portrait-pet) * .75); }
+@media(max-width:760px) { .level-hero .observatory-display { --portrait-hero:min(80%,150px);--portrait-pet:min(38%,80px); } }
+@media(max-width:720px) { .personal-observatory .observatory-display { --portrait-hero:min(80%,160px); } }

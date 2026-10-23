@@ -84,7 +84,7 @@
     }
     function portrait(s){
         const look=definition('outfits',s.outfit),pet=definition('pets',s.pet);
-        return '<div class="observatory-display'+(recentWin?' celebrating':'')+'"><div class="figure-platform"></div>'+figure(look,s.hero,'hero-figure')+(pet.id!=='none'?figure(pet,s.hero,'pet-figure'):'')+'</div>';
+        return '<div class="observatory-display'+(pet.id!=='none'?' has-pet':'')+(recentWin?' celebrating':'')+'"><div class="figure-platform"></div>'+figure(look,s.hero,'hero-figure')+(pet.id!=='none'?figure(pet,s.hero,'pet-figure'):'')+'</div>';
     }
     function achievementArt(id,done){
         const types={master:7,speed:8,immortal:6,seven_visits:6,collector:0,first_book:0,perfect_book:0,archive12:1,four_topics:3,dresser:4,new_sky:6,familiar:5,endless10:8,endless25:8,endless50:8,cascade3:7,cascade5:7,alchemy10:7,oracle10:1,tutorial:0};
