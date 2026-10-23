@@ -7,7 +7,7 @@
     <title>Созвездие памяти</title>
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="assets/fonts/fonts.css">
-    <script src="platform.js?v=rewards-15"></script>
+    <script src="platform.js?v=lean-16"></script>
     <style>
          :root {
             --bg0: #07091c;
@@ -795,110 +795,6 @@
         .zcard.done .zmeta {
             color: var(--gold-hi)
         }
-        /* экран уровней знака */
-        
-        .lv-list {
-            width: min(680px, 94vw);
-            display: flex;
-            flex-direction: column;
-            gap: 10px
-        }
-        
-        .lv-row {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            background: linear-gradient(180deg, rgba(20, 24, 58, .92), rgba(11, 14, 44, .92));
-            border: 1.5px solid var(--line);
-            border-radius: 15px;
-            padding: 13px 16px;
-            text-align: left;
-            transition: .18s;
-            position: relative
-        }
-        
-        .lv-row.open {
-            border-color: var(--gold-dim)
-        }
-        
-        .lv-row.open:hover {
-            transform: translateY(-2px);
-            border-color: var(--gold);
-            box-shadow: 0 8px 26px rgba(230, 200, 125, .18)
-        }
-        
-        .lv-row.locked {
-            opacity: .55
-        }
-        
-        .lv-num {
-            width: 44px;
-            height: 44px;
-            flex: 0 0 44px;
-            border-radius: 50%;
-            border: 2px solid var(--line);
-            background: #0b0e2c;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.25rem;
-            color: var(--muted)
-        }
-        
-        .lv-row.open .lv-num {
-            border-color: var(--gold);
-            color: var(--gold-hi);
-            box-shadow: 0 0 14px rgba(230, 200, 125, .25)
-        }
-        
-        .lv-row.done .lv-num {
-            background: rgba(230, 200, 125, .12)
-        }
-        
-        .lv-body {
-            flex: 1;
-            min-width: 0
-        }
-        
-        .lv-body b {
-            display: block;
-            font-size: .98rem;
-            color: var(--ink)
-        }
-        
-        .lv-row.locked .lv-body b {
-            color: #565c85
-        }
-        
-        .lv-tags {
-            display: flex;
-            gap: 5px;
-            margin-top: 4px;
-            flex-wrap: wrap;
-            align-items: center
-        }
-        
-        .lv-stars {
-            display: flex;
-            gap: 3px
-        }
-        
-        .lv-stars svg {
-            width: 13px;
-            height: 13px;
-            color: #2c3161
-        }
-        
-        .lv-stars svg.lit {
-            color: var(--gold)
-        }
-        
-        .lv-act {
-            flex: 0 0 auto;
-            color: var(--gold-hi)
-        }
-        
         .hub-wrap {
             width: min(1060px, 96vw);
             flex: 1;
@@ -3000,7 +2896,6 @@
             display: flex;
             flex-direction: column;
             padding: 16px;
-            background: url('shar.png') center/cover no-repeat;
             border-color: var(--gold-dim)
         }
         
@@ -3050,7 +2945,6 @@
             position: relative;
             overflow: hidden;
             min-height: 170px;
-            background: url('shar.png') center/cover no-repeat;
             border-color: var(--gold-dim)
         }
         
@@ -3085,14 +2979,14 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="journey.css?v=rewards-15">
-    <link rel="stylesheet" href="observatory.css?v=rewards-15"><link rel="stylesheet" href="worlds.css?v=rewards-15">
+    <link rel="stylesheet" href="journey.css?v=lean-16">
+    <link rel="stylesheet" href="observatory.css?v=lean-16"><link rel="stylesheet" href="worlds.css?v=lean-16">
 </head>
 
 <body>
-    <script src="ad-rewards.js?v=rewards-15"></script><script src="level-goals.js?v=rewards-15"></script><script src="wardrobe-content.js?v=rewards-15"></script><script src="economy.js?v=rewards-15"></script><script src="campaign.js?v=rewards-15"></script><script src="journey.js?v=rewards-15"></script>
-    <script src="save-files.js?v=rewards-15"></script>
-    <script src="match3.js?v=rewards-15"></script><script src="level-tour.js?v=rewards-15"></script><script src="campaign-map.js?v=rewards-15"></script>
+    <script src="ad-rewards.js?v=lean-16"></script><script src="level-goals.js?v=lean-16"></script><script src="wardrobe-content.js?v=lean-16"></script><script src="economy.js?v=lean-16"></script><script src="campaign.js?v=lean-16"></script><script src="journey.js?v=lean-16"></script>
+    <script src="save-files.js?v=lean-16"></script>
+    <script src="match3.js?v=lean-16"></script><script src="level-tour.js?v=lean-16"></script><script src="campaign-map.js?v=lean-16"></script>
     <script>
         (function() {
             var shown = false;
@@ -3249,19 +3143,6 @@
                     <div class="zcards" id="zcards"></div>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <section class="screen" id="s_signLevels">
-        <div class="atlas-stars" id="slStars"></div>
-        <div class="atlas-body">
-            <div class="atlas-top">
-                <button class="btn back-btn" id="slBack">&#8592; Назад</button>
-                <h2 class="atlas-title"><span id="slGlyph" style="font-weight:400"></span> <span id="slName"></span></h2>
-                <span class="chip gold" id="slProg"></span>
-            </div>
-            <div class="atlas-sub" id="slSub"></div>
-            <div class="lv-list" id="lvList"></div>
         </div>
     </section>
 
@@ -4440,8 +4321,8 @@
         })();
     </script>
 
-    <script src="predictions.js?v=rewards-15"></script>
-    <script src="observatory.js?v=rewards-15"></script>
+    <script src="predictions.js?v=lean-16"></script>
+    <script src="observatory.js?v=lean-16"></script>
     <script>Observatory.init(window.ZM);</script>
     <script>
         /* ═══ ДВИЖОК: аудио+музыка, фон, хаб-атлас, игра ═══ */
@@ -4982,17 +4863,19 @@
                 },
                 loadImages: function() {
                     var self = this;
-
+                    self.imageCache = self.imageCache || new Map();
                     function mk(src) {
+                        if(self.imageCache.has(src))return self.imageCache.get(src);
                         var im = new Image();
+                        self.imageCache.set(src,im);
                         im.onload = function() {
                             self.imgOK = true;
                         };
                         im.src = src;
                         return im;
                     }
-                    this.imgL = mk(window.Observatory ? Observatory.backgroundImage(false) : 'fon.png'); /* горизонтальный */
-                    this.imgP = mk(window.Observatory ? Observatory.backgroundImage(true) : 'fonvert.png'); /* вертикальный */
+                    this.imgL = mk(window.Observatory ? Observatory.backgroundImage(false) : 'fon.webp'); /* горизонтальный */
+                    this.imgP = mk(window.Observatory ? Observatory.backgroundImage(true) : 'fonvert.webp'); /* вертикальный */
                 },
                 resize: function() {
                     if (this.dead || !this.cv) return;
@@ -5670,32 +5553,6 @@
                 return arr[idx];
             }
 
-            function buyPred(cat) {
-                var price = PRED_PRICES[cat],
-                    p = ZM.save.preds[cat];
-                if (p.count >= 1) {
-                    ZM.toast('В этой теме уже куплено предсказание на сегодня', {
-                        ic: 'i-warn'
-                    });
-                    return;
-                }
-                if (ZM.save.dust < price && ZM.save.omens <= 0) {
-                    ZM.toast('Не хватает звёздной пыли: нужно ' + price + ' ' + ZM.STAR, {
-                        ic: 'i-warn'
-                    });
-                    return;
-                }
-                spendPrediction(price);
-                p.count = 1;
-                p.last = drawPredIdx(cat);
-                archivePrediction(cat);
-                ZM.persist();
-                PRED_OPEN[cat] = true;
-                ZM.toast('«' + PRED_META[cat].name + '»: предсказание открыто', {
-                    ic: 'i-star'
-                });
-                renderPredictions();
-            }
 
             function renderPredictions() {
                 var host = document.getElementById('predList');
@@ -6095,7 +5952,7 @@
                     host.appendChild(s);
                 }
             }
-            /* Обложки карточек атласа: PNG в папке covers/ рядом с index.html.
+            /* Оригинальные PNG-карточки атласа лежат в корне проекта.
                Порядок соответствует ZM.SIGNS: Овен, Телец, …, Рыбы.
                Если файла нет — карточка автоматически покажет глиф знака. */
             ZM.COVERS = [
@@ -6154,82 +6011,8 @@
                 ZM.modalOpen('<h2>Альбом знаков</h2><div class="msub">12 знаков · по 10 звёздочек с тремя режимами. Закройте все 10 игр одного режима, чтобы снять его печать.</div><div id="atlasModal"></div><div class="m-actions"><button class="btn" data-close>К звёздной тропе</button></div>',{cls:'atlas-modal'});
                 var panel=document.getElementById('atlasPanel');panel.hidden=false;document.getElementById('atlasModal').appendChild(panel);
             }
-            function openSignLevels(si) {
-                ZM.showScreen('signLevels');
-                spawnSubStars(document.getElementById('slStars'));
-                var sg = ZM.SIGNS[si];
-                document.getElementById('slGlyph').textContent = ZM.GLYPHS[si];
-                document.getElementById('slName').textContent = sg.name + ' · ' + sg.elem;
-                var done = signDone(si);
-                document.getElementById('slProg').textContent = done + '/' + ZM.PER_SIGN + ' уровней';
-                document.getElementById('slSub').textContent = sg.dates + ' · управитель: ' + sg.ruler + ' · соберите все 9 — созвездие попадёт в коллекцию';
-                var list = document.getElementById('lvList');
-                list.innerHTML = '';
-                var openLvl = ZM.save.lvOpen[si];
-                for (var l = 0; l < ZM.PER_SIGN; l++) {
-                    var cfg = ZM.LEVELS96[si * ZM.PER_SIGN + l],
-                        stars = ZM.save.lvStars[lvKey(si, l)],
-                        isOpen = Campaign.available(ZM.save,si*30+l) && !!cfg,
-                        row = document.createElement('button');
-                    row.type = 'button';
-                    row.className = 'lv-row' + (isOpen ? ' open' : ' locked') + (stars > 0 ? ' done' : '');
-                    if (cfg) {
-                        var tags = '';
-                        var T = {
-                            decoys: ['обманки', 't-decoy'],
-                            trios: ['триады', 't-trio'],
-                            darks: ['тьма', 't-dark'],
-                            boss: ['босс · 8 мин', 't-boss'],
-                            oracle: ['оракул', 't-oracle'],
-                            match3: ['три в ряд', 't-alchemy']
-                        };
-                        for (var k in T)
-                            if (cfg[k]) tags += '<span class="tag ' + T[k][1] + '">' + T[k][0] + '</span>';
-                        var starsHtml = '';
-                        [1, 2, 3].forEach(function(n) {
-                            starsHtml += '<svg class="' + (stars >= n ? 'lit' : '') + '" viewBox="0 0 24 24"><use href="#i-star"/></svg>';
-                        });
-                        row.innerHTML = '<span class="lv-num">' + (l + 1) + '</span>' +
-                            '<span class="lv-body"><b>Уровень ' + (l + 1) + (cfg.match3 ? ' · алхимия звёзд' : cfg.oracle ? ' · оракул' : ' · ' + cfg.rows + '\u00D7' + cfg.cols) + '</b>' +
-                            '<span class="lv-tags">' + (tags || '<span class="tag">базовые пары</span>') +
-                            '<span class="lv-stars">' + starsHtml + '</span></span></span>' +
-                            '<span class="lv-act">' + (isOpen ? ZM.ic('i-play') : ZM.ic('i-lock')) + '</span>';
-                    } else {
-                        row.innerHTML = '<span class="lv-num">' + (l + 1) + '</span>' +
-                            '<span class="lv-body"><b>Уровень ' + (l + 1) + '</b>' +
-                            '<span class="lv-tags"><span class="tag">скоро · созвездие пишется</span></span></span>' +
-                            '<span class="lv-act">' + ZM.ic('i-lock') + '</span>';
-                    }
-                    if (isOpen) {
-                        (function(idx) {
-                            row.addEventListener('click', function() {
-                                startLevel(idx);
-                            });
-                        })(si * ZM.PER_SIGN + l);
-                    } else {
-                        row.disabled = true;
-                    }
-                    list.appendChild(row);
-                }
-            }
 
-            function spawnSubStars(host) {
-                if (!host) return;
-                host.innerHTML = '';
-                for (var i = 0; i < 60; i++) {
-                    var s = document.createElement('i');
-                    s.className = 'astar';
-                    s.style.left = (Math.random() * 100).toFixed(2) + '%';
-                    s.style.top = (Math.random() * 100).toFixed(2) + '%';
-                    var sz = (0.8 + Math.random() * 1.8).toFixed(1);
-                    s.style.width = s.style.height = sz + 'px';
-                    s.style.animationDelay = (Math.random() * 5).toFixed(2) + 's';
-                    s.style.animationDuration = (2.5 + Math.random() * 3).toFixed(2) + 's';
-                    host.appendChild(s);
-                }
-            }
 
-            /* хаб */
             function applySkin() {
                 var g = document.getElementById('s_game');
                 ZM.SKINS.forEach(function(s) {
@@ -7216,36 +6999,6 @@
                 });
             }
 
-            function reflowOracle(cb) {
-                if (!G || !G.oracle) {
-                    if (cb) cb();
-                    return;
-                }
-                var s = G.sid,
-                    alive = [];
-                G.deck.forEach(function(cd, ci) {
-                    if (!cd.grp.done) alive.push(ci);
-                });
-                if (alive.length < 2) {
-                    if (cb) cb();
-                    return;
-                }
-                var b = document.getElementById('oracleBanner');
-                if (b) b.innerHTML = 'Оракул тасует вновь\u2026';
-                G.busy = true;
-                var swaps = Math.max(4, Math.round((G.cfg.swaps || 8) * 0.55)),
-                    dur0 = Math.max(280, 560 - G.oracle.foundCount * 70);
-                runShuffle(alive, swaps, !!G.cfg.dual, dur0, function() {
-                    if (!G || G.sid !== s) return;
-                    G.busy = false;
-                    updateOracleBanner();
-                    AE.tone(392, {
-                        dur: .35,
-                        vol: .05
-                    });
-                    if (cb) cb();
-                });
-            }
 
             function animateSwap(a, b, dur, cb) {
                 var ea = cellEl(a),
@@ -7973,30 +7726,6 @@
                 } catch (e) {}
             }
 
-            function showFinale() {
-                BG.constellation();
-                setTimeout(function() {
-                    BG.constellation();
-                }, 1600);
-                AE.complete();
-                ZM.modalOpen('<h2>Звёздный путь продолжается</h2>' +
-                    '<div class="finale-wheel">' + wheelSVG(true) + '</div>' +
-                    '<div class="msub">Ваше созвездие засияло. Продолжайте исследовать двенадцать знаков.</div>' +
-                    '<div class="statgrid">' +
-                    '<div class="stat"><b>' + ZM.save.lvStars.reduce(function(a, b) {
-                        return a + b;
-                    }, 0) + '/324</b><span>звёзды</span></div>' +
-                    '<div class="stat"><b>' + ZM.save.dust + '</b><span>пыль</span></div>' +
-                    '<div class="stat"><b>' + collectedCount() + '/12</b><span>коллекция</span></div>' +
-                    '<div class="stat"><b>\u00D7' + Math.max(1, ZM.save.stats.bestCombo) + '</b><span>лучшее комбо</span></div></div>' +
-                    '<div class="m-actions"><button class="btn primary" data-close>' + ZM.ic('i-home') + ' К атласу</button></div>', {
-                        persistent: true,
-                        onClose: function() {
-                            enterHub(false);
-                        }
-                    });
-            }
-
             /* обработчики и вход */
             document.addEventListener('pointerdown', function() {
                 AE.resume();
@@ -8042,10 +7771,7 @@
             document.getElementById('btnDaily').addEventListener('click', function() {
                 if (dailyUnread()) showDaily();
             });
-            document.getElementById('slBack').addEventListener('click', function() {
-                AE.pick();
-                enterHub(false);
-            });
+
             document.getElementById('wheelPanel').addEventListener('click', function() {
                 var all = collectedCount() >= 12;
                 if (all && !ZM.save.wheelBonus) claimWheelBonus();

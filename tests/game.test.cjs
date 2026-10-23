@@ -586,7 +586,7 @@ test('previous journey can be restored after an import',async t=>{
 test('real animation keeps survivors moving downward and waits before the next cascade',async t=>{
     const page=await game(t,undefined,{realTime:true});
     assert.equal(await page.evaluate(()=>matchMedia('(prefers-reduced-motion:reduce)').matches),true);
-    await page.evaluate(()=>{ZM.modalForceClose();testGame.start(7,{cfg:{match3:true,rows:6,cols:6,target:3,moves:8,par:180}});});
+    await page.evaluate(()=>{let seed=1;Math.random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};ZM.modalForceClose();testGame.start(7,{cfg:{match3:true,rows:6,cols:6,target:3,moves:8,par:180}});});
     await page.waitForTimeout(650);
     await page.evaluate(()=>{
         const board=testGame.state.match3.board;let best=null,deep=-1;
@@ -708,7 +708,7 @@ test('generated assets decode and the atlas leads the mobile observatory',async 
     assert.equal(await page.evaluate(()=>Observatory.state().hero),'male');
     const result=await page.evaluate(async()=>{
         const decoded=[];
-        for(const src of['assets/observatory-atlas.png','assets/alchemy-icons.png','assets/moon-garden.png','assets/mystic-emblems.png',...Array.from({length:4},(_,i)=>'assets/costumes-'+i+'.webp'),...Array.from({length:2},(_,i)=>'assets/familiars-'+i+'.webp')]){
+        for(const src of['assets/observatory-atlas.webp','assets/alchemy-icons.webp','assets/moon-garden.webp','assets/mystic-emblems.webp',...Array.from({length:4},(_,i)=>'assets/costumes-'+i+'.webp'),...Array.from({length:2},(_,i)=>'assets/familiars-'+i+'.webp')]){
             const image=new Image();image.src=src;await image.decode();decoded.push(image.naturalWidth>0);
         }
         const avatar=document.getElementById('observatoryHost').getBoundingClientRect();

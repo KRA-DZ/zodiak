@@ -132,3 +132,20 @@ Manrope и Cormorant Garamond, переменные TTF из google/fonts, ка�
 Загрузка с Google Fonts заменена локальными `@font-face`, включая кириллицу.
 Источники: https://github.com/google/fonts/tree/main/ofl/manrope и
 https://github.com/google/fonts/tree/main/ofl/cormorantgaramond.
+
+## Оптимизация без изменения графики · 2026-10-23
+
+Активные `observatory-atlas`, `alchemy-icons`, `mystic-emblems`, `moon-garden`,
+`fon`, `fonvert` переведены из PNG в lossless WebP с теми же именами основ.
+Проверены размеры, альфа-канал и все видимые пиксели. Оригиналы находятся
+в `artwork-source` с сохранением относительных путей. Исторические пути PNG
+в разделах выше теперь относятся к этой папке; игра использует WebP.
+
+Три `zodiac-worlds`, старые `path-seals.png` и `shar.png` больше не входят
+в рабочие ресурсы. Они сохранены в `artwork-source` для будущего оформления.
+Эталон стиля: `artwork-source/assets/observatory-atlas.png`.
+
+Шрифты TTF заменены WOFF2 без подмножества символов. Таблицы соответствия
+символов глифам совпадают; SIL OFL сохранены. Размер шрифтов: 1 360 260 →
+262 944 байт. Для игры и сборки дополнительные Python-пакеты не нужны:
+готовые WOFF2 включены в репозиторий.

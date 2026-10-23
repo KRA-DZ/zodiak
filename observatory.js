@@ -17,8 +17,8 @@
             {id:'dragon',name:'Дракончик Астра',price:null,art:11,desc:'Хранитель всего зодиакального круга',unlock:'Трофей «Коллекционер» или «За горизонтом»'}
         ],
         backgrounds: [
-            {id:'original',name:'Звёздный берег',price:0,desc:'Ваше первое небо',image:'fon.png'},
-            {id:'garden',name:'Лунный сад',price:240,desc:'Тихое озеро и цветущая обсерватория',image:'assets/moon-garden.png'},
+            {id:'original',name:'Звёздный берег',price:0,desc:'Ваше первое небо',image:'fon.webp'},
+            {id:'garden',name:'Лунный сад',price:240,desc:'Тихое озеро и цветущая обсерватория',image:'assets/moon-garden.webp'},
             {id:'candles',name:'Комната предсказаний',price:160,desc:'Тёплое сияние свечей и старинных тайн',image:'table.jpg'}
         ],
         effects: [
@@ -110,7 +110,7 @@
         document.body.style.setProperty('--chosen-background','url("'+backgroundImage(false)+'")');
         render();
     }
-    function backgroundImage(portrait=false){const s=state();return s.background==='original'?(portrait?'fonvert.png':'fon.png'):definition('backgrounds',s.background).image;}
+    function backgroundImage(portrait=false){const s=state();return s.background==='original'?(portrait?'fonvert.webp':'fon.webp'):definition('backgrounds',s.background).image;}
     function setHero(hero){if(!['female','male'].includes(hero))return false;state().hero=hero;const look=definition('outfits',state().outfit);if(look.hero&&look.hero!==hero)state().outfit='apprentice';ZM.persist();render();return true;}
     function equipped(kind,id){const s=state();return kind==='backs'?ZM.save.skin===id:s[{outfits:'outfit',pets:'pet',backgrounds:'background',effects:'effect'}[kind]]===id;}
     function equip(kind,id){

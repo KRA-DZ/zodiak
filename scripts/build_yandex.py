@@ -30,9 +30,9 @@ with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as z:
 with zipfile.ZipFile(archive) as z:
     assert z.testzip() is None
     assert 'index.html' in z.namelist()
-    assert not any(n.startswith(('/', '../')) or 'node_modules' in n or n.startswith('tests/') for n in z.namelist())
+    assert not any(n.startswith(('/', '../')) or 'node_modules' in n or n.startswith(('tests/','artwork-source/')) for n in z.namelist())
 report = {'archive': archive.name, 'files': len(files), 'bytes': archive.stat().st_size,
           'root_entry': 'index.html', 'sdk': 'platform.js -> /sdk.js on Yandex hosts',
-          'external_startup_fonts': False, 'tests_in_archive': False}
+          'external_startup_fonts': False, 'tests_in_archive': False, 'artwork_sources_in_archive': False}
 (OUT / 'package-report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
 print(json.dumps(report, ensure_ascii=False))

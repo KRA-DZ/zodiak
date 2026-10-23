@@ -19,7 +19,7 @@ function render(){
  const viewport=host.querySelector('.path-viewport');let animation,suppressClickUntil=0;
  function show(sign,animate=true){
   const previousSign=activeSign;
-  sign=Math.max(0,Math.min(11,sign));warm(sign-1);warm(sign+1);dismiss();activeSign=sign;s.campaignChapter=sign;ZM.persist();
+  sign=Math.max(0,Math.min(11,sign));for(const cached of backgrounds.keys())if(Math.abs(cached-sign)>1)backgrounds.delete(cached);warm(sign);warm(sign-1);warm(sign+1);dismiss();activeSign=sign;s.campaignChapter=sign;ZM.persist();
   host.querySelector('h2').textContent=ZM.GLYPHS[sign]+' '+ZM.SIGNS[sign].name;
   const done=Array.from({length:n},(_,step)=>[0,1,2].filter(mode=>s.lvStars[Campaign.id(sign,mode,step)]>0).length).reduce((a,b)=>a+b,0),seals=[0,1,2].filter(mode=>Campaign.completed(s,sign,mode)===n).length;
   host.querySelector('#chapterProgress').textContent='Карта знака · '+done+'/30 · печати '+seals+'/3';

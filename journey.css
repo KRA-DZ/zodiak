@@ -137,11 +137,11 @@
 }
 @media(prefers-reduced-motion:reduce) {
     #bgc { display:none; }
-    body::before { content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:url('fon.png') center/cover; }
+    body::before { content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:url('fon.webp') center/cover; }
     .alchemy-spark,.alchemy-praise { display:none; }
     .gem.gem-hint { animation:none; outline:2px solid var(--gold); }
 }
-@media(prefers-reduced-motion:reduce) and (orientation:portrait) { body::before { background-image:url('fonvert.png'); } }
+@media(prefers-reduced-motion:reduce) and (orientation:portrait) { body::before { background-image:url('fonvert.webp'); } }
 /* Дополнительные действия доступны без постоянного ряда мелких кнопок. */
 #s_hub .topbar { position:relative; z-index:20; }
 .brand-short { display:none; }

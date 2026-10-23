@@ -1,4 +1,4 @@
-.figure-art { display:block; background-image:url('assets/observatory-atlas.png'); background-repeat:no-repeat; background-size:400% var(--art-size); background-position:var(--art-x) var(--art-y); aspect-ratio:var(--art-ratio); flex-shrink:0; }
+.figure-art { display:block; background-image:url('assets/observatory-atlas.webp'); background-repeat:no-repeat; background-size:400% var(--art-size); background-position:var(--art-x) var(--art-y); aspect-ratio:var(--art-ratio); flex-shrink:0; }
 .observatory-panel { padding:18px; overflow:hidden; background:radial-gradient(ellipse at 50% 45%,#6c488638,transparent 65%),var(--panel); }
 .observatory-top { display:flex; justify-content:space-between; align-items:center; gap:8px; }
 .observatory-help { color:var(--gold); border:1px solid var(--line); border-radius:50%; width:28px;height:28px; }
@@ -53,9 +53,9 @@ body[data-effect=comets] .alchemy-spark { color:#b5d5ff !important;text-shadow:1
 body[data-motion=minimal] .pet-figure,body[data-motion=minimal] .hero-figure,body[data-motion=minimal] .effect-preview i { animation:none !important; }
 body[data-motion=minimal] .alchemy-spark,body[data-motion=minimal] .alchemy-praise { display:none; }
 body[data-motion=minimal] #bgc { display:none; }
-body[data-motion=minimal]::before { content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background-image:var(--chosen-background,url('fon.png'));background-position:center;background-size:cover; }
+body[data-motion=minimal]::before { content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background-image:var(--chosen-background,url('fon.webp'));background-position:center;background-size:cover; }
 @media(prefers-reduced-motion:reduce) {
-    body::before { background-image:var(--chosen-background,url('fon.png')); }
+    body::before { background-image:var(--chosen-background,url('fon.webp')); }
     body[data-motion=full] #bgc { display:block !important; }
     body[data-motion=full]::before { display:none !important; }
     body[data-motion=full] .alchemy-spark { display:block;animation-duration:.65s !important; }
@@ -76,7 +76,7 @@ body[data-motion=minimal]::before { content:'';position:fixed;inset:0;z-index:0;
 /* Поле имеет постоянные координаты: перестановка DOM больше не перемещает фишки. */
 .board.match3-board { display:block;position:relative; }
 .match3-board > .gem { position:absolute;margin:0; }
-.gem-art { position:absolute;inset:5%;z-index:2;background-image:url('assets/alchemy-icons.png');background-size:300% 200%;background-position:var(--icon-x) var(--icon-y);background-repeat:no-repeat;pointer-events:none;filter:drop-shadow(0 2px 3px #0009); }
+.gem-art { position:absolute;inset:5%;z-index:2;background-image:url('assets/alchemy-icons.webp');background-size:300% 200%;background-position:var(--icon-x) var(--icon-y);background-repeat:no-repeat;pointer-events:none;filter:drop-shadow(0 2px 3px #0009); }
 .gem-symbol { opacity:.12; }
 .gem-facet { display:none; }
 .gem.sealed::after { z-index:3; }
@@ -138,7 +138,7 @@ body[data-motion=minimal]::before { content:'';position:fixed;inset:0;z-index:0;
 .observatory-link > span:nth-child(2) { flex:1;min-width:0;display:grid;gap:5px; }
 .observatory-link b { font-size:.78rem; }
 .observatory-link small { color:var(--muted);font-size:.64rem;line-height:1.5; }
-.mystic-icon { display:inline-block;flex-shrink:0;width:48px;height:48px;background-image:url('assets/mystic-emblems.png');background-size:300% 300%;background-position:var(--icon-x,0%) var(--icon-y,0%);filter:drop-shadow(0 2px 7px #d5afff33); }
+.mystic-icon { display:inline-block;flex-shrink:0;width:48px;height:48px;background-image:url('assets/mystic-emblems.webp');background-size:300% 300%;background-position:var(--icon-x,0%) var(--icon-y,0%);filter:drop-shadow(0 2px 7px #d5afff33); }
 .icon-zodiac { --icon-x:0%;--icon-y:100%; }.icon-oracle { --icon-x:50%;--icon-y:0%; }.icon-trophy { --icon-x:100%;--icon-y:0%; }
 .zcards { grid-template-columns:repeat(4,minmax(0,1fr));gap:14px; }
 .zcard { min-width:0;animation:cardIn .5s both;border-radius:17px;background:#10142d; }
@@ -272,7 +272,7 @@ body[data-motion=minimal]::before { content:'';position:fixed;inset:0;z-index:0;
 .path-node b { font-size:1rem; }.path-node small { font-size:.62rem;white-space:nowrap; }.node-symbol { font-size:1.1rem;line-height:1; }.path-node.locked { filter:grayscale(.8);opacity:.6;cursor:not-allowed; }.path-node.completed { background:radial-gradient(circle,#a48a5d,#252139);border-color:var(--gold);color:#ffe8b0; }.path-node.guardian { border-width:3px;box-shadow:0 0 0 5px #b98d5522,0 0 22px #c2955e33; }.path-node[data-ready=yes] { outline:3px solid var(--gold-hi);outline-offset:5px; }.path-node.available:hover { filter:brightness(1.2); }
 .path-begin { position:absolute;bottom:15px;text-align:center;width:100%;font-size:.8rem;color:var(--gold-hi); }.path-footer { display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap;padding:15px;background:#10152de8; }.path-footer .btn { font-size:.74rem;padding:10px; }
 .chapter-arrival { animation:chapterArrival .9s ease both; }@keyframes chapterArrival { from { opacity:0;transform:translateY(40px); } to { opacity:1;transform:none; } }
-.atlas-modal { width:min(1100px,96vw); }.atlas-modal .map-panel { width:100%;padding:15px;background:none;box-shadow:none;border:0; }.atlas-modal .zcards { grid-template-columns:repeat(4,minmax(0,1fr)); }.card-seals { position:absolute;inset:auto 0 6%;display:flex;justify-content:center;gap:3px;z-index:3; }.zodiac-seal { display:block;width:30%;aspect-ratio:1;background:url('assets/path-seals.png') var(--seal-x) 50% / 300% 100% no-repeat;filter:drop-shadow(0 3px 5px #000);position:relative; }.zodiac-seal.fallen { opacity:.2;filter:grayscale(1); }.zodiac-seal.fallen span { display:grid;place-items:center;height:100%;color:white;font-size:1.7rem; }
+.atlas-modal { width:min(1100px,96vw); }.atlas-modal .map-panel { width:100%;padding:15px;background:none;box-shadow:none;border:0; }.atlas-modal .zcards { grid-template-columns:repeat(4,minmax(0,1fr)); }.card-seals { position:absolute;inset:auto 0 6%;display:flex;justify-content:center;gap:3px;z-index:3; }.zodiac-seal { display:block;width:30%;aspect-ratio:1;background:url('assets/path-seals-dark.webp') var(--seal-x) 50% / 300% 100% no-repeat;filter:drop-shadow(0 3px 5px #000);position:relative; }.zodiac-seal.fallen { opacity:.2;filter:grayscale(1); }.zodiac-seal.fallen span { display:grid;place-items:center;height:100%;color:white;font-size:1.7rem; }
 .gem[data-void=true] { visibility:hidden;pointer-events:none; }
 body::after { content:'';position:fixed;inset:0;pointer-events:none;background-image:var(--chapter-art);background-position:center;background-size:cover;opacity:.1;z-index:0;transition:opacity .7s; }
 @media(max-width:720px) { .hub-wrap > .campaign-map { grid-row:1;grid-column:1; }.personal-observatory { position:static;max-height:none; }.path-heading { padding:16px; }.path-heading h2 { font-size:1.1rem; }.path-node { width:55px;height:55px; }.path-legend button { font-size:.67rem; }.path-viewport { height:62dvh; }.atlas-modal .zcards { grid-template-columns:repeat(3,minmax(0,1fr));gap:8px; }.path-footer .btn { font-size:.65rem; } }

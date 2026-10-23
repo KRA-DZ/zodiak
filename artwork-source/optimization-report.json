@@ -1,0 +1,81 @@
+{
+  "before_archive": {
+    "archive": "zodiak-yandex.zip",
+    "files": 73,
+    "bytes": 46649804,
+    "root_entry": "index.html",
+    "sdk": "platform.js -> /sdk.js on Yandex hosts",
+    "external_startup_fonts": false,
+    "tests_in_archive": false
+  },
+  "images": [
+    {
+      "source": "assets/observatory-atlas.png",
+      "runtime": "assets/observatory-atlas.webp",
+      "before": 2241444,
+      "after": 1584780,
+      "visible_pixels_identical": true
+    },
+    {
+      "source": "assets/alchemy-icons.png",
+      "runtime": "assets/alchemy-icons.webp",
+      "before": 2539025,
+      "after": 1843448,
+      "visible_pixels_identical": true
+    },
+    {
+      "source": "assets/mystic-emblems.png",
+      "runtime": "assets/mystic-emblems.webp",
+      "before": 2671311,
+      "after": 1955772,
+      "visible_pixels_identical": true
+    },
+    {
+      "source": "assets/moon-garden.png",
+      "runtime": "assets/moon-garden.webp",
+      "before": 2830462,
+      "after": 2085410,
+      "visible_pixels_identical": true
+    },
+    {
+      "source": "fon.png",
+      "runtime": "fon.webp",
+      "before": 2480318,
+      "after": 1848318,
+      "visible_pixels_identical": true
+    },
+    {
+      "source": "fonvert.png",
+      "runtime": "fonvert.webp",
+      "before": 2167490,
+      "after": 1533262,
+      "visible_pixels_identical": true
+    }
+  ],
+  "fonts": [
+    {
+      "font": "CormorantGaramond.ttf",
+      "ttf_bytes": 1195560,
+      "woff2_bytes": 209320,
+      "glyph_mapping_identical": true
+    },
+    {
+      "font": "Manrope.ttf",
+      "ttf_bytes": 164700,
+      "woff2_bytes": 53624,
+      "glyph_mapping_identical": true
+    }
+  ],
+  "after_archive": {
+    "archive": "zodiak-yandex.zip",
+    "files": 68,
+    "bytes": 26809608,
+    "root_entry": "index.html",
+    "sdk": "platform.js -> /sdk.js on Yandex hosts",
+    "external_startup_fonts": false,
+    "tests_in_archive": false,
+    "artwork_sources_in_archive": false
+  },
+  "archive_saving_bytes": 19840196,
+  "archive_saving_percent": 42.53
+}
