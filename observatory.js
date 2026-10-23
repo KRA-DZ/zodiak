@@ -196,16 +196,39 @@
         document.getElementById('caseAgain').onclick=()=>openCase(kind);
         document.getElementById('caseBack').onclick=()=>openWardrobe('cases');return result;
     }
+    async function watchReward(kind,after){
+        const day=ZM.todayISO(),a=AdRewards.hydrate(ZM.save,day);
+        if(a.counts[kind]>=AdRewards.limits[kind]){ZM.toast('Сегодня все награды этого типа получены');return;}
+        if(kind==='outfit'&&!a.target){ZM.toast('Сначала выберите наряд');return;}
+        let result=null;
+        const status=await GamePlatform.rewarded(()=>{
+            result=AdRewards.grant(ZM.save,catalog,kind,ZM.todayISO());
+            ZM.persist();ZM.renderDust();render();
+        });
+        if(result)ZM.toast(result.message,{ic:'i-star'});
+        else ZM.toast(status==='closed'?'Просмотр не завершён — награда не выдана':'Реклама сейчас недоступна. Попробуйте позже.');
+        if(after)after();
+        if(document.querySelector('.wardrobe-modal'))openWardrobe('rewards');
+    }
+    function rewardsMarkup(){
+        const a=AdRewards.hydrate(ZM.save,ZM.todayISO()),d=AdRewards.target(ZM.save,catalog,ZM.todayISO());ZM.persist();
+        const offers='<div class="ad-offers"><button class="btn" data-ad="hint" '+(a.counts.hint>=5?'disabled':'')+'>▶ +1 подсказка · '+a.counts.hint+'/5 сегодня</button><button class="btn" data-ad="dust" '+(a.counts.dust>=3?'disabled':'')+'>▶ +25 пыли · '+a.counts.dust+'/3 сегодня</button></div>';
+        const selection=!a.chosenUsed&&!a.progress?'<p>Один наряд можно выбрать самостоятельно. Затем цели назначаются случайно из этой подборки.</p><div class="ad-selection">'+AdRewards.pool(catalog).map(item=>'<button class="ad-choice'+(item.id===a.target?' selected':'')+'" data-ad-choice="'+item.id+'" '+(owned('outfits',item.id)?'disabled':'')+'>'+productArt('outfits',item)+'<b>'+item.name+'</b><small>'+Economy.rarities[item.rarity].name+' · '+AdRewards.needed(item)+' просмотра · '+(item.hero==='male'?'Волшебник':'Волшебница')+'</small></button>').join('')+'</div>':'';
+        const refund=d?Math.floor((d.seasonal?220:180)*Economy.rarities[d.rarity].refund):0;
+        return '<div class="ad-reward-section"><h3>Добровольные награды</h3><p>Награда выдаётся только за успешно завершённый просмотр. Закрытие и ошибка ничего не расходуют.</p>'+offers+selection+(d?'<article class="ad-target">'+productArt('outfits',d)+'<h3>'+d.name+'</h3><p>'+(a.chosenUsed?'Случайная цель':'Ваш выбранный наряд')+' · '+(d.hero==='male'?'для Волшебника':'для Волшебницы')+'</p><progress max="'+AdRewards.needed(d)+'" value="'+a.progress+'"></progress><p>'+a.progress+' / '+AdRewards.needed(d)+' успешных просмотров</p><button class="btn primary" data-ad="outfit" '+(a.counts.outfit>=3?'disabled':'')+'>▶ Продвинуться · '+a.counts.outfit+'/3 сегодня</button><small>Повторка вернёт '+refund+' пыли. После первого просмотра выбор закрепляется. Прогресс сохраняется между днями.</small></article>':'<p>Выберите желаемый наряд выше. Уже полученные вещи тоже могут стать случайной целью; компенсация будет показана заранее.</p>')+'</div>';
+    }
     function openWardrobe(tab='cases'){
-        if(!Object.hasOwn(names,tab))tab='cases';
+        if(!Object.hasOwn(names,tab)&&tab!=='rewards')tab='cases';if(tab==='rewards'&&!GamePlatform.adsAvailable)tab='cases';
         const s=state(),hero=s.hero||'female';
-        const body=tab==='cases'?caseMarkup():'<div class="wardrobe-grid">'+catalog[tab].filter(d=>!d.hero||d.hero===hero).map(d=>{
+        const body=tab==='rewards'?rewardsMarkup():tab==='cases'?caseMarkup():'<div class="wardrobe-grid">'+catalog[tab].filter(d=>!d.hero||d.hero===hero).map(d=>{
             const has=owned(tab,d.id),active=equipped(tab,d.id),isCase=d.case,label=active?'Выбрано':has?'Применить':isCase?(d.seasonal?'Из сезонного ларца':'Из ларца'):d.price==null?d.unlock:d.price+' ★',rarity=d.rarity&&Economy.rarities[d.rarity];
             return '<article class="wardrobe-item'+(active?' equipped':'')+'" '+(rarity?'style="--rarity:'+rarity.color+'"':'')+'>'+productArt(tab,d)+(rarity?'<span class="rarity-badge">'+rarity.name+'</span>':'')+'<b>'+d.name+'</b><p>'+(d.desc||'Без изменений')+'</p><button class="btn'+(active?'':' primary')+'" data-item="'+d.id+'" '+(active||(!has&&(isCase||d.price==null||ZM.save.dust<d.price))?'disabled':'')+'>'+label+'</button></article>';
         }).join('')+'</div>';
-        ZM.modalOpen('<h2>Гардероб созвездий</h2><div class="msub">'+ZM.save.dust+' ★ звёздной пыли · коллекция и волшебные ларцы</div><div class="hero-switch" aria-label="Выбор героя">'+['female','male'].map(h=>'<button class="btn'+(hero===h?' primary':'')+'" data-switch-hero="'+h+'">'+(h==='female'?'Волшебница':'Волшебник')+'</button>').join('')+'</div><div class="wardrobe-preview">'+portrait(s)+'</div><div class="wardrobe-tabs">'+Object.keys(names).map(k=>'<button class="btn'+(k===tab?' primary':'')+'" data-tab="'+k+'">'+names[k]+'</button>').join('')+'</div>'+body+'<p class="journey-note">Героя можно менять бесплатно. Общие образы доступны обоим героям; особые наряды отмечены в коллекции выбранного героя. Редкие награды сложных достижений нельзя получить из ларцов.</p><div class="m-actions"><button class="btn primary" data-close>Вернуться к звёздам</button></div>',{cls:'wardrobe-modal'+(tab==='cases'?' wardrobe-cases':'')});
+        ZM.modalOpen('<h2>Гардероб созвездий</h2><div class="msub">'+ZM.save.dust+' ★ звёздной пыли · коллекция и волшебные ларцы</div><div class="hero-switch" aria-label="Выбор героя">'+['female','male'].map(h=>'<button class="btn'+(hero===h?' primary':'')+'" data-switch-hero="'+h+'">'+(h==='female'?'Волшебница':'Волшебник')+'</button>').join('')+'</div><div class="wardrobe-preview">'+portrait(s)+'</div><div class="wardrobe-tabs">'+Object.keys({...names,...(GamePlatform.adsAvailable?{rewards:'За рекламу'}:{})}).map(k=>'<button class="btn'+(k===tab?' primary':'')+'" data-tab="'+k+'">'+(names[k]||'За рекламу')+'</button>').join('')+'</div>'+body+'<p class="journey-note">Героя можно менять бесплатно. Общие образы доступны обоим героям; особые наряды отмечены в коллекции выбранного героя. Редкие награды сложных достижений нельзя получить из ларцов.</p><div class="m-actions"><button class="btn primary" data-close>Вернуться к звёздам</button></div>',{cls:'wardrobe-modal'+(tab==='cases'?' wardrobe-cases':'')});
         ZM.qa('[data-switch-hero]').forEach(b=>b.onclick=()=>{setHero(b.dataset.switchHero);openWardrobe(tab);});
         ZM.qa('[data-tab]').forEach(b=>b.onclick=()=>openWardrobe(b.dataset.tab));
+        ZM.qa('[data-ad]').forEach(b=>b.onclick=()=>watchReward(b.dataset.ad));
+        ZM.qa('[data-ad-choice]').forEach(b=>b.onclick=()=>{AdRewards.choose(ZM.save,catalog,b.dataset.adChoice,ZM.todayISO());ZM.persist();openWardrobe('rewards');});
         ZM.qa('[data-case]').forEach(b=>b.onclick=()=>openCase(b.dataset.case));
         ZM.qa('[data-item]').forEach(b=>b.onclick=()=>{if(!state().hero)setHero('female');if(buy(tab,b.dataset.item))openWardrobe(tab);else ZM.toast('Предмет пока недоступен',{ic:'i-warn'});});
     }
@@ -257,7 +280,7 @@
         if(ZM.save.ach.collector&&!state().collectorGift){giveReward(collector.extra);state().collectorGift=true;}
         ZM.persist();
     }
-    const Observatory={heroPortrait(){return portrait(state());},catalog,statKeys,hydrate,init,connect(h){hooks=h;applyPreferences();check();},state,render,setHero,equip,buy,owned,giveReward,describeReward,rewardArt,record,check,openWardrobe,openCase,backgroundImage,reducedMotion,progressOf,achievementArt};
+    const Observatory={watchReward,heroPortrait(){return portrait(state());},catalog,statKeys,hydrate,init,connect(h){hooks=h;applyPreferences();check();},state,render,setHero,equip,buy,owned,giveReward,describeReward,rewardArt,record,check,openWardrobe,openCase,backgroundImage,reducedMotion,progressOf,achievementArt};
     root.Observatory=Observatory;
     if(typeof module!=='undefined')module.exports=Observatory;
 })(typeof window==='undefined'?globalThis:window);

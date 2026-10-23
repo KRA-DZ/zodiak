@@ -41,6 +41,7 @@ async function game(t, seed, settings = {}) {
         return route.fulfill({ status: 404, body: '' });
     });
     if (settings.sdk) await page.addInitScript(() => { window.platformCalls=[];window.platformEvents={};window.YaGames={init:async()=>({features:{LoadingAPI:{ready:()=>platformCalls.push('ready')},GameplayAPI:{start:()=>platformCalls.push('start'),stop:()=>platformCalls.push('stop')}},on:(name,fn)=>platformEvents[name]=fn})}; });
+    if(settings.rewarded)await page.addInitScript(()=>{window.adRequests=0;window.YaGames={init:async()=>({features:{LoadingAPI:{ready(){}},GameplayAPI:{start(){},stop(){}}},on(){},adv:{showRewardedVideo({callbacks}){window.adCallbacks=callbacks;window.adRequests++;callbacks.onOpen();}}})};});
     if (seed) await page.addInitScript(save => { if(!localStorage.getItem('zodiacMemory.v3'))localStorage.setItem('zodiacMemory.v3', JSON.stringify(save)); }, settings.legacyEconomy?seed:{...seed,economyVersion:2});
     if (!settings.realTime) {
         await page.clock.install();
@@ -1106,4 +1107,25 @@ test('Yandex SDK network failure leaves the standalone game playable and startup
  assert.equal(await page.locator('#board .gem').count(),36);
  assert.equal(await page.locator('link[href*="fonts.googleapis"]').count(),0);
  assert.equal(await page.evaluate(()=>document.fonts.check('16px Manrope')),true);
+});
+
+
+test('rewarded ads grant once only after SDK confirmation, do not reward closes/errors and release pause',async t=>{
+ const page=await game(t,null,{rewarded:true});await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>{ZM.modalForceClose();Observatory.openWardrobe('rewards');});
+ const before=await page.evaluate(()=>ZM.save.dust);await page.locator('[data-ad="dust"]').click();assert.equal(await page.evaluate(()=>GamePlatform.paused),true);
+ await page.evaluate(()=>{adCallbacks.onRewarded();adCallbacks.onRewarded();adCallbacks.onClose();});
+ assert.equal(await page.evaluate(()=>ZM.save.dust),before+25);assert.equal(await page.evaluate(()=>GamePlatform.paused),false);
+ await page.locator('[data-ad="dust"]').click();await page.evaluate(()=>adCallbacks.onClose());assert.equal(await page.evaluate(()=>ZM.save.dust),before+25);
+ await page.locator('[data-ad="dust"]').click();await page.evaluate(()=>{adCallbacks.onError();adCallbacks.onRewarded();});assert.equal(await page.evaluate(()=>ZM.save.dust),before+25);
+ assert.equal(await page.evaluate(()=>ZM.save.adRewards.counts.dust),1);
+ await page.locator('[data-ad-choice="academyrunes"]').click();
+ for(let n=0;n<3;n++){await page.locator('[data-ad="outfit"]').click();await page.evaluate(()=>{adCallbacks.onRewarded();adCallbacks.onClose();});}
+ assert.equal(await page.evaluate(()=>ZM.save.observatory.owned.outfits.academyrunes),true);assert.equal(await page.evaluate(()=>ZM.save.adRewards.chosenUsed),true);
+ assert.equal(await page.locator('[data-ad="outfit"]').isDisabled(),true);
+ const target=await page.evaluate(()=>ZM.save.adRewards.target);await page.reload();assert.equal(await page.evaluate(()=>ZM.save.adRewards.target),target);assert.equal(await page.evaluate(()=>ZM.save.adRewards.chosenUsed),true);
+});
+test('ad offerings are absent without SDK and an exhausted hint exposes a labelled voluntary offer',async t=>{
+ const plain=await game(t);await plain.evaluate(()=>Observatory.openWardrobe('rewards'));assert.equal(await plain.locator('[data-ad]').count(),0);await plain.close();
+ const page=await game(t,null,{rewarded:true});await start(page,20);await page.evaluate(()=>{testGame.state.hintFree=false;ZM.save.inv.hint=0;testGame.guardian();document.getElementById('btnHint').click();});assert.equal(await page.locator('[data-ad="hint"]').count(),1);
+ await page.locator('[data-ad="hint"]').click();await page.evaluate(()=>{adCallbacks.onRewarded();adCallbacks.onClose();});assert.equal(await page.evaluate(()=>ZM.save.inv.hint),1);
 });

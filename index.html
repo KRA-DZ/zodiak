@@ -7,7 +7,7 @@
     <title>Созвездие памяти</title>
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="assets/fonts/fonts.css">
-    <script src="platform.js?v=yandex-14"></script>
+    <script src="platform.js?v=rewards-15"></script>
     <style>
          :root {
             --bg0: #07091c;
@@ -3085,14 +3085,14 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="journey.css?v=yandex-14">
-    <link rel="stylesheet" href="observatory.css?v=yandex-14"><link rel="stylesheet" href="worlds.css?v=yandex-14">
+    <link rel="stylesheet" href="journey.css?v=rewards-15">
+    <link rel="stylesheet" href="observatory.css?v=rewards-15"><link rel="stylesheet" href="worlds.css?v=rewards-15">
 </head>
 
 <body>
-    <script src="level-goals.js?v=yandex-14"></script><script src="wardrobe-content.js?v=yandex-14"></script><script src="economy.js?v=yandex-14"></script><script src="campaign.js?v=yandex-14"></script><script src="journey.js?v=yandex-14"></script>
-    <script src="save-files.js?v=yandex-14"></script>
-    <script src="match3.js?v=yandex-14"></script><script src="level-tour.js?v=yandex-14"></script><script src="campaign-map.js?v=yandex-14"></script>
+    <script src="ad-rewards.js?v=rewards-15"></script><script src="level-goals.js?v=rewards-15"></script><script src="wardrobe-content.js?v=rewards-15"></script><script src="economy.js?v=rewards-15"></script><script src="campaign.js?v=rewards-15"></script><script src="journey.js?v=rewards-15"></script>
+    <script src="save-files.js?v=rewards-15"></script>
+    <script src="match3.js?v=rewards-15"></script><script src="level-tour.js?v=rewards-15"></script><script src="campaign-map.js?v=rewards-15"></script>
     <script>
         (function() {
             var shown = false;
@@ -4440,8 +4440,8 @@
         })();
     </script>
 
-    <script src="predictions.js?v=yandex-14"></script>
-    <script src="observatory.js?v=yandex-14"></script>
+    <script src="predictions.js?v=rewards-15"></script>
+    <script src="observatory.js?v=rewards-15"></script>
     <script>Observatory.init(window.ZM);</script>
     <script>
         /* ═══ ДВИЖОК: аудио+музыка, фон, хаб-атлас, игра ═══ */
@@ -6749,6 +6749,7 @@
                     (ZM.save.inv.map > 0 ? '<button class="gbtn" id="btnMap">' + ZM.ic('i-map') + ' Астро-карта<span class="cnt">' + ZM.save.inv.map + '</span></button>' : '') +
                     '<button class="gbtn" id="btnHome">' + ZM.ic('i-home') + ' Уйти</button>' +
                     '<button class="gbtn muteBtn" id="btnMute2">' + ZM.ic(AE.on ? 'i-vol' : 'i-voloff') + '</button>';
+                if(GamePlatform.adsAvailable){var adButton=document.createElement('button');adButton.id='adHint';adButton.className='gbtn';adButton.textContent='▶ Подсказка за рекламу';adButton.hidden=true;adButton.onclick=function(){Observatory.watchReward('hint',updateHintUI);};document.getElementById('gFoot').appendChild(adButton);}
                 document.getElementById('btnHint').addEventListener('click', useHint);
                 document.getElementById('btnPower').addEventListener('click', usePower);
                 document.getElementById('btnHome').addEventListener('click', confirmQuit);
@@ -6976,6 +6977,7 @@
             function updateHintUI() {
                 if (!G) return;
                 document.getElementById('btnHint').disabled = !!(G.match3 && G.match3.busy);
+                var adHint=document.getElementById('adHint');if(adHint)adHint.hidden=!(GamePlatform.adsAvailable&&!G.hintFree&&ZM.save.inv.hint===0);
                 var hc = document.getElementById('hintCnt');
                 if (hc) hc.textContent = (G.hintFree ? 1 : 0) + ZM.save.inv.hint;
                 var pw = document.getElementById('btnPower'),
@@ -7509,6 +7511,7 @@
                 if (!G || G.busy || G.preview || G.finished || G.dead) return;
                 if (G.match3 && G.match3.busy) return;
                 if (!(G.hintFree || ZM.save.inv.hint > 0)) {
+                    if(GamePlatform.adsAvailable){Observatory.openWardrobe('rewards');return;}
                     ZM.toast('Подсказок нет — загляните в лавку', {
                         ic: 'i-warn'
                     });

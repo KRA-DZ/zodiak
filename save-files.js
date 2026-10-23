@@ -2,6 +2,7 @@
 (function(root) {
     'use strict';
     const Economy=root.Economy||(typeof require==='function'?require('./economy.js'):null);
+    const AdRewards=root.AdRewards||(typeof require==='function'?require('./ad-rewards.js'):null);
     const fail = () => { throw new Error('Файл не похож на корректную копию прогресса этой игры.'); };
     const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
     const int = (n, max = 1e9) => Number.isSafeInteger(n) && n >= 0 && n <= max;
@@ -82,13 +83,17 @@
             const stats=['tutorial','wardrobeBuys','backgroundChanges','bestCascade','gems','alchemyWins','oracleWins','memoryWins','predictions'];
             if(!Object.keys(o.stats).every(k=>stats.includes(k)&&int(o.stats[k])))fail();
         }
+        if(s.adRewards!=null){
+            const a=s.adRewards,epic=['starreader','merlin'];
+            if(!object(a)||!date(a.day)||a.day===''||typeof a.chosenUsed!=='boolean'||!object(a.counts)||!['hint','dust','outfit'].every(k=>int(a.counts[k],AdRewards.limits[k]))||!Object.keys(a.counts).every(k=>Object.hasOwn(AdRewards.limits,k))||!(a.target===null||AdRewards.ids.includes(a.target))||!int(a.progress,a.target&&epic.includes(a.target)?4:2)||(!a.target&&a.progress!==0))fail();
+        }
         if(s.levelGuides!=null&&(!flags(s.levelGuides)||!Object.keys(s.levelGuides).every(k=>['memory','oracle','alchemy'].includes(k))))fail();
         if(s.journeyVersion===2&&s.campaignVersion!==1)fail();
         if(s.campaignVersion!=null&&(s.campaignVersion!==1||s.lvStars.length!==360||!int(s.campaignMode,2)||!int(s.campaignChapter,11)))fail();
         if(s.pathRewards!=null&&(!flags(s.pathRewards)||!Object.keys(s.pathRewards).every(k=>/^(?:[0-9]|1[01]):[012]$/.test(k))))fail();
         if(s.albumSeen!=null&&(!Array.isArray(s.albumSeen)||s.albumSeen.length>12||!s.albumSeen.every(n=>int(n,11))||new Set(s.albumSeen).size!==s.albumSeen.length))fail();
         if(s.economyVersion!=null&&s.economyVersion!==Economy.VERSION)fail();
-        const fields = ['economyVersion','created','sign','birth','dust','inv','skins','skin','lvOpen','lvStars','ach','stats','horoUsed','daily','preds','predDay','predSign','wheelBonus','traits','calStart','calLast','calTaken','journeyVersion','journal','omens','endless','loginStreak','loginLast','ritual','frag','stars','observatory','levelGuides','campaignVersion','campaignMode','campaignChapter','pathRewards','albumSeen'];
+        const fields = ['economyVersion','created','sign','birth','dust','inv','skins','skin','lvOpen','lvStars','ach','stats','horoUsed','daily','preds','predDay','predSign','wheelBonus','traits','calStart','calLast','calTaken','journeyVersion','journal','omens','endless','loginStreak','loginLast','ritual','frag','stars','observatory','levelGuides','campaignVersion','campaignMode','campaignChapter','pathRewards','albumSeen','adRewards'];
         const save = {};
         fields.forEach(k => { if (Object.hasOwn(s,k)) save[k] = s[k]; });
         for (const k of ['frag','stars']) if (save[k] != null && (!Array.isArray(save[k]) || save[k].length > 108 || !save[k].every(n => int(n)))) fail();

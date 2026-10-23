@@ -23,7 +23,21 @@ async function init(){
   maybeReady();
  }catch(e){state.sdk='unavailable';}
 }
-root.GamePlatform={get paused(){return reasons.size>0;},state,delay,cancel,pause,resume,sync,connect(value){hooks=value;},gameplay(value){playing=!!value;sync();},ready(){engineReady=true;maybeReady();}};
+let adBusy=false;
+function rewarded(onReward){
+ if(adBusy||!sdk?.adv?.showRewardedVideo||reasons.size)return Promise.resolve('unavailable');
+ adBusy=true;pause('rewarded');
+ return new Promise(resolve=>{let granted=false,closed=false;
+  function finish(status){if(closed)return;closed=true;adBusy=false;resume('rewarded');resolve(status);}
+  try{sdk.adv.showRewardedVideo({callbacks:{
+   onOpen:()=>{},
+   onRewarded:()=>{if(closed||granted)return;granted=true;try{onReward();}catch(e){state.rewardError=true;}},
+   onClose:()=>finish(granted?'rewarded':'closed'),
+   onError:()=>finish(granted?'rewarded':'error')
+  }});}catch(e){finish('error');}
+ });
+}
+root.GamePlatform={rewarded,get adsAvailable(){return !!sdk?.adv?.showRewardedVideo;},get adBusy(){return adBusy;},get paused(){return reasons.size>0;},state,delay,cancel,pause,resume,sync,connect(value){hooks=value;},gameplay(value){playing=!!value;sync();},ready(){engineReady=true;maybeReady();}};
 addEventListener('blur',()=>pause('focus'));addEventListener('focus',()=>resume('focus'));
 document.addEventListener('visibilitychange',()=>document.hidden?pause('visibility'):resume('visibility'));
 addEventListener('pagehide',()=>pause('page'));addEventListener('pageshow',()=>resume('page'));
