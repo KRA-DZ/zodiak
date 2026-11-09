@@ -12,7 +12,7 @@ before(async () => {
 after(async () => { await browser?.close(); });
 
 async function game(t, seed, settings = {}) {
-    const page = await browser.newPage({ reducedMotion: 'reduce',locale:settings.locale||'ru-RU' });
+    const page = await browser.newPage({ reducedMotion: 'reduce',locale:settings.locale||'ru-RU',...(settings.phone?{isMobile:true,hasTouch:true}:{}) });
     t.after(() => page.close());
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
@@ -21,6 +21,7 @@ async function game(t, seed, settings = {}) {
         const url = new URL(route.request().url());
         if (url.hostname !== 'game.test') return route.abort();
         const name = path.basename(url.pathname);
+        if(name==='portal.html'&&settings.portal)return route.fulfill({contentType:'text/html',body:'<meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;height:100%;overflow:hidden}header{height:52px;background:#101010;color:white}iframe{position:fixed;left:0;right:0;top:52px;width:100%;height:calc(100% - 52px);border:0}</style><header>Test portal toolbar</header><iframe name="game" src="/index.html"></iframe>'});
         if(name==='sdk.js'&&settings.sdkScript)return route.fulfill({contentType:'application/javascript',body:"window.platformCalls=[];window.platformEvents={};window.YaGames={init:async()=>({features:{LoadingAPI:{ready:()=>platformCalls.push('ready')},GameplayAPI:{start:()=>platformCalls.push('start'),stop:()=>platformCalls.push('stop')}},on:(name,fn)=>platformEvents[name]=fn})};"});
         if (name === 'index.html') {
             let html = fs.readFileSync(process.env.GAME_SOURCE || path.join(root, name), 'utf8');
@@ -56,7 +57,7 @@ async function game(t, seed, settings = {}) {
         // Deterministic model tests omit native animations; real-time tests verify falling frames.
         await page.addInitScript(() => { Element.prototype.animate = undefined; });
     }
-    await page.goto(settings.url||'http://game.test/index.html');
+    await page.goto(settings.url||(settings.portal?'http://game.test/portal.html':'http://game.test/index.html'));
     return page;
 }
 
@@ -464,7 +465,7 @@ test('mobile predictions are readable, cost is shown and atlas art fits its colu
     assert.ok(sizes.width>240 && sizes.left>=0 && sizes.right<=390);
     assert.ok(sizes.text.length>40);
     await page.evaluate(()=>ZM.modalForceClose());
-    await page.evaluate(()=>ZM.modalForceClose());await page.locator('#openAtlas').click();
+    await page.evaluate(()=>ZM.modalForceClose());await page.locator('#mobileHero').click();await page.locator('#openAtlas').click();
     // Wait for the modal entrance transform before measuring its final mobile width.
     await page.waitForFunction(()=>{const r=document.querySelector('#atlasModal .map-panel').getBoundingClientRect();return r.width>300&&r.left>=0&&r.right<=390;});
     const fit=await page.locator('#atlasModal .map-panel').evaluate(el=>{
@@ -722,9 +723,9 @@ test('generated assets decode and the atlas leads the mobile observatory',async 
         const avatar=document.getElementById('observatoryHost').getBoundingClientRect();
         const modes=document.querySelector('.command-actions').getBoundingClientRect();
         const atlas=document.getElementById('campaignMap').getBoundingClientRect();
-        return {decoded,above:modes.top<avatar.top,atlasFirst:atlas.top<avatar.top,columns:Campaign.modes.length,overflow:document.documentElement.scrollWidth>innerWidth};
+        return {decoded,atlasVisible:atlas.height>0,avatarHidden:avatar.height===0,columns:Campaign.modes.length,overflow:document.documentElement.scrollWidth>innerWidth};
     });
-    assert.ok(result.decoded.every(Boolean));assert.equal(result.above,true);assert.equal(result.atlasFirst,true);assert.equal(result.columns,3);assert.equal(result.overflow,false);
+    assert.ok(result.decoded.every(Boolean));assert.equal(result.atlasVisible,true);assert.equal(result.avatarHidden,true);assert.equal(result.columns,3);assert.equal(result.overflow,false);await page.locator('#mobileHero').click();assert.equal(await page.locator('#observatoryHost').isVisible(),true);
 });
 
 test('shop, all wardrobe sections and the complete trophy list open through visible controls',async t=>{
@@ -1297,4 +1298,52 @@ test('an SDK write timeout cannot launch a concurrent write and late confirmatio
  await page.evaluate(()=>{ZM.save.dust=11;ZM.persist();CloudSave.sync();});assert.equal(await page.evaluate(()=>cloudCalls.filter(c=>c[0]==='write').length),2);
  await page.evaluate(()=>{window.cloudHoldWrite=false;releaseCloudWrite();});await cloudUntil(page,()=>CloudSave.status==='pending');await page.clock.runFor(31000);await cloudUntil(page,()=>CloudSave.status==='synced');
  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('mock.cloud.data')).zodiacMemoryCloud.save.dust),11);
+});
+
+test('mobile hub fits an iPhone viewport below a portal toolbar and keeps all ten touch targets accessible',async t=>{
+ const page=await game(t,null,{phone:true,portal:true});await page.setViewportSize({width:393,height:852});const frame=page.frame({name:'game'});
+ await frame.locator('#setupGo').click();await page.clock.runFor(800);await frame.evaluate(()=>ZM.modalForceClose());
+ const fit=await frame.evaluate(()=>{const r=el=>el.getBoundingClientRect(),map=r(document.querySelector('.chapter-viewport')),nodes=[...document.querySelectorAll('.star-node')].map(r),nav=r(document.getElementById('mobileNav')),footer=r(document.querySelector('.chapter-footer'));return{height:innerHeight,hubHeight:r(document.getElementById('s_hub')).height,navBottom:nav.bottom,footerFits:footer.bottom<=nav.top,mapHeight:map.height,fit:nodes.every(n=>n.top>=map.top&&n.bottom<=map.bottom&&n.left>=0&&n.right<=innerWidth),touch:nodes.every(n=>n.width>=44&&n.height>=44),overlap:nodes.some((a,i)=>nodes.some((b,j)=>i<j&&a.left<b.right&&b.left<a.right&&a.top<b.bottom&&b.top<a.bottom)),overflow:document.documentElement.scrollWidth>innerWidth};});
+ assert.equal(fit.height,800);assert.equal(fit.hubHeight,800);assert.ok(fit.navBottom<=800);assert.equal(fit.footerFits,true);assert.ok(fit.mapHeight>450);assert.equal(fit.fit,true);assert.equal(fit.touch,true);assert.equal(fit.overlap,false);assert.equal(fit.overflow,false);
+ await frame.locator('#pathContinue').click();assert.equal(await frame.locator('.picker-mode').count(),3);await frame.locator('[data-play="20"]').click();await page.clock.runFor(100);
+ assert.equal(await frame.locator('#s_game.active').count(),1);assert.equal(await frame.locator('#mobileNav').isVisible(),false);
+});
+
+test('mobile tabs preserve progress, expose observatory features and restore the original desktop layout',async t=>{
+ const page=await game(t,null,{phone:true});await page.setViewportSize({width:393,height:720});await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
+ const save=await page.evaluate(()=>JSON.stringify(ZM.save));
+ await page.locator('#mobileHero').click();assert.equal(await page.locator('#campaignMap').isVisible(),false);assert.equal(await page.locator('#openTraits').isVisible(),true);await page.locator('#openTraits').click();assert.equal(await page.locator('#traitsModal').count(),1);await page.locator('.mobile-dialog-close').click();
+ await page.locator('#mobileModes').click();assert.equal(await page.locator('#btnEndless').isVisible(),true);assert.equal(await page.locator('#dailyQuest').isVisible(),true);await page.keyboard.press('Escape');assert.equal(await page.locator('#mobileModesSheet').isVisible(),false);
+ await page.locator('#mobilePath').click();await page.locator('#mobileSigns').click();assert.equal(await page.locator('.path-chapters').isVisible(),true);await page.locator('[data-chapter="1"]').click();assert.equal(await page.locator('.path-chapters').isVisible(),false);
+ await page.locator('[data-chapter="0"]').evaluate(b=>b.click());assert.equal(await page.evaluate(()=>JSON.stringify(ZM.save)),save);
+ await page.setViewportSize({width:1366,height:950});await page.clock.runFor(50);assert.equal(await page.evaluate(()=>MobileUI.active),false);assert.equal(await page.locator('#btnEndless').isVisible(),true);assert.equal(await page.locator('.personal-observatory').isVisible(),true);assert.equal(await page.locator('.topbar #btnHubMenu').count(),1);assert.equal(await page.locator('#mobileNav').isVisible(),false);
+ assert.equal(await page.evaluate(()=>JSON.stringify(ZM.save)),save);
+});
+
+test('mobile goal and booster dialogs freeze previews, keep dialog controls usable and resume the same game',async t=>{
+ const page=await game(t,null,{phone:true});await page.setViewportSize({width:393,height:700});await start(page,10);const session=await page.evaluate(()=>testGame.state.sid);
+ await page.locator('#mobileGoals').click();const state=await page.evaluate(()=>({preview:testGame.state.preview,deck:testGame.state.deck.map(c=>c.grp.id),elapsed:testGame.state.elapsed}));await page.clock.runFor(12000);
+ assert.deepEqual(await page.evaluate(()=>({preview:testGame.state.preview,deck:testGame.state.deck.map(c=>c.grp.id),elapsed:testGame.state.elapsed})),state);assert.equal(await page.locator('#mobileGoalsHost #guardianStars').count(),1);
+ await page.locator('.mobile-game-dialog [data-close]').click();assert.equal(await page.evaluate(()=>GamePlatform.paused),false);assert.equal(await page.evaluate(()=>testGame.state.sid),session);assert.equal(await page.locator('.level-guardian #guardianStars').count(),1);await page.clock.runFor(18000);assert.equal(await page.evaluate(()=>testGame.state.preview),false);
+ await page.locator('#mobileBoosts').click();assert.equal(await page.locator('[data-mobile-boost=btnMute2]').isVisible(),true);await page.locator('.mobile-game-dialog [data-close]').click();assert.equal(await page.evaluate(()=>GamePlatform.paused),false);
+ await page.evaluate(()=>{ZM.save.inv.map=1;});await start(page,0);await skipPreview(page);await page.locator('#mobileBoosts').click();await page.locator('[data-mobile-boost=btnMap]').click();await page.clock.runFor(1600);assert.equal(await page.evaluate(()=>ZM.save.inv.map),0);assert.ok(await page.evaluate(()=>testGame.state.cleared)>0);assert.equal(await page.evaluate(()=>GamePlatform.paused),false);
+});
+
+test('small phones and rotated phones keep map targets, game boards and controls within the viewport',async t=>{
+ const page=await game(t,null,{phone:true});await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
+ for(const [width,height]of [[320,480],[320,568],[393,700],[430,800],[852,343]]){
+  await page.evaluate(()=>{testGame.kill();ZM.showScreen('hub');MobileUI.setTab('path');});await page.setViewportSize({width,height});await page.clock.runFor(100);
+  assert.equal(await page.evaluate(()=>{const map=document.querySelector('.chapter-viewport').getBoundingClientRect();const nodes=[...document.querySelectorAll('.star-node')].map(n=>n.getBoundingClientRect());return nodes.every(n=>n.top>=map.top&&n.bottom<=map.bottom)&&!nodes.some((a,i)=>nodes.some((b,j)=>i<j&&a.left<b.right&&b.left<a.right&&a.top<b.bottom&&b.top<a.bottom));}),true,width+' map');
+  for(const index of [0,10,20,359]){await start(page,index);await page.evaluate(()=>document.fonts.ready);await page.clock.runFor(160);const fit=await page.evaluate(()=>{const b=document.getElementById('board').getBoundingClientRect(),g=document.querySelector('.level-guardian').getBoundingClientRect(),foot=document.getElementById('gFoot').getBoundingClientRect();return{bounds:b.toJSON(),zone:document.querySelector('.board-zone').getBoundingClientRect().toJSON(),board:b.top>=0&&b.left>=0&&b.right<=innerWidth+.5&&b.bottom<=innerHeight+.5,foot:foot.bottom<=innerHeight+.5,overlap:b.left<g.right&&g.left<b.right&&b.top<g.bottom&&g.top<b.bottom};});assert.equal(fit.board,true,width+' level '+index+' '+JSON.stringify(fit));assert.equal(fit.foot,true);assert.equal(fit.overlap,false);assert.equal(await page.locator('#mobileGoals').isVisible(),true);}
+ }
+});
+
+test('mobile sheets and star dialogs translate in English and Turkish without duplicate IDs',async t=>{
+ const page=await game(t,null,{phone:true});await page.setViewportSize({width:393,height:720});await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
+ for(const lang of ['en','tr']){
+  await page.evaluate(lang=>I18n.set(lang),lang);await page.locator('#mobileModes').click();await page.clock.runFor(32);assert.deepEqual(await visibleRussian(page),[]);await page.locator('#mobileModesSheet .mobile-sheet-close').click();
+  await page.locator('#btnHubMenu').click();await page.clock.runFor(32);assert.deepEqual(await visibleRussian(page),[]);await page.locator('#mobileMoreSheet .mobile-sheet-close').click();
+  await start(page,20);await page.locator('#mobileGoals').click();await page.clock.runFor(32);assert.deepEqual(await visibleRussian(page),[]);await page.locator('.mobile-game-dialog [data-close]').click();await page.evaluate(()=>{testGame.kill();ZM.showScreen('hub');});
+ }
+ const duplicates=await page.evaluate(()=>{const ids=[...document.querySelectorAll('[id]')].map(n=>n.id);return ids.filter((id,i)=>ids.indexOf(id)!==i);});assert.deepEqual(duplicates,[]);
 });

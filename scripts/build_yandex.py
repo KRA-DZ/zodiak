@@ -11,6 +11,7 @@ files += sorted((ROOT / 'locales').glob('*.tsv'))
 assert ROOT / 'index.html' in files
 assert ROOT / 'i18n.js' in files
 assert ROOT / 'cloud-save.js' in files
+assert ROOT / 'mobile-ui.js' in files and ROOT / 'mobile.css' in files
 locale = ROOT / 'locales' / 'ui.tsv'
 assert locale in files, 'Missing interface translations'
 rows = [line.split('|') for line in locale.read_text().splitlines() if line]

@@ -41,7 +41,7 @@ root.GamePlatform={rewarded,get adsAvailable(){return !!sdk?.adv?.showRewardedVi
 addEventListener('blur',()=>pause('focus'));addEventListener('focus',()=>resume('focus'));
 document.addEventListener('visibilitychange',()=>document.hidden?pause('visibility'):resume('visibility'));
 addEventListener('pagehide',()=>pause('page'));addEventListener('pageshow',()=>resume('page'));
-const guard=e=>{if(reasons.size){e.preventDefault();e.stopImmediatePropagation();}};
+const guard=e=>{if(reasons.size&&!(reasons.size===1&&reasons.has('mobile-dialog')&&e.target.closest?.('.mobile-game-dialog'))){e.preventDefault();e.stopImmediatePropagation();}};
 for(const event of ['pointerdown','pointerup','click','keydown','touchstart'])document.addEventListener(event,guard,{capture:true,passive:false});
 function loaded(){const fonts=Promise.all([document.fonts?.ready||Promise.resolve(),root.I18n?.ready||Promise.resolve()]);Promise.resolve(fonts).catch(()=>{}).then(()=>{assetsReady=true;maybeReady();});new MutationObserver(sync).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});if(document.hidden)pause('visibility');}
 if(document.readyState==='complete')loaded();else addEventListener('load',loaded,{once:true});

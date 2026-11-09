@@ -8,7 +8,15 @@ const hints=['Найди пары','Следи за картами','Три в �
 const backgrounds=new Map();
 function warm(sign){if(sign<0||sign>11||backgrounds.has(sign))return;const image=new Image();backgrounds.set(sign,image);image.src='assets/route-'+names[sign]+'.webp';}
 const steps=()=>Campaign.nodesPerSign||10;
-const point=(sign,step)=>({x:300+190*Math.sin(step*.86+sign*.43)+22*Math.sin(step*1.7),y:90-step*8.6});
+const point=(sign,step)=>{
+ if(root.MobileUI?.active){
+  if(root.MobileUI.landscape)return{x:60+(step<5?step:9-step)*120,y:step<5?76:24};
+  if(root.innerHeight<600){const points=[[.18,88],[.50,88],[.82,88],[.82,62],[.50,62],[.18,62],[.18,36],[.50,36],[.82,36],[.50,13]];return{x:points[step][0]*600,y:points[step][1]};}
+  const points=[[.40,92],[.67,84],[.85,72],[.56,66],[.25,59],[.14,43],[.43,40],[.77,31],[.70,15],[.36,12]];
+  return{x:points[step][0]*600,y:points[step][1]};
+ }
+ return{x:300+190*Math.sin(step*.86+sign*.43)+22*Math.sin(step*1.7),y:90-step*8.6};
+};
 function describe(c){const tags=[Campaign.names[c.campaignMode]];if(c.campaignBoss)tags.push('Испытание хранителя');if(c.rest)tags.push('Спокойный уровень');if(c.boss)tags.push('Обратный отсчёт '+c.par+' с');if(c.match3)tags.push(c.rows+'×'+c.cols,c.shapeLabel||'Открытое небо',c.moves+' ходов');if(c.trios)tags.push('Триады');if(c.darks)tags.push('Тёмные карты');if(c.oracle)tags.push('до 2 целей · '+c.stages.length+' этапа');if(c.match3)tags.push(c.goal?.type==='seals'?'Лунные печати':c.goal?.type==='collect'?'Сбор цвета':'Сбор символов');if(c.obstacles?.length)tags.push('Замки и лёд');if(c.voids?.length)tags.push('Разрывы поля');return tags.join(' · ');}
 function detail(cfg){return describe(cfg)||[cfg.campaignBoss?'Испытание хранителя':'',cfg.rest?'Спокойный уровень':'',cfg.goal?.type==='seals'?'Лунные печати':'',cfg.obstacles?.length?'Замки и лёд':'',cfg.voids?.length?'Разрывы поля':''].filter(Boolean).join(' · ')||'Обычный расклад';}
 function dismiss(){const popup=document.querySelector('.node-picker');if(popup){const node=document.querySelector('.star-node[data-node="'+popup.dataset.node+'"]');popup.remove();return node;}return null;}
@@ -62,7 +70,7 @@ function render(){
  host.querySelectorAll('[data-chapter]').forEach(b=>b.onclick=()=>show(+b.dataset.chapter));
  host.querySelector('#chapterPrev').onclick=()=>show(activeSign-1);host.querySelector('#chapterNext').onclick=()=>show(activeSign+1);
  host.querySelector('#pathObservatory').onclick=()=>document.querySelector('.personal-observatory').scrollIntoView({behavior:'smooth',block:'start'});
- host.querySelector('#pathContinue').onclick=()=>{const id=Campaign.next(s,s.campaignMode),sign=Math.floor(id/30),step=id%n;show(sign);host.querySelector('.star-node[data-node="'+(sign*n+step)+'"]').focus({preventScroll:true});};
+ host.querySelector('#pathContinue').onclick=()=>{const id=Campaign.next(s,s.campaignMode),sign=Math.floor(id/30),step=id%n;show(sign);host.querySelector('.star-node[data-node="'+(sign*n+step)+'"]').focus({preventScroll:true});if(root.MobileUI?.active){const node=host.querySelector('.star-node[data-node="'+(sign*n+step)+'"]');picker(sign*n+step,node);}};
  show(activeSign,false);
 }
 document.addEventListener('pointerdown',e=>{if(!e.target.closest('.node-picker,.star-node'))dismiss();});
