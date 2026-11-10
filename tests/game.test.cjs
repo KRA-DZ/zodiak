@@ -1347,3 +1347,19 @@ test('mobile sheets and star dialogs translate in English and Turkish without du
  }
  const duplicates=await page.evaluate(()=>{const ids=[...document.querySelectorAll('[id]')].map(n=>n.id);return ids.filter((id,i)=>ids.indexOf(id)!==i);});assert.deepEqual(duplicates,[]);
 });
+
+
+test('mobile hint toolbar exposes sign power and keeps quitting in the header across levels',async t=>{
+ const page=await game(t,null,{phone:true});await page.setViewportSize({width:393,height:700});
+ for(const index of [0,10,0]){
+  await start(page,index);await skipPreview(page);
+  assert.equal(await page.locator('#gFoot #btnPower').isVisible(),true);
+  assert.equal(await page.locator('.game-head #btnHome').isVisible(),true);
+  assert.equal(await page.locator('#gFoot #btnHome').count(),0);
+  assert.equal(await page.locator('#btnHome').count(),1);
+  assert.match(await page.locator('#mobileHintHelp').textContent(),index===10?/нужную карту/:/совпадения/);
+  await page.locator('#btnHome').click();assert.equal(await page.locator('#modalRoot.show').count(),1);await page.evaluate(()=>ZM.modalForceClose());
+ }
+ await start(page,20);assert.equal(await page.locator('#btnPower').isVisible(),false);assert.match(await page.locator('#mobileHintHelp').textContent(),/возможный ход/);
+ await page.setViewportSize({width:1366,height:950});assert.equal(await page.locator('#gFoot #btnHome').isVisible(),true);assert.equal(await page.locator('#mobileHintHelp').count(),0);
+});

@@ -41,7 +41,7 @@ function gameDialog(kind){
   root.ZM.modalOpen('<h2>Условия звёзд</h2><div id="mobileGoalsHost"></div><div class="m-actions"><button class="btn primary" data-close>Продолжить игру</button></div>',{cls:'mobile-game-dialog mobile-goals-modal',onClose(){restore(goals);root.GamePlatform.resume('mobile-dialog');}});
   document.getElementById('mobileGoalsHost').appendChild(goals);
  }else{
-  const options=[['btnPower','Сила знака'],['btnFreeze','Стужа'],['btnMap','Астро-карта'],['btnMute2','Звук']].map(([id,label])=>({original:document.getElementById(id),id,label})).filter(x=>x.original&&!x.original.hidden);
+  const options=[['btnFreeze','Стужа'],['btnMap','Астро-карта'],['btnMute2','Звук']].map(([id,label])=>({original:document.getElementById(id),id,label})).filter(x=>x.original&&!x.original.hidden);
   root.ZM.modalOpen('<h2>Бонусы и звук</h2><div class="mobile-boost-list">'+options.map(x=>'<button class="btn" data-mobile-boost="'+x.id+'" '+(x.original.disabled?'disabled':'')+'>'+x.label+' '+(x.original.querySelector('.cnt')?.textContent||'')+'</button>').join('')+'</div><div class="m-actions"><button class="btn primary" data-close>Продолжить игру</button></div>',{cls:'mobile-game-dialog',onClose(){root.GamePlatform.resume('mobile-dialog');}});
   document.querySelectorAll('[data-mobile-boost]').forEach(b=>b.onclick=()=>{const original=document.getElementById(b.dataset.mobileBoost);root.ZM.modalClose();original?.click();});
  }
@@ -49,7 +49,10 @@ function gameDialog(kind){
 function gameControls(){
  if(!active)return;const foot=document.getElementById('gFoot');if(!foot.children.length)return;
  if(innerHeight<600&&innerWidth<=innerHeight)move(goalsButton,foot);else if(goalsButton)restore(goalsButton);
- if(!document.getElementById('mobileBoosts')){const b=document.createElement('button');b.id='mobileBoosts';b.className='gbtn';b.textContent='Бонусы';b.onclick=()=>gameDialog('boosts');foot.querySelector('#btnHome').before(b);root.I18n?.render(b);}
+ const exit=foot.querySelector('#btnHome');
+ if(exit){const old=document.querySelector('.game-head #btnHome');if(old&&old!==exit){homes.delete(old);old.remove();}move(exit,document.querySelector('.game-head'));}
+ if(!foot.querySelector('#mobileHintHelp')){const help=document.createElement('small');help.id='mobileHintHelp';help.textContent=foot.dataset.hintHelp||'';foot.appendChild(help);root.I18n?.render(help);}
+ if(!document.getElementById('mobileBoosts')){const b=document.createElement('button');b.id='mobileBoosts';b.className='gbtn';b.textContent='Бонусы';b.onclick=()=>gameDialog('boosts');foot.appendChild(b);root.I18n?.render(b);}
 }
 function modalControls(){
  if(!active)return;const dialog=document.querySelector('#modalRoot .modal');if(!dialog||!dialog.querySelector('[data-close]')||dialog.querySelector('.mobile-dialog-close'))return;
@@ -71,7 +74,7 @@ function apply(){
   closeSheet(false);if(document.querySelector('.mobile-game-dialog'))root.ZM.modalClose();
   for(const [node]of homes)if(!node.classList.contains('guardian-goals'))restore(node);
   document.getElementById('mobileSigns')?.remove();document.querySelector('.mobile-map-hint')?.remove();document.querySelector('.chapter-heading')?.classList.remove('mobile-signs-open');
-  root.CampaignMap?.render();document.getElementById('mobileBoosts')?.remove();
+  root.CampaignMap?.render();document.getElementById('mobileBoosts')?.remove();document.getElementById('mobileHintHelp')?.remove();
  }
  size();sync();
 }
@@ -103,6 +106,6 @@ function init(){
  });
  query.addEventListener('change',apply);addEventListener('resize',apply);root.visualViewport?.addEventListener('resize',size);apply();root.I18n?.render(hub);
 }
-root.MobileUI={get active(){return active;},get landscape(){return active&&innerWidth>innerHeight;},setTab};
+root.MobileUI={resetGameControls(){const exit=document.querySelector('.game-head #btnHome');if(exit){homes.delete(exit);exit.remove();}},get active(){return active;},get landscape(){return active&&innerWidth>innerHeight;},setTab};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })(window);

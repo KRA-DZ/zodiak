@@ -90,7 +90,7 @@ body.mobile-ui #s_game #guardianForecast { margin:0;font-size:12px;text-align:le
 body.mobile-ui #mobileGoals { display:block;min-width:70px;min-height:44px;padding:6px;border:1px solid #b09ac355;border-radius:10px;color:var(--gold-hi);font-size:12px; }
 body.mobile-ui #s_game .game-foot { flex:none;width:100%;margin:0;gap:5px;flex-wrap:wrap; }
 body.mobile-ui #s_game .game-foot .gbtn { min-height:44px;flex:1;min-width:0;justify-content:center;padding:7px 4px;font-size:12px;gap:4px; }
-body.mobile-ui #gFoot #btnPower,body.mobile-ui #gFoot #btnFreeze,body.mobile-ui #gFoot #btnMap,body.mobile-ui #gFoot #btnMute2 { display:none; }
+body.mobile-ui #gFoot #btnFreeze,body.mobile-ui #gFoot #btnMap,body.mobile-ui #gFoot #btnMute2 { display:none; }
 body.mobile-ui #gFoot #adHint:not([hidden]) { flex-basis:100%; }
 body.mobile-ui #modalRoot { padding:8px;max-height:var(--mobile-height,100dvh); }
 body.mobile-ui .modal { max-height:calc(var(--mobile-height,100dvh) - 16px);width:min(700px,100%);padding:18px;border-radius:18px;overscroll-behavior:contain; }
@@ -153,3 +153,11 @@ body.mobile-ui.mobile-short-portrait #s_game .game-guide,body.mobile-ui.mobile-s
 body.mobile-ui.mobile-short-portrait #gFoot .gbtn { font-size:11px; }
 body.mobile-ui.mobile-short-portrait #gFoot #btnHint>svg { display:none; }
 body.mobile-ui.mobile-short-portrait #gFoot #mobileGoals { flex:1;min-width:0;min-height:44px;padding:6px 3px;font-size:11px; }
+
+/* Keep the sign power beside hints, and leave quitting away from the play toolbar. */
+body.mobile-ui #s_game .game-head #btnHome { flex:0 0 44px;min-width:44px;max-width:54px;min-height:44px;align-self:flex-start;display:flex;flex-direction:column;justify-content:center;gap:2px;padding:5px 3px;border:1px solid #b09ac344;border-radius:12px;font-size:10px; }
+body.mobile-ui #s_game .game-head #btnHome svg { width:18px;height:18px; }
+body.mobile-ui #gFoot #btnPower[hidden] { display:none; }
+body.mobile-ui #mobileHintHelp { order:10;flex:0 0 100%;grid-column:1 / -1;text-align:center;font-size:10px;line-height:1.3;color:#c7b9d5; }
+body.mobile-ui #gFoot #btnPower.ready { border-color:var(--gold-hi);background:#b58fdb26; }
+@media(max-height:500px) and (min-width:600px) { body.mobile-ui #s_game .game-head { flex-wrap:wrap; }body.mobile-ui #s_game .game-head .hud-l { flex-basis:120px; }body.mobile-ui #s_game .game-head #btnHome { margin-left:auto; } }
