@@ -7,9 +7,9 @@
     <title>Созвездие памяти</title>
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="assets/fonts/fonts.css">
-    <script src="i18n.js?v=glass-23"></script>
-    <script src="platform.js?v=glass-23"></script>
-    <script src="mobile-ui.js?v=glass-23" defer></script>
+    <script src="i18n.js?v=panel-24"></script>
+    <script src="platform.js?v=panel-24"></script>
+    <script src="mobile-ui.js?v=panel-24" defer></script>
     <style>
          :root {
             --bg0: #07091c;
@@ -2993,15 +2993,15 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="journey.css?v=glass-23">
-    <link rel="stylesheet" href="observatory.css?v=glass-23"><link rel="stylesheet" href="worlds.css?v=glass-23"><link rel="stylesheet" href="mobile.css?v=glass-23"><link rel="stylesheet" href="card-faces.css?v=glass-23">
+    <link rel="stylesheet" href="journey.css?v=panel-24">
+    <link rel="stylesheet" href="observatory.css?v=panel-24"><link rel="stylesheet" href="worlds.css?v=panel-24"><link rel="stylesheet" href="mobile.css?v=panel-24"><link rel="stylesheet" href="card-faces.css?v=panel-24"><link rel="stylesheet" href="hub-panel.css?v=panel-24">
 </head>
 
 <body>
-    <script src="ad-rewards.js?v=glass-23"></script><script src="level-goals.js?v=glass-23"></script><script src="wardrobe-content.js?v=glass-23"></script><script src="economy.js?v=glass-23"></script><script src="campaign.js?v=glass-23"></script><script src="journey.js?v=glass-23"></script>
-    <script src="save-files.js?v=glass-23"></script>
-    <script src="cloud-save.js?v=glass-23"></script>
-    <script src="match3.js?v=glass-23"></script><script src="level-tour.js?v=glass-23"></script><script src="campaign-map.js?v=glass-23"></script>
+    <script src="ad-rewards.js?v=panel-24"></script><script src="level-goals.js?v=panel-24"></script><script src="wardrobe-content.js?v=panel-24"></script><script src="economy.js?v=panel-24"></script><script src="campaign.js?v=panel-24"></script><script src="journey.js?v=panel-24"></script>
+    <script src="save-files.js?v=panel-24"></script>
+    <script src="cloud-save.js?v=panel-24"></script>
+    <script src="match3.js?v=panel-24"></script><script src="level-tour.js?v=panel-24"></script><script src="campaign-map.js?v=panel-24"></script>
     <script>
         (function() {
             var shown = false;
@@ -3099,8 +3099,9 @@
             <span class="dustchip" title="Звёздная пыль"><svg><use href="#i-star"/></svg><span id="dustTop">0</span></span>
 
             <button class="iconbtn" id="btnCalendar" title="Ежедневные награды"><svg><use href="#i-gift"/></svg><span class="il">Дар</span><span class="dot" id="calDot" style="display:none"></span></button>
-            <button class="iconbtn" id="btnHubMenu" title="Настройки и разделы" aria-label="Ещё: настройки и разделы" aria-controls="hubTools" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="il">Ещё</span></button>
-            <nav id="hubTools" class="hub-tools" hidden aria-label="Дополнительные разделы" inert><button class="iconbtn muteBtn" id="btnVol" title="Звук"><svg><use href="#i-vol"/></svg><span class="il">Звук</span></button><button class="iconbtn" id="btnProfile" title="Сменить знак"><svg><use href="#i-user"/></svg><span class="il">Знак</span></button><button class="iconbtn" id="btnShop" title="Лавка"><svg><use href="#i-bag"/></svg><span class="il">Лавка</span></button><button class="iconbtn" id="btnAch" title="Трофеи"><svg><use href="#i-trophy"/></svg><span class="il">Трофеи</span></button><button class="iconbtn" id="btnDaily" title="Ежедневный прогноз" style="display:none"><svg><use href="#i-clock"/></svg><span class="il">Прогноз</span></button></nav>
+            <button class="iconbtn" id="btnShop" title="Лавка"><svg><use href="#i-bag"/></svg><span class="il">Лавка</span></button><button class="iconbtn" id="btnAch" title="Трофеи"><svg><use href="#i-trophy"/></svg><span class="il">Трофеи</span></button>
+            <button class="iconbtn" id="btnHubMenu" title="Настройки" aria-label="Настройки" aria-controls="hubTools" aria-expanded="false"><svg class="settings-gear" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M10 2h4l.7 3 2 .9 2.8-.9 2 3.4-2.1 2.1v3l2.1 2.1-2 3.4-2.8-.9-2 .9-.7 3h-4l-.7-3-2-.9-2.8.9-2-3.4 2.1-2.1v-3L2.5 8.4l2-3.4 2.8.9 2-.9z"/><circle cx="12" cy="12" r="3.2"/></svg><span class="il">Настройки</span></button>
+            <nav id="hubTools" class="hub-tools" hidden aria-label="Настройки" inert><button class="iconbtn muteBtn" id="btnVol" title="Звук"><svg><use href="#i-vol"/></svg><span class="il">Звук</span></button><button class="iconbtn" id="btnProfile" title="Сменить знак"><svg><use href="#i-user"/></svg><span class="il">Знак</span></button><button class="iconbtn" id="btnDaily" title="Ежедневный прогноз" style="display:none"><svg><use href="#i-clock"/></svg><span class="il">Прогноз</span></button></nav>
 
         </div>
 <section class="command-actions" aria-label="Ваше путешествие">
@@ -4343,8 +4344,8 @@
         })();
     </script>
 
-    <script src="predictions.js?v=glass-23"></script>
-    <script src="observatory.js?v=glass-23"></script>
+    <script src="predictions.js?v=panel-24"></script>
+    <script src="observatory.js?v=panel-24"></script>
     <script>Observatory.init(window.ZM);</script>
     <script>
         /* ═══ ДВИЖОК: аудио+музыка, фон, хаб-атлас, игра ═══ */

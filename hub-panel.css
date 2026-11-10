@@ -1,0 +1,39 @@
+/* Main destinations stay visible; secondary preferences live under the gear. */
+#s_hub .hub-command { overflow:visible;position:relative;z-index:12; }
+#s_hub .topbar { position:relative; }
+#s_hub #btnAch { order:3;flex-shrink:0; }
+#s_hub #btnShop { order:4;flex:0 0 auto;min-width:155px;min-height:60px;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:12px;padding:12px 22px;border:1px solid #ffe7a4;border-radius:16px;background:linear-gradient(135deg,#f5d989,#cda450);color:#241a34;box-shadow:0 4px 18px #e8bd5930,inset 0 1px 0 #fff8c9;font-weight:700; }
+#s_hub #btnShop svg { width:30px;height:30px; }
+#s_hub #btnShop .il { display:block;font-size:16px;letter-spacing:.04em;color:inherit; }
+#s_hub #btnShop:hover { filter:brightness(1.08); }
+#s_hub #btnHubMenu { order:5; }
+.settings-gear { font-size:29px;line-height:1; }
+#s_hub #hubTools { position:absolute;right:12px;top:calc(100% + 6px);z-index:50;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:300px;max-width:calc(100vw - 32px);padding:12px;border:1px solid #b89bca77;border-radius:18px;background:linear-gradient(145deg,#28213f,#11162f);box-shadow:0 12px 35px #0009;overflow:visible;transition:none; }
+#s_hub #hubTools[hidden] { display:none!important; }
+#s_hub #hubTools .iconbtn { width:100%;min-height:70px;border:1px solid #b09ac344;background:#ffffff05;border-radius:12px; }
+#s_hub #hubTools .il { display:block;white-space:normal; }
+#s_hub .menu-expanded .logo { flex:1; }
+@media(min-width:761px) and (max-width:1150px) {
+ #s_hub .hub-command .topbar { flex-wrap:wrap; }
+ #s_hub .command-meta { order:6;flex:1 0 100%;justify-content:space-between;margin:0;padding-top:6px;border-top:1px solid var(--line); }
+ #s_hub #btnShop { min-width:140px; }
+}
+body.mobile-ui #s_hub .hub-command .topbar { display:grid;grid-template-columns:minmax(0,1fr) 58px 44px 44px;grid-template-rows:auto 44px;gap:5px; }
+body.mobile-ui #s_hub .hub-command .logo { grid-column:1;grid-row:1; }
+body.mobile-ui #s_hub .topbar .dustchip { grid-column:2;grid-row:1; }
+body.mobile-ui #s_hub #btnCalendar { grid-column:3;grid-row:1; }
+body.mobile-ui #s_hub #mobileGuide { grid-column:4;grid-row:1; }
+body.mobile-ui #s_hub #btnShop { grid-column:1 / span 2;grid-row:2;width:100%;min-width:0;min-height:44px;height:44px;padding:6px 12px;gap:8px;border-radius:12px; }
+body.mobile-ui #s_hub #btnShop svg { width:24px;height:24px; }
+body.mobile-ui #s_hub #btnShop .il { font-size:14px; }
+body.mobile-ui #s_hub #btnAch { grid-column:3 / span 2;grid-row:2;min-width:0;width:100%;min-height:44px;height:44px;display:flex;flex-direction:row;justify-content:center;gap:6px;padding:5px;border:1px solid #b09ac355;border-radius:12px; }
+body.mobile-ui #s_hub #btnAch svg { width:19px;height:19px; }
+body.mobile-ui #s_hub #btnAch .il { display:block;font-size:10px; }
+body.mobile-ui #mobileNav .settings-gear { display:block;font-size:25px;line-height:25px; }
+body.mobile-ui #mobileNav #btnHubMenu .il { font-size:10px; }
+@media(max-height:500px) and (min-width:600px) {
+ body.mobile-ui #s_hub .hub-command .topbar { grid-template-columns:minmax(0,1fr) 58px 44px 44px minmax(120px,160px) 85px;grid-template-rows:auto; }
+ body.mobile-ui #s_hub #btnShop { grid-column:5;grid-row:1; }
+ body.mobile-ui #s_hub #btnAch { grid-column:6;grid-row:1; }
+}
+#s_hub #hubTools #btnDaily { display:none!important; }

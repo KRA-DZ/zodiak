@@ -81,7 +81,7 @@ function apply(){
 function init(){
  const hub=document.getElementById('s_hub');if(!hub||!root.ZM?.ready)return;
  const nav=document.createElement('nav');nav.id='mobileNav';nav.hidden=true;nav.setAttribute('aria-label','Разделы игры');nav.innerHTML='<button id="mobilePath" data-mobile-tab-button="path" aria-pressed="true"><span aria-hidden="true">✦</span><b>Путь</b></button><button id="mobileHero" data-mobile-tab-button="hero" aria-pressed="false"><span aria-hidden="true">☾</span><b>Герой</b></button><button id="mobileModes"><span aria-hidden="true">◇</span><b>Режимы</b></button>';hub.appendChild(nav);
- for(const [name,title]of[['More','Ещё'],['Modes','Выберите режим']]){
+ for(const [name,title]of[['More','Настройки'],['Modes','Выберите режим']]){
   const wrap=document.createElement('div');wrap.id='mobile'+name+'Sheet';wrap.className='mobile-sheet';wrap.hidden=true;wrap.inert=true;
   wrap.innerHTML='<button class="mobile-sheet-backdrop" tabindex="-1" aria-label="Закрыть"></button><section class="mobile-sheet-panel" aria-label="'+title+'" tabindex="-1"><header><h2>'+title+'</h2><button class="mobile-sheet-close" aria-label="Закрыть">×</button></header><div id="mobile'+name+'Content"></div></section>';
   document.body.appendChild(wrap);wrap.querySelector('.mobile-sheet-backdrop').onclick=()=>closeSheet();wrap.querySelector('.mobile-sheet-close').onclick=()=>closeSheet();

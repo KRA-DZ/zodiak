@@ -14,6 +14,7 @@ assert ROOT / 'i18n.js' in files
 assert ROOT / 'cloud-save.js' in files
 assert ROOT / 'mobile-ui.js' in files and ROOT / 'mobile.css' in files
 assert ROOT / 'card-faces.css' in files
+assert ROOT / 'hub-panel.css' in files
 assert all(ROOT / ('assets/cards-' + name + '.webp') in files for name in ['zodiac','celestial','alchemy'])
 locale = ROOT / 'locales' / 'ui.tsv'
 assert locale in files, 'Missing interface translations'

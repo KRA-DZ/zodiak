@@ -732,7 +732,7 @@ test('shop, all wardrobe sections and the complete trophy list open through visi
     const page=await game(t);
     await page.locator('#setupGo').click();await page.clock.runFor(800);
     await page.evaluate(()=>ZM.modalForceClose());
-    await page.locator('#btnHubMenu').click();await page.locator('#btnShop').click();
+    await page.locator('#btnShop').click();
     await page.locator('#shopWardrobe').click();
     for(const tab of['pets','backgrounds','effects','backs','outfits']){
         await page.locator('[data-tab="'+tab+'"]').click();
@@ -740,7 +740,7 @@ test('shop, all wardrobe sections and the complete trophy list open through visi
         if(tab==='backs')assert.equal(await page.locator('.wardrobe-item').count(),10);
     }
     await page.keyboard.press('Escape');
-    await page.locator('#btnHubMenu').click();await page.locator('#btnAch').click();
+    await page.locator('#btnAch').click();
     assert.equal(await page.locator('.ach-row').count(),22);
 });
 
@@ -860,12 +860,12 @@ test('special tile swaps trigger chains, respect obstacles and preserve a create
     await page.evaluate(()=>specialRound.destroy());
 });
 
-test('streak and guide lead the atlas, header opens inline and trophies avoid automatic focus',async t=>{
+test('streak and guide lead the atlas, settings open a popover and trophies avoid automatic focus',async t=>{
     const page=await game(t);await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
     assert.equal(await page.evaluate(()=>document.querySelector('.welcome-strip').getBoundingClientRect().top<document.getElementById('campaignMap').getBoundingClientRect().top),true);
     await page.locator('#btnHubMenu').click();
     assert.equal(await page.evaluate(()=>document.querySelector('.topbar').classList.contains('menu-expanded')),true);
-    assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('hubTools')).position),'static');
+    assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('hubTools')).position),'absolute');
     await page.locator('#btnHubMenu').click();
     assert.equal(await page.locator('#hubTools').getAttribute('hidden'),'');
     await page.locator('#openTrophies').click();
@@ -1334,7 +1334,8 @@ test('small phones and rotated phones keep map targets, game boards and controls
  for(const [width,height]of [[320,480],[320,568],[393,700],[430,800],[852,343]]){
   await page.evaluate(()=>{testGame.kill();ZM.showScreen('hub');MobileUI.setTab('path');});await page.setViewportSize({width,height});await page.clock.runFor(100);
   assert.equal(await page.evaluate(()=>{const map=document.querySelector('.chapter-viewport').getBoundingClientRect();const nodes=[...document.querySelectorAll('.star-node')].map(n=>n.getBoundingClientRect());return nodes.every(n=>n.top>=map.top&&n.bottom<=map.bottom)&&!nodes.some((a,i)=>nodes.some((b,j)=>i<j&&a.left<b.right&&b.left<a.right&&a.top<b.bottom&&b.top<a.bottom));}),true,width+' map');
-  for(const index of [0,10,20,359]){await start(page,index);await page.evaluate(()=>document.fonts.ready);await page.clock.runFor(160);const fit=await page.evaluate(()=>{const b=document.getElementById('board').getBoundingClientRect(),g=document.querySelector('.level-guardian').getBoundingClientRect(),foot=document.getElementById('gFoot').getBoundingClientRect();return{bounds:b.toJSON(),zone:document.querySelector('.board-zone').getBoundingClientRect().toJSON(),board:b.top>=0&&b.left>=0&&b.right<=innerWidth+.5&&b.bottom<=innerHeight+.5,foot:foot.bottom<=innerHeight+.5,overlap:b.left<g.right&&g.left<b.right&&b.top<g.bottom&&g.top<b.bottom};});assert.equal(fit.board,true,width+' level '+index+' '+JSON.stringify(fit));assert.equal(fit.foot,true);assert.equal(fit.overlap,false);assert.equal(await page.locator('#mobileGoals').isVisible(),true);}
+  // Container-query layout needs a browser paint in addition to emulated game timers.
+  for(const index of [0,10,20,359]){await start(page,index);await page.evaluate(()=>document.fonts.ready);await page.clock.runFor(160);await page.waitForTimeout(50);await page.clock.runFor(32);const fit=await page.evaluate(()=>{const b=document.getElementById('board').getBoundingClientRect(),g=document.querySelector('.level-guardian').getBoundingClientRect(),foot=document.getElementById('gFoot').getBoundingClientRect();return{mobile:MobileUI.active,classes:document.body.className,style:document.getElementById('board').getAttribute('style'),container:getComputedStyle(document.querySelector('.board-zone')).containerType,bounds:b.toJSON(),zone:document.querySelector('.board-zone').getBoundingClientRect().toJSON(),board:b.top>=0&&b.left>=0&&b.right<=innerWidth+.5&&b.bottom<=innerHeight+.5,foot:foot.bottom<=innerHeight+.5,overlap:b.left<g.right&&g.left<b.right&&b.top<g.bottom&&g.top<b.bottom};});assert.equal(fit.board,true,width+' level '+index+' '+JSON.stringify(fit));assert.equal(fit.foot,true);assert.equal(fit.overlap,false);assert.equal(await page.locator('#mobileGoals').isVisible(),true);}
  }
 });
 
@@ -1402,4 +1403,18 @@ test('stained glass faces cover every symbol, stay mapped during Oracle shuffles
  await start(page,20);assert.match(await page.locator('.gem-art').first().evaluate(el=>getComputedStyle(el).backgroundImage),/cards-alchemy/);
  await page.evaluate(()=>{testGame.kill();testGame.oracle();});assert.equal(await page.locator('.ft-back .card-art').count(),4);
  await page.evaluate(()=>ZM.modalForceClose());
+});
+
+
+test('main header keeps shop, trophies and gift visible and groups sign language and sound under settings',async t=>{
+ const page=await game(t);await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
+ for(const [width,height]of [[1366,950],[1024,768],[393,720],[320,480],[852,343]]){
+  await page.setViewportSize({width,height});await page.clock.runFor(100);
+  for(const id of ['btnShop','btnAch','btnCalendar'])assert.equal(await page.locator('#'+id).isVisible(),true);
+  assert.equal(await page.locator('#btnProfile').isVisible(),false);assert.equal(await page.locator('#btnVol').isVisible(),false);assert.equal(await page.locator('#btnLanguage').isVisible(),false);
+  assert.equal(await page.locator('#btnShop').evaluate(el=>el.getBoundingClientRect().width>document.getElementById('btnAch').getBoundingClientRect().width),true);
+  await page.locator('#btnHubMenu').click();for(const id of ['btnProfile','btnVol','btnLanguage'])assert.equal(await page.locator('#'+id).isVisible(),true);await page.keyboard.press('Escape');
+  assert.equal(await page.locator('.topbar').evaluate(el=>el.scrollWidth<=el.clientWidth),true);
+ }
+ await page.locator('#btnShop').click();assert.equal(await page.locator('#shopWardrobe').isVisible(),true);
 });
