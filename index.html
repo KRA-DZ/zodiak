@@ -7,9 +7,9 @@
     <title>Созвездие памяти</title>
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="assets/fonts/fonts.css">
-    <script src="i18n.js?v=panel-24"></script>
-    <script src="platform.js?v=panel-24"></script>
-    <script src="mobile-ui.js?v=panel-24" defer></script>
+    <script src="i18n.js?v=backs-25"></script>
+    <script src="platform.js?v=backs-25"></script>
+    <script src="mobile-ui.js?v=backs-25" defer></script>
     <style>
          :root {
             --bg0: #07091c;
@@ -2993,15 +2993,16 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="journey.css?v=panel-24">
-    <link rel="stylesheet" href="observatory.css?v=panel-24"><link rel="stylesheet" href="worlds.css?v=panel-24"><link rel="stylesheet" href="mobile.css?v=panel-24"><link rel="stylesheet" href="card-faces.css?v=panel-24"><link rel="stylesheet" href="hub-panel.css?v=panel-24">
+    <link rel="stylesheet" href="journey.css?v=backs-25">
+    <link rel="stylesheet" href="observatory.css?v=backs-25"><link rel="stylesheet" href="worlds.css?v=backs-25"><link rel="stylesheet" href="mobile.css?v=backs-25"><link rel="stylesheet" href="card-faces.css?v=backs-25"><link rel="stylesheet" href="hub-panel.css?v=backs-25"><link rel="stylesheet" href="card-backs.css?v=backs-25">
 </head>
 
 <body>
-    <script src="ad-rewards.js?v=panel-24"></script><script src="level-goals.js?v=panel-24"></script><script src="wardrobe-content.js?v=panel-24"></script><script src="economy.js?v=panel-24"></script><script src="campaign.js?v=panel-24"></script><script src="journey.js?v=panel-24"></script>
-    <script src="save-files.js?v=panel-24"></script>
-    <script src="cloud-save.js?v=panel-24"></script>
-    <script src="match3.js?v=panel-24"></script><script src="level-tour.js?v=panel-24"></script><script src="campaign-map.js?v=panel-24"></script>
+    <script src="ad-rewards.js?v=backs-25"></script><script src="level-goals.js?v=backs-25"></script><script src="wardrobe-content.js?v=backs-25"></script><script src="economy.js?v=backs-25"></script><script src="campaign.js?v=backs-25"></script><script src="journey.js?v=backs-25"></script>
+    <script src="card-backs.js?v=backs-25"></script>
+    <script src="save-files.js?v=backs-25"></script>
+    <script src="cloud-save.js?v=backs-25"></script>
+    <script src="match3.js?v=backs-25"></script><script src="level-tour.js?v=backs-25"></script><script src="campaign-map.js?v=backs-25"></script>
     <script>
         (function() {
             var shown = false;
@@ -4262,39 +4263,7 @@
                 price: 200,
                 icn: 'i-map'
             }];
-            ZM.SKINS = [{
-                id: 'classic',
-                name: 'Классика',
-                price: 0
-            }, {
-                id: 'gold',
-                name: 'Золото',
-                price: 300
-            }, {
-                id: 'silver',
-                name: 'Серебро',
-                price: 300
-            }, {
-                id: 'neon',
-                name: 'Неон',
-                price: 300
-            }, {
-                id: 'celestial',
-                name: 'Небесный',
-                price: null
-            }, {
-                id: 'dawn',
-                name: 'Заря',
-                price: null
-            }, {
-                id: 'moss',
-                name: 'Мох',
-                price: null
-            }, {
-                id: 'abyss',
-                name: 'Бездна',
-                price: null
-            }];
+            ZM.SKINS = CardBacks.catalog.map(function(d){return Object.assign({},d);});
             ZM.ACHDEFS = [{
                 id: 'newbie',
                 name: 'Новичок',
@@ -4344,8 +4313,8 @@
         })();
     </script>
 
-    <script src="predictions.js?v=panel-24"></script>
-    <script src="observatory.js?v=panel-24"></script>
+    <script src="predictions.js?v=backs-25"></script>
+    <script src="observatory.js?v=backs-25"></script>
     <script>Observatory.init(window.ZM);</script>
     <script>
         /* ═══ ДВИЖОК: аудио+музыка, фон, хаб-атлас, игра ═══ */
@@ -6064,7 +6033,7 @@
                 ZM.SKINS.forEach(function(s) {
                     if (g) g.classList.remove('skin-' + s.id);
                 });
-                if (g && ZM.save.skin) g.classList.add('skin-' + ZM.save.skin);
+                if (g && ZM.save.skin) {g.classList.add('skin-' + ZM.save.skin);g.style.setProperty('--card-back-image','url("'+CardBacks.image(ZM.save.skin)+'")');g.dataset.cardBack=ZM.save.skin;}
             }
 
             function buildHub() {
@@ -6155,18 +6124,6 @@
                         '<button class="buy-btn" data-buy="' + it.id + '" ' + (ZM.save.dust < it.price ? 'disabled' : '') +
                         '>' + ZM.ic('i-star') + it.price + '</button></div>';
                 }).join('');
-                var swSyms = {
-                    classic: '\u2726',
-                    gold: '\u2737',
-                    silver: '\u263D',
-                    neon: '\u26A1',
-                    celestial: '\u2648',
-                    dawn: '\u2600',
-                    moss: '\u2698',
-                    abyss: '\u2727',
-                    moonlace: '☾',
-                    roseglass: '❀'
-                };
                 var skins = '<div class="skins-row">' + ZM.SKINS.map(function(s) {
                     var owned = !!ZM.save.skins[s.id],
                         eq = ZM.save.skin === s.id,
@@ -6178,9 +6135,9 @@
                     else if (s.id === 'abyss') sub = 'день 28 календаря';
                     else if (s.id === 'roseglass') sub = 'за трофей «Первый урок»';
                     else sub = (s.price == null) ? 'за трофей «Коллекционер»' : s.price + ' \u2605';
-                    return '<div class="skin-card' + (eq ? ' sel' : '') + '" data-skin="' + s.id + '">' +
-                        '<div class="swatch sw-' + s.id + '"><b>' + swSyms[s.id] + '</b></div>' +
-                        '<b class="nm">' + s.name + '</b><span class="sub">' + sub + '</span></div>';
+                    return '<button type="button" class="skin-card' + (eq ? ' sel' : '') + '" aria-pressed="'+eq+'" data-skin="' + s.id + '">' +
+                        CardBacks.preview(s.id,'swatch') +
+                        '<b class="nm">' + s.name + '</b><span class="skin-material">'+s.desc+'</span><span class="sub">' + sub + '</span></button>';
                 }).join('') + '</div>';
                 ZM.modalOpen('<h2>Звёздная лавка</h2><div class="msub">Ваш запас: <b style="color:var(--gold-hi)">' +
                     ZM.save.dust + ' ' + ZM.STAR + '</b></div>' + rows +
@@ -6563,7 +6520,7 @@
                     cell.setAttribute('aria-label', 'Карта ' + (i + 1));
                     cell.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onCell(i); } });
                     cell.className = 'cell' + ((gr.type !== 'pair' && gr.type !== 'decoy') ? ' m-' + gr.type : '');
-                    cell.innerHTML = '<div class="cflip"><div class="cf cf-back">' + wheelSVG(false) + '</div>' +
+                    cell.innerHTML = '<div class="cflip"><div class="cf cf-back"></div>' +
                         '<div class="cf cf-front" style="--hue:' + gr.hue + '">' +
                         ZM.cardArt(gr.sym) + '<span class="fg">' + ZM.SYMS[gr.sym].g + '</span><span class="fn">' + ZM.SYMS[gr.sym].n + '</span></div></div>';
                     cell.addEventListener('click', function() {

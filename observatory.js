@@ -2,6 +2,7 @@
 (function(root) {
     'use strict';
     const Economy=root.Economy||(typeof require==='function'?require('./economy.js'):null);
+    const CardBacks=root.CardBacks||(typeof require==='function'?require('./card-backs.js'):null);
     const catalog = {
         outfits: [
             {id:'apprentice',name:'Ученик звёзд',price:0,art:[0,1],desc:'Лавандовая мантия и книга тайн'},
@@ -27,10 +28,7 @@
             {id:'petals',name:'Лунные лепестки',price:200,desc:'Розовые цветочные искорки'},
             {id:'comets',name:'Кометный след',price:null,desc:'Холодное сияние и летящие звёзды',unlock:'Трофей «Звёздная лавина»'}
         ],
-        backs: [
-            {id:'moonlace',name:'Лунное кружево',price:180,desc:'Серебряные узоры на ночном бархате'},
-            {id:'roseglass',name:'Розовый кварц',price:null,desc:'Розовое стекло и тонкие золотые линии',unlock:'Трофей «Первый урок»'}
-        ]
+        backs: CardBacks.catalog.map(d=>({...d}))
     };
     catalog.outfits.push(...Economy.additions.outfits);
     catalog.pets.push(...Economy.additions.pets);
@@ -172,7 +170,7 @@
         if(kind==='pets')return d.id==='none'?'<span class="empty-pet">✧</span>':figure(d,s.hero,'product-art');
         if(kind==='backgrounds')return '<span class="scene-preview" style="background-image:url(\''+d.image+'\')"></span>';
         if(kind==='effects')return '<span class="effect-preview preview-'+d.id+'" aria-hidden="true">✦ <i>✧</i> ✦</span>';
-        return '<span class="back-preview preview-'+d.id+'" aria-hidden="true">☾<small>✦</small></span>';
+        return CardBacks.preview(d.id);
     }
     function rewardArt(r){
         const gifts=[...(r?.cosmetics||[]),...(r?.skin?[{kind:'backs',id:r.skin}]:[])].slice(0,2);
@@ -234,11 +232,6 @@
     }
     function init(zm){
         ZM=zm;hydrate(ZM.save);
-        if(!catalog.backs.some(d=>d.id==='classic')) {
-            const calendar={dawn:7,moss:14,abyss:28};
-            catalog.backs.unshift(...ZM.SKINS.map(d=>({id:d.id,name:d.name,price:d.price,desc:'Рубашка карт для поиска пар и Оракула',unlock:calendar[d.id]?'Календарь · день '+calendar[d.id]:'Трофей «Коллекционер»'})));
-        }
-        ZM.SKINS.push({id:'moonlace',name:'Лунное кружево',price:180},{id:'roseglass',name:'Розовый кварц',price:null});
         const completed=()=>Array.from({length:12},(_,i)=>ZM.save.lvStars.slice(i*30,i*30+30).every(n=>n>0)).filter(Boolean).length;
         const stat=(k,n)=>()=>state().stats[k]>=n;
         const definitions=[

@@ -15,6 +15,9 @@ assert ROOT / 'cloud-save.js' in files
 assert ROOT / 'mobile-ui.js' in files and ROOT / 'mobile.css' in files
 assert ROOT / 'card-faces.css' in files
 assert ROOT / 'hub-panel.css' in files
+assert ROOT / 'card-backs.js' in files and ROOT / 'card-backs.css' in files
+back_ids=re.findall(r"\{id:'([^']+)'",(ROOT/'card-backs.js').read_text())
+assert len(back_ids)==16 and all(ROOT / ('assets/backs/'+id+'.webp') in files for id in back_ids)
 assert all(ROOT / ('assets/cards-' + name + '.webp') in files for name in ['zodiac','celestial','alchemy'])
 locale = ROOT / 'locales' / 'ui.tsv'
 assert locale in files, 'Missing interface translations'

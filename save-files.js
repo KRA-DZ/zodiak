@@ -3,6 +3,7 @@
     'use strict';
     const Economy=root.Economy||(typeof require==='function'?require('./economy.js'):null);
     const AdRewards=root.AdRewards||(typeof require==='function'?require('./ad-rewards.js'):null);
+    const CardBacks=root.CardBacks||(typeof require==='function'?require('./card-backs.js'):null);
     const fail = () => { throw new Error('Файл не похож на корректную копию прогресса этой игры.'); };
     const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
     const int = (n, max = 1e9) => Number.isSafeInteger(n) && n >= 0 && n <= max;
@@ -41,7 +42,7 @@
         for (const k of ['created','omens','loginStreak']) if (s[k] != null && !int(s[k], Number.MAX_SAFE_INTEGER)) fail();
         for (const k of ['birth','daily','predDay','calStart','calLast','loginLast']) if (s[k] != null && !date(s[k])) fail();
         for (const k of ['skins','ach']) if (s[k] != null && !flags(s[k])) fail();
-        const skins = ['classic','gold','silver','neon','celestial','dawn','moss','abyss','moonlace','roseglass'];
+        const skins = CardBacks.catalog.map(d=>d.id);
         if (s.skin != null && (!skins.includes(s.skin) || !s.skins?.[s.skin])) fail();
         if (s.wheelBonus != null && typeof s.wheelBonus !== 'boolean') fail();
         if (s.calTaken != null && (!Array.isArray(s.calTaken) || s.calTaken.length > 31 || !s.calTaken.every(n => int(n,31) && n > 0) || new Set(s.calTaken).size !== s.calTaken.length)) fail();

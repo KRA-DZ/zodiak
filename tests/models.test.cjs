@@ -280,3 +280,9 @@ test('small alchemy boards are full squares and campaign board sizes never drop 
  assert.equal(last,8);
  for(const shape of ['cross','ring','diamond','stairs','hourglass','wings'])assert.deepEqual(C.alchemyLayout(6,shape),[]);
 });
+
+test('all sixteen card backs share stable save IDs and new purchases survive import',()=>{
+ const Backs=require('../card-backs.js');assert.equal(Backs.catalog.length,16);assert.equal(new Set(Backs.catalog.map(d=>d.id)).size,16);
+ for(const d of Backs.catalog){const p=packet();p.save.skins[d.id]=true;p.save.skin=d.id;assert.equal(Saves.parse(JSON.stringify(p)).skin,d.id);assert.match(Backs.image(d.id),new RegExp('/'+d.id+'\\.webp$'));}
+ const p=packet();p.save.skin='ravenfeather';assert.throws(()=>Saves.parse(JSON.stringify(p)));
+});

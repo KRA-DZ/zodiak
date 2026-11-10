@@ -261,7 +261,9 @@ test('match3 swaps, resolves cascades, awards campaign stars and cleans up on ex
                 const count=Match3.matches(next).length;
                 if(count>max) {max=count;best=[i,j];}
             }
-            return best;
+            // A bonus exchange is legal even when no ordinary three-in-a-row remains.
+            const game=testGame.state.match3;
+            return best || Match3.findMove(board,testGame.state.cfg.goal,game.seals,new Set(game.obstacles.keys()),game.specials);
         });
         assert.ok(pair);
         await page.evaluate(([a,b]) => {
@@ -737,7 +739,7 @@ test('shop, all wardrobe sections and the complete trophy list open through visi
     for(const tab of['pets','backgrounds','effects','backs','outfits']){
         await page.locator('[data-tab="'+tab+'"]').click();
         assert.ok(await page.locator('.wardrobe-item').count()>0);
-        if(tab==='backs')assert.equal(await page.locator('.wardrobe-item').count(),10);
+        if(tab==='backs')assert.equal(await page.locator('.wardrobe-item').count(),16);
     }
     await page.keyboard.press('Escape');
     await page.locator('#btnAch').click();
@@ -1417,4 +1419,22 @@ test('main header keeps shop, trophies and gift visible and groups sign language
   assert.equal(await page.locator('.topbar').evaluate(el=>el.scrollWidth<=el.clientWidth),true);
  }
  await page.locator('#btnShop').click();assert.equal(await page.locator('#shopWardrobe').isVisible(),true);
+});
+
+test('illustrated card back shop shows all sixteen designs, purchases once and preserves equipped backs across games and reload',async t=>{
+ const page=await game(t,null,{phone:true});await page.setViewportSize({width:393,height:720});await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>{ZM.modalForceClose();ZM.save.dust=1000;ZM.save.ach.dresser=true;});
+ await page.locator('#btnShop').click();assert.equal(await page.locator('[data-skin]').count(),16);
+ const decoded=await page.evaluate(async()=>{for(const d of CardBacks.catalog){const im=new Image();im.src=CardBacks.image(d.id);await im.decode();if(im.naturalWidth!==288||im.naturalHeight!==432)return false;}return true;});assert.equal(decoded,true);
+ await page.locator('[data-skin=ravenfeather]').click();assert.equal(await page.evaluate(()=>ZM.save.dust),820);assert.equal(await page.locator('[data-skin=ravenfeather]').getAttribute('aria-pressed'),'true');
+ await page.locator('[data-skin=ravenfeather]').click();assert.equal(await page.evaluate(()=>ZM.save.dust),820);
+ await page.locator('[data-skin=dawn]').click();assert.equal(await page.evaluate(()=>ZM.save.skin),'ravenfeather');assert.equal(await page.evaluate(()=>ZM.save.skins.dawn===true),false);await page.evaluate(()=>ZM.modalForceClose());
+ for(const index of [0,10]){await start(page,index);assert.equal(await page.locator('#s_game').getAttribute('data-card-back'),'ravenfeather');const images=await page.locator('.cf-back').evaluateAll(els=>[...new Set(els.map(el=>getComputedStyle(el).backgroundImage))]);assert.equal(images.length,1);assert.match(images[0],/backs\/ravenfeather.webp/);assert.equal(await page.locator('.cf-back svg').count(),0);}
+ assert.equal(await page.evaluate(()=>SaveFiles.parse(JSON.stringify({format:'zodiac-memory',version:1,save:ZM.save})).skin),'ravenfeather');
+ await page.reload();assert.equal(await page.evaluate(()=>ZM.save.skin),'ravenfeather');assert.equal(await page.evaluate(()=>ZM.save.skins.ravenfeather),true);
+ await page.evaluate(()=>Observatory.openWardrobe('backs'));assert.equal(await page.locator('.wardrobe-item .back-image').count(),16);assert.match(await page.locator('.wardrobe-item.equipped img').getAttribute('src'),/ravenfeather/);
+});
+
+test('new card back names and materials translate and the shop grid fits a small phone',async t=>{
+ const page=await game(t,null,{phone:true});await page.setViewportSize({width:320,height:568});await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
+ for(const lang of ['en','tr']){await page.evaluate(lang=>I18n.set(lang),lang);await page.locator('#btnShop').click();await page.clock.runFor(32);assert.deepEqual(await visibleRussian(page),[]);assert.equal(await page.locator('.modal').evaluate(el=>el.scrollWidth<=el.clientWidth),true);await page.evaluate(()=>ZM.modalForceClose());}
 });
