@@ -178,3 +178,5 @@ body.mobile-ui #gFoot #btnPower.ready { border-color:var(--gold-hi);background:#
 body.mobile-ui #s_game #gFoot #btnPower { padding-bottom:11px; }
 @media(prefers-reduced-motion:reduce) { #btnPower progress::-webkit-progress-value { transition:none; } }
 body.mobile-ui.mobile-short-portrait #gFoot #btnPower>svg { display:none; }
+
+body.mobile-ui .star-crown { top:-8px; }

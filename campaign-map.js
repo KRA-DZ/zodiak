@@ -1,27 +1,43 @@
 /* One zodiac per screen: ten stars with three game modes each. */
 (function(root){
 'use strict';
-let ZM,start,activeSign=0;
+let ZM,start,activeSign=0,routeObserver=null;
 const names=['aries','taurus','gemini','cancer','leo','virgo','libra','scorpio','sagittarius','capricorn','aquarius','pisces'];
 const labels=['Созвездие памяти','Оракул','Алхимия звёзд'];
 const hints=['Найди пары','Следи за картами','Три в ряд'];
 const backgrounds=new Map();
 function warm(sign){if(sign<0||sign>11||backgrounds.has(sign))return;const image=new Image();backgrounds.set(sign,image);image.src='assets/route-'+names[sign]+'.webp';}
 const steps=()=>Campaign.nodesPerSign||10;
-const point=(sign,step)=>{
- if(root.MobileUI?.active){
-  if(root.MobileUI.landscape)return{x:60+(step<5?step:9-step)*120,y:step<5?76:24};
-  if(root.innerHeight<600){const points=[[.18,88],[.50,88],[.82,88],[.82,62],[.50,62],[.18,62],[.18,36],[.50,36],[.82,36],[.50,13]];return{x:points[step][0]*600,y:points[step][1]};}
-  const points=[[.40,92],[.67,84],[.85,72],[.56,66],[.25,59],[.14,43],[.43,40],[.77,31],[.70,15],[.36,12]];
-  return{x:points[step][0]*600,y:points[step][1]};
+function point(sign,step,viewport){
+ if(root.MobileUI?.active&&viewport?.clientWidth&&viewport?.clientHeight){
+  const width=viewport.clientWidth,height=viewport.clientHeight;
+  let u,v;
+  if((width>500&&width>height)||height<210){u=(step<5?step:9-step)/4;v=step<5?1:0;}
+  else if(height<380){const points=[[0,1],[.5,1],[1,1],[1,2/3],[.5,2/3],[0,2/3],[0,1/3],[.5,1/3],[1,1/3],[.5,0]];[u,v]=points[step];}
+  else{const points=[[.40,92],[.67,84],[.85,72],[.56,66],[.25,59],[.14,43],[.43,40],[.77,31],[.70,15],[.36,12]];u=points[step][0];v=(points[step][1]-12)/80;}
+  // Reserve the entire 44px touch target and its boss crown, in real pixels.
+  const padX=30,padY=Math.min(32,Math.max(22,(height-48)/2));
+  return{x:(padX+u*Math.max(0,width-padX*2))/Math.max(1,width)*600,y:(padY+v*Math.max(0,height-padY*2))/Math.max(1,height)*100};
  }
  return{x:300+190*Math.sin(step*.86+sign*.43)+22*Math.sin(step*1.7),y:90-step*8.6};
-};
+}
+function layoutRoute(viewport,sign){
+ if(!viewport.clientWidth||!viewport.clientHeight)return;
+ let path='',previous;
+ viewport.querySelectorAll('.star-node').forEach((button,step)=>{
+  const p=point(sign,step,viewport),y=p.y*6;
+  button.style.left=p.x/6+'%';button.style.top=p.y+'%';
+  if(!previous)path='M '+p.x+' '+y;else{const mid=(previous.y+y)/2;path+=' C '+previous.x+' '+mid+' '+p.x+' '+mid+' '+p.x+' '+y;}
+  previous={x:p.x,y};
+ });
+ viewport.querySelectorAll('svg path').forEach(el=>el.setAttribute('d',path));
+}
+
 function describe(c){const tags=[Campaign.names[c.campaignMode]];if(c.campaignBoss)tags.push('Испытание хранителя');if(c.rest)tags.push('Спокойный уровень');if(c.boss)tags.push('Обратный отсчёт '+c.par+' с');if(c.match3)tags.push(c.rows+'×'+c.cols,c.shapeLabel||'Открытое небо',c.moves+' ходов');if(c.trios)tags.push('Триады');if(c.darks)tags.push('Тёмные карты');if(c.oracle)tags.push('до 2 целей · '+c.stages.length+' этапа');if(c.match3)tags.push(c.goal?.type==='seals'?'Лунные печати':c.goal?.type==='collect'?'Сбор цвета':'Сбор символов');if(c.obstacles?.length)tags.push('Замки и лёд');if(c.voids?.length)tags.push('Разрывы поля');return tags.join(' · ');}
 function detail(cfg){return describe(cfg)||[cfg.campaignBoss?'Испытание хранителя':'',cfg.rest?'Спокойный уровень':'',cfg.goal?.type==='seals'?'Лунные печати':'',cfg.obstacles?.length?'Замки и лёд':'',cfg.voids?.length?'Разрывы поля':''].filter(Boolean).join(' · ')||'Обычный расклад';}
 function dismiss(){const popup=document.querySelector('.node-picker');if(popup){const node=document.querySelector('.star-node[data-node="'+popup.dataset.node+'"]');popup.remove();return node;}return null;}
 function render(){
- const host=document.getElementById('campaignMap');if(!host||!ZM)return;
+ const host=document.getElementById('campaignMap');if(!host||!ZM)return;routeObserver?.disconnect();
  const s=ZM.save,n=steps();activeSign=s.campaignChapter;
  host.innerHTML='<header class="path-heading chapter-heading"><div class="chapter-topline"><div class="chapter-caption"><span class="eyebrow">ЗВЁЗДНАЯ ТРОПА · 120 ЗВЁЗДОЧЕК</span><h2></h2></div><span id="chapterProgress"></span><div class="chapter-paging"><button id="chapterPrev" aria-label="Предыдущий знак">‹</button><span id="chapterIndex"></span><button id="chapterNext" aria-label="Следующий знак">›</button></div><button class="btn path-observatory" id="pathObservatory">☾ Обсерватория</button></div><nav class="path-chapters" aria-label="Знаки зодиака">'+ZM.SIGNS.map((sign,i)=>'<button class="chapter-dot" data-chapter="'+i+'" title="'+sign.name+'" aria-label="'+sign.name+'">'+ZM.GLYPHS[i]+'</button>').join('')+'</nav><div id="pathDetails" role="status">Любой режим открывает следующую звёздочку · все три собирают карту.</div></header><div class="path-viewport chapter-viewport" tabindex="0" aria-label="Карта знака. Колёсико вверх — следующие уровни, вниз — предыдущие."></div><footer class="path-footer chapter-footer"><button class="btn primary" id="pathContinue">Следующая звёздочка ↑</button></footer>';
  const viewport=host.querySelector('.path-viewport');let animation,suppressClickUntil=0;
@@ -36,11 +52,12 @@ function render(){
   host.querySelector('#pathDetails').textContent='Любой режим открывает следующую звёздочку · все три собирают карту.';
   let nodes='',path='',previous;
   for(let step=0;step<n;step++){
-   const node=sign*n+step,p=point(sign,step),done=[0,1,2].map(mode=>s.lvStars[Campaign.id(sign,mode,step)]>0),count=done.filter(Boolean).length,allowed=Campaign.available(s,Campaign.id(sign,0,step)),boss=(step+1)%5===0,y=p.y*6;
+   const node=sign*n+step,p=point(sign,step,viewport),done=[0,1,2].map(mode=>s.lvStars[Campaign.id(sign,mode,step)]>0),count=done.filter(Boolean).length,allowed=Campaign.available(s,Campaign.id(sign,0,step)),boss=(step+1)%5===0,y=p.y*6;
    if(!previous)path='M '+p.x+' '+y;else{const mid=(previous.y+y)/2;path+=' C '+previous.x+' '+mid+' '+p.x+' '+mid+' '+p.x+' '+y;}previous={x:p.x,y};
    nodes+='<button class="star-node'+(count===3?' filled':count?' visited':'')+(allowed?'':' locked')+(boss?' guardian':'')+'" data-node="'+node+'" style="left:'+p.x/6+'%;top:'+p.y+'%;--node-progress:'+count/3+'" aria-disabled="'+!allowed+'" tabindex="'+(allowed?'0':'-1')+'" aria-label="'+ZM.SIGNS[sign].name+' · звёздочка '+(node+1)+' · пройдено '+count+' из 3'+(boss?' · хранитель':'')+'"><span class="star-disc">'+(boss?'<i class="star-crown" aria-hidden="true">♛</i>':'')+'<b>'+(node+1)+'</b></span><span class="star-checks" aria-hidden="true">'+done.map((yes,mode)=>'<i class="'+(yes?'checked':'')+'" style="--check-color:'+Campaign.colors[mode]+'">'+(yes?'✓':'·')+'</i>').join('')+'</span></button>';
   }
   animation?.cancel();viewport.innerHTML='<section class="zodiac-region route-region chapter-scene" data-region="'+sign+'" style="--world-image:url(assets/route-'+names[sign]+'.webp)"><svg viewBox="0 0 600 600" preserveAspectRatio="none" aria-hidden="true"><path class="trail-shadow" d="'+path+'"/><path class="trail-line" d="'+path+'"/></svg>'+nodes+'</section>';
+  layoutRoute(viewport,sign);
   viewport.querySelectorAll('.star-node').forEach(button=>button.onclick=()=>{if(Date.now()>=suppressClickUntil)picker(+button.dataset.node,button);});
   if(animate&&sign!==previousSign&&!matchMedia('(prefers-reduced-motion: reduce)').matches&&viewport.animate)animation=viewport.querySelector('.chapter-scene').animate([{transform:'translateY('+(sign>previousSign?'-':'')+'100%)',opacity:.35},{transform:'translateY(0)',opacity:1}],{duration:440,easing:'cubic-bezier(.2,.7,.25,1)'});
  }
@@ -72,6 +89,7 @@ function render(){
  host.querySelector('#pathObservatory').onclick=()=>document.querySelector('.personal-observatory').scrollIntoView({behavior:'smooth',block:'start'});
  host.querySelector('#pathContinue').onclick=()=>{const id=Campaign.next(s,s.campaignMode),sign=Math.floor(id/30),step=id%n;show(sign);host.querySelector('.star-node[data-node="'+(sign*n+step)+'"]').focus({preventScroll:true});if(root.MobileUI?.active){const node=host.querySelector('.star-node[data-node="'+(sign*n+step)+'"]');picker(sign*n+step,node);}};
  show(activeSign,false);
+ routeObserver=new ResizeObserver(()=>layoutRoute(viewport,activeSign));routeObserver.observe(viewport);
 }
 document.addEventListener('pointerdown',e=>{if(!e.target.closest('.node-picker,.star-node'))dismiss();});
 root.CampaignMap={init(zm,launch){ZM=zm;start=launch;},render,describe};

@@ -1335,7 +1335,15 @@ test('small phones and rotated phones keep map targets, game boards and controls
  const page=await game(t,null,{phone:true});await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
  for(const [width,height]of [[320,480],[320,568],[393,700],[430,800],[852,343]]){
   await page.evaluate(()=>{testGame.kill();ZM.showScreen('hub');MobileUI.setTab('path');});await page.setViewportSize({width,height});await page.clock.runFor(100);
-  assert.equal(await page.evaluate(()=>{const map=document.querySelector('.chapter-viewport').getBoundingClientRect();const nodes=[...document.querySelectorAll('.star-node')].map(n=>n.getBoundingClientRect());return nodes.every(n=>n.top>=map.top&&n.bottom<=map.bottom)&&!nodes.some((a,i)=>nodes.some((b,j)=>i<j&&a.left<b.right&&b.left<a.right&&a.top<b.bottom&&b.top<a.bottom));}),true,width+' map');
+  await page.evaluate(()=>document.fonts.ready);
+  let geometry;
+  // Native resize/font layout happens outside the emulated gameplay clock.
+  for(let attempt=0;attempt<20;attempt++){
+   await page.waitForTimeout(50);await page.clock.runFor(32);
+   geometry=await page.evaluate(()=>{const map=document.querySelector('.chapter-viewport').getBoundingClientRect(),nodes=[...document.querySelectorAll('.star-node')].map(n=>n.getBoundingClientRect());return{map:map.toJSON(),nodes:nodes.map(n=>n.toJSON()),fit:nodes.length===10&&nodes.every(n=>n.top>=map.top&&n.bottom<=map.bottom&&n.left>=map.left&&n.right<=map.right),overlap:nodes.some((a,i)=>nodes.some((b,j)=>i<j&&a.left<b.right&&b.left<a.right&&a.top<b.bottom&&b.top<a.bottom))};});
+   if(geometry.fit&&!geometry.overlap)break;
+  }
+  assert.equal(geometry.fit&&!geometry.overlap,true,width+' map '+JSON.stringify(geometry));
   // Container-query layout needs a browser paint in addition to emulated game timers.
   for(const index of [0,10,20,359]){await start(page,index);await page.evaluate(()=>document.fonts.ready);await page.clock.runFor(160);await page.waitForTimeout(50);await page.clock.runFor(32);const fit=await page.evaluate(()=>{const b=document.getElementById('board').getBoundingClientRect(),g=document.querySelector('.level-guardian').getBoundingClientRect(),foot=document.getElementById('gFoot').getBoundingClientRect();return{mobile:MobileUI.active,classes:document.body.className,style:document.getElementById('board').getAttribute('style'),container:getComputedStyle(document.querySelector('.board-zone')).containerType,bounds:b.toJSON(),zone:document.querySelector('.board-zone').getBoundingClientRect().toJSON(),board:b.top>=0&&b.left>=0&&b.right<=innerWidth+.5&&b.bottom<=innerHeight+.5,foot:foot.bottom<=innerHeight+.5,overlap:b.left<g.right&&g.left<b.right&&b.top<g.bottom&&g.top<b.bottom};});assert.equal(fit.board,true,width+' level '+index+' '+JSON.stringify(fit));assert.equal(fit.foot,true);assert.equal(fit.overlap,false);assert.equal(await page.locator('#mobileGoals').isVisible(),true);}
  }
@@ -1370,7 +1378,7 @@ test('mobile hint toolbar exposes sign power and keeps quitting in the header ac
 test('uploaded level music plays in every mode, pauses with platform and mute, and stops in the menu',async t=>{
  const page=await game(t,null,{realTime:true});
  await page.evaluate(()=>{const NativeAudio=window.Audio;window.__musicNodes=[];window.Audio=function(...args){const audio=new NativeAudio(...args);__musicNodes.push(audio);return audio;};});
- await page.locator('#setupGo').click();await page.waitForTimeout(300);await page.evaluate(()=>ZM.modalForceClose());
+ await page.locator('#setupGo').click();await page.locator('#modalRoot.show').waitFor({state:'visible'});await page.evaluate(()=>ZM.modalForceClose());
  assert.equal(await page.evaluate(()=>!!document.querySelector('audio')),false);
  for(const index of [0,10,20]){
   await start(page,index);
@@ -1456,4 +1464,17 @@ test('Oracle power charge survives stage rebuilds and errors, can recharge, and 
  await page.evaluate(()=>testGame.click(testGame.state.deck.findIndex(c=>c.grp.type!=='target')));await page.clock.runFor(1700);assert.equal(await page.evaluate(()=>testGame.state.powerCharge),3);await page.locator('#btnPower').click();await page.clock.runFor(1800);assert.equal(await page.evaluate(()=>testGame.state.powerCharge),0);
  await target();await page.clock.runFor(9000);await target();await target();await page.clock.runFor(9000);assert.equal(await page.evaluate(()=>testGame.state.powerCharge),3);assert.equal(await page.locator('#btnPower').isEnabled(),true);
  await page.evaluate(()=>{testGame.state.oracle.targets.forEach(g=>g.done=true);testGame.power();});assert.equal(await page.evaluate(()=>testGame.state.powerCharge),3);
+});
+
+
+test('mobile trail adapts to translated header height without requiring a window resize',async t=>{
+ const page=await game(t,null,{phone:true});await page.setViewportSize({width:320,height:480});await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>{ZM.modalForceClose();});await page.evaluate(()=>document.fonts.ready);
+ for(const [lang,height] of [['ru',480],['en',480],['tr',480],...Array.from({length:9},(_,i)=>['ru',600+i*20])]){
+  await page.setViewportSize({width:320,height});
+  await page.evaluate(lang=>{I18n.set(lang);document.querySelector('.hub-command .topbar').style.setProperty('padding-top','32px','important');},lang);
+  let fit;
+  for(let i=0;i<20;i++){await page.waitForTimeout(50);await page.clock.runFor(32);fit=await page.evaluate(()=>{const area=document.querySelector('.chapter-viewport').getBoundingClientRect(),nodes=[...document.querySelectorAll('.star-node')].map(n=>n.getBoundingClientRect());return nodes.length===10&&nodes.every(n=>n.width>=44&&n.height>=44&&n.left>=area.left&&n.right<=area.right&&n.top>=area.top&&n.bottom<=area.bottom)&&!nodes.some((a,i)=>nodes.some((b,j)=>i<j&&a.left<b.right&&b.left<a.right&&a.top<b.bottom&&b.top<a.bottom));});if(fit)break;}
+  assert.equal(fit,true,lang+' '+height+' map must reflow after header height changes');
+  await page.evaluate(()=>document.querySelector('.hub-command .topbar').style.removeProperty('padding-top'));
+ }
 });
