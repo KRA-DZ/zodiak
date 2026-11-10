@@ -4,10 +4,11 @@ from pathlib import Path
 import json, re, zipfile
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'dist'
-SUFFIXES = {'.html', '.js', '.css', '.png', '.jpg', '.jpeg', '.webp', '.svg', '.woff2', '.woff', '.ttf'}
+SUFFIXES = {'.html', '.js', '.css', '.png', '.jpg', '.jpeg', '.webp', '.svg', '.woff2', '.woff', '.ttf', '.mp3'}
 files = sorted(p for p in ROOT.iterdir() if p.is_file() and p.suffix in SUFFIXES)
-files += sorted(p for p in (ROOT / 'assets').rglob('*') if p.is_file() and (p.suffix in SUFFIXES or p.name.endswith('-OFL.txt')))
+files += sorted(p for p in (ROOT / 'assets').rglob('*') if p.is_file() and (p.suffix in SUFFIXES or p.name.endswith('-OFL.txt') or p.name == 'CREDITS.txt'))
 files += sorted((ROOT / 'locales').glob('*.tsv'))
+assert ROOT / 'assets/audio/midnight-breeze.mp3' in files
 assert ROOT / 'index.html' in files
 assert ROOT / 'i18n.js' in files
 assert ROOT / 'cloud-save.js' in files

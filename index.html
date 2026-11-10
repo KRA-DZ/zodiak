@@ -7,9 +7,9 @@
     <title>Созвездие памяти</title>
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="assets/fonts/fonts.css">
-    <script src="i18n.js?v=mobile-20"></script>
-    <script src="platform.js?v=mobile-20"></script>
-    <script src="mobile-ui.js?v=mobile-20" defer></script>
+    <script src="i18n.js?v=music-21"></script>
+    <script src="platform.js?v=music-21"></script>
+    <script src="mobile-ui.js?v=music-21" defer></script>
     <style>
          :root {
             --bg0: #07091c;
@@ -2981,15 +2981,15 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="journey.css?v=mobile-20">
-    <link rel="stylesheet" href="observatory.css?v=mobile-20"><link rel="stylesheet" href="worlds.css?v=mobile-20"><link rel="stylesheet" href="mobile.css?v=mobile-20">
+    <link rel="stylesheet" href="journey.css?v=music-21">
+    <link rel="stylesheet" href="observatory.css?v=music-21"><link rel="stylesheet" href="worlds.css?v=music-21"><link rel="stylesheet" href="mobile.css?v=music-21">
 </head>
 
 <body>
-    <script src="ad-rewards.js?v=mobile-20"></script><script src="level-goals.js?v=mobile-20"></script><script src="wardrobe-content.js?v=mobile-20"></script><script src="economy.js?v=mobile-20"></script><script src="campaign.js?v=mobile-20"></script><script src="journey.js?v=mobile-20"></script>
-    <script src="save-files.js?v=mobile-20"></script>
-    <script src="cloud-save.js?v=mobile-20"></script>
-    <script src="match3.js?v=mobile-20"></script><script src="level-tour.js?v=mobile-20"></script><script src="campaign-map.js?v=mobile-20"></script>
+    <script src="ad-rewards.js?v=music-21"></script><script src="level-goals.js?v=music-21"></script><script src="wardrobe-content.js?v=music-21"></script><script src="economy.js?v=music-21"></script><script src="campaign.js?v=music-21"></script><script src="journey.js?v=music-21"></script>
+    <script src="save-files.js?v=music-21"></script>
+    <script src="cloud-save.js?v=music-21"></script>
+    <script src="match3.js?v=music-21"></script><script src="level-tour.js?v=music-21"></script><script src="campaign-map.js?v=music-21"></script>
     <script>
         (function() {
             var shown = false;
@@ -4325,8 +4325,8 @@
         })();
     </script>
 
-    <script src="predictions.js?v=mobile-20"></script>
-    <script src="observatory.js?v=mobile-20"></script>
+    <script src="predictions.js?v=music-21"></script>
+    <script src="observatory.js?v=music-21"></script>
     <script>Observatory.init(window.ZM);</script>
     <script>
         /* ═══ ДВИЖОК: аудио+музыка, фон, хаб-атлас, игра ═══ */
@@ -4613,12 +4613,34 @@
                         this.bus = null;
                     }
                 },
+                gameAudio: null,
+                startGameAudio: function() {
+                    if (!AE.ctx || !AE.master) return;
+                    if (!this.gameAudio) {
+                        var audio = new Audio('assets/audio/midnight-breeze.mp3');
+                        audio.loop = true;
+                        audio.preload = 'none';
+                        var gain = AE.ctx.createGain();
+                        gain.gain.value = .3;
+                        AE.ctx.createMediaElementSource(audio).connect(gain);
+                        gain.connect(AE.master);
+                        this.gameAudio = audio;
+                    }
+                    var self = this;
+                    var pending = this.gameAudio.play();
+                    if (pending) pending.then(function() {
+                        if (self.mode !== 'game' || !AE.on || GamePlatform.paused) self.gameAudio.pause();
+                    }).catch(function() {});
+                },
                 play: function(mode) {
                     if (!TRACKS[mode]) return;
+                    if (mode !== this.mode) this.pause();
                     this.mode = mode;
                     if (!AE.on || GamePlatform.paused) return;
                     this.init();
                     if (!this.bus) return;
+                    this.bus.gain.value = mode === 'game' ? 0 : .8;
+                    if (mode === 'game') { this.startGameAudio(); return; }
                     if (this.timer) return;
                     this.bar = 0;
                     this.six = 60 / TRACKS[mode].bpm / 4;
@@ -4631,9 +4653,10 @@
                 ensure: function() {
                     if (!AE.on) return;
                     if (!this.mode) this.mode = (curScr === 'game') ? 'game' : 'menu';
-                    if (!this.timer && this.mode && AE.ctx) this.play(this.mode);
+                    if (this.mode && AE.ctx && (this.mode === 'game' || !this.timer)) this.play(this.mode);
                 },
                 pause: function() {
+                    if (this.gameAudio) this.gameAudio.pause();
                     clearInterval(this.timer);
                     this.timer = null;
                 },

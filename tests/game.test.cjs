@@ -1363,3 +1363,22 @@ test('mobile hint toolbar exposes sign power and keeps quitting in the header ac
  await start(page,20);assert.equal(await page.locator('#btnPower').isVisible(),false);assert.match(await page.locator('#mobileHintHelp').textContent(),/возможный ход/);
  await page.setViewportSize({width:1366,height:950});assert.equal(await page.locator('#gFoot #btnHome').isVisible(),true);assert.equal(await page.locator('#mobileHintHelp').count(),0);
 });
+
+test('uploaded level music plays in every mode, pauses with platform and mute, and stops in the menu',async t=>{
+ const page=await game(t,null,{realTime:true});
+ await page.evaluate(()=>{const NativeAudio=window.Audio;window.__musicNodes=[];window.Audio=function(...args){const audio=new NativeAudio(...args);__musicNodes.push(audio);return audio;};});
+ await page.locator('#setupGo').click();await page.waitForTimeout(300);await page.evaluate(()=>ZM.modalForceClose());
+ assert.equal(await page.evaluate(()=>!!document.querySelector('audio')),false);
+ for(const index of [0,10,20]){
+  await start(page,index);
+  await page.waitForFunction(()=>{const nodes=window.__musicNodes;return nodes&&nodes.length&&nodes[0].readyState>=2&&!nodes[0].paused;});
+  assert.equal(await page.evaluate(()=>__musicNodes.length),1);
+  assert.equal(await page.evaluate(()=>__musicNodes[0].loop),true);
+  await page.evaluate(()=>GamePlatform.pause('sdk'));assert.equal(await page.evaluate(()=>__musicNodes[0].paused),true);
+  await page.evaluate(()=>GamePlatform.resume('sdk'));await page.waitForFunction(()=>!__musicNodes[0].paused);
+  await page.evaluate(()=>ZM.AE.toggle());assert.equal(await page.evaluate(()=>__musicNodes[0].paused),true);
+  await page.evaluate(()=>ZM.AE.toggle());await page.waitForFunction(()=>!__musicNodes[0].paused);
+ }
+ await page.locator('#btnHome').click();await page.locator('#quitYes').click();
+ assert.equal(await page.evaluate(()=>__musicNodes[0].paused),true);
+});
