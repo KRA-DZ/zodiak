@@ -717,7 +717,7 @@ test('generated assets decode and the atlas leads the mobile observatory',async 
     assert.equal(await page.evaluate(()=>Observatory.state().hero),'male');
     const result=await page.evaluate(async()=>{
         const decoded=[];
-        for(const src of['assets/observatory-atlas.webp','assets/alchemy-icons.webp','assets/moon-garden.webp','assets/mystic-emblems.webp',...Array.from({length:4},(_,i)=>'assets/costumes-'+i+'.webp'),...Array.from({length:2},(_,i)=>'assets/familiars-'+i+'.webp')]){
+        for(const src of['assets/observatory-atlas.webp','assets/cards-alchemy.webp','assets/moon-garden.webp','assets/mystic-emblems.webp',...Array.from({length:4},(_,i)=>'assets/costumes-'+i+'.webp'),...Array.from({length:2},(_,i)=>'assets/familiars-'+i+'.webp')]){
             const image=new Image();image.src=src;await image.decode();decoded.push(image.naturalWidth>0);
         }
         const avatar=document.getElementById('observatoryHost').getBoundingClientRect();
@@ -1391,4 +1391,15 @@ test('oracle preview lights the whole target card and removes emphasis before th
  assert.match(face.background,/radial-gradient/);assert.notEqual(face.transform,'none');
  await page.clock.runFor(6500);assert.equal(await page.locator('#board.oracle-preview,#board .target').count(),0);
  await start(page,10);await page.clock.runFor(1400);await page.evaluate(()=>testGame.kill());assert.equal(await page.locator('#board.oracle-preview,#board .target').count(),0);
+});
+
+
+test('stained glass faces cover every symbol, stay mapped during Oracle shuffles and style alchemy tiles',async t=>{
+ const page=await game(t,null,{phone:true});await page.setViewportSize({width:393,height:720});
+ const sheets=await page.evaluate(async()=>{const out=[];for(const name of ['zodiac','celestial','alchemy']){const im=new Image();im.src='assets/cards-'+name+'.webp';await im.decode();out.push([im.naturalWidth,im.naturalHeight]);}return out;});assert.equal(sheets.length,3);assert.ok(sheets.every(([w,h])=>w>=900&&h>=600));
+ const all=await page.evaluate(()=>ZM.SYMS.map((f,i)=>{const el=document.createElement('div');el.innerHTML=ZM.cardArt(i);return{symbol:+el.firstChild.dataset.symbol,position:el.firstChild.getAttribute('style')};}));assert.equal(all.length,26);assert.equal(new Set(all.map(x=>x.position)).size,26);
+ for(const index of [0,10]){await start(page,index);if(index===10)await page.clock.runFor(18000);const mapping=await page.evaluate(()=>[...document.querySelectorAll('#board .cell')].every((cell,i)=>+cell.querySelector('.card-art').dataset.symbol===testGame.state.deck[i].grp.sym));assert.equal(mapping,true);}
+ await start(page,20);assert.match(await page.locator('.gem-art').first().evaluate(el=>getComputedStyle(el).backgroundImage),/cards-alchemy/);
+ await page.evaluate(()=>{testGame.kill();testGame.oracle();});assert.equal(await page.locator('.ft-back .card-art').count(),4);
+ await page.evaluate(()=>ZM.modalForceClose());
 });

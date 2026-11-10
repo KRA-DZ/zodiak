@@ -7,9 +7,9 @@
     <title>Созвездие памяти</title>
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="assets/fonts/fonts.css">
-    <script src="i18n.js?v=oracle-22"></script>
-    <script src="platform.js?v=oracle-22"></script>
-    <script src="mobile-ui.js?v=oracle-22" defer></script>
+    <script src="i18n.js?v=glass-23"></script>
+    <script src="platform.js?v=glass-23"></script>
+    <script src="mobile-ui.js?v=glass-23" defer></script>
     <style>
          :root {
             --bg0: #07091c;
@@ -2993,15 +2993,15 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="journey.css?v=oracle-22">
-    <link rel="stylesheet" href="observatory.css?v=oracle-22"><link rel="stylesheet" href="worlds.css?v=oracle-22"><link rel="stylesheet" href="mobile.css?v=oracle-22">
+    <link rel="stylesheet" href="journey.css?v=glass-23">
+    <link rel="stylesheet" href="observatory.css?v=glass-23"><link rel="stylesheet" href="worlds.css?v=glass-23"><link rel="stylesheet" href="mobile.css?v=glass-23"><link rel="stylesheet" href="card-faces.css?v=glass-23">
 </head>
 
 <body>
-    <script src="ad-rewards.js?v=oracle-22"></script><script src="level-goals.js?v=oracle-22"></script><script src="wardrobe-content.js?v=oracle-22"></script><script src="economy.js?v=oracle-22"></script><script src="campaign.js?v=oracle-22"></script><script src="journey.js?v=oracle-22"></script>
-    <script src="save-files.js?v=oracle-22"></script>
-    <script src="cloud-save.js?v=oracle-22"></script>
-    <script src="match3.js?v=oracle-22"></script><script src="level-tour.js?v=oracle-22"></script><script src="campaign-map.js?v=oracle-22"></script>
+    <script src="ad-rewards.js?v=glass-23"></script><script src="level-goals.js?v=glass-23"></script><script src="wardrobe-content.js?v=glass-23"></script><script src="economy.js?v=glass-23"></script><script src="campaign.js?v=glass-23"></script><script src="journey.js?v=glass-23"></script>
+    <script src="save-files.js?v=glass-23"></script>
+    <script src="cloud-save.js?v=glass-23"></script>
+    <script src="match3.js?v=glass-23"></script><script src="level-tour.js?v=glass-23"></script><script src="campaign-map.js?v=glass-23"></script>
     <script>
         (function() {
             var shown = false;
@@ -3689,6 +3689,12 @@
                     sign: -1
                 });
             });
+            /* A stable symbol ID selects the same stained-glass illustration in every mode. */
+            ZM.cardArt = function(sym) {
+                var zodiac = sym < 12, cols = zodiac ? 4 : 5, rows = 3;
+                var index = zodiac ? sym : sym - 12;
+                return '<span class="card-art" aria-hidden="true" data-symbol="' + sym + '" style="--card-sheet:url(assets/cards-' + (zodiac ? 'zodiac' : 'celestial') + '.webp);--card-cols:' + cols + ';--card-rows:' + rows + ';--card-x:' + ((index % cols) * 100 / (cols - 1)) + '%;--card-y:' + (Math.floor(index / cols) * 100 / (rows - 1)) + '%"></span>';
+            };
             ZM.TRAITS = [{
                 pos: ['Смелость и решительность', 'Инициативность и лидерский задор', 'Энергия и работоспособность', 'Честность и прямота', 'Оптимизм и жажда жизни'],
                 neg: ['Вспыльчивость и нетерпеливость', 'Импульсивность решений', 'Упрямство под давлением', 'Эгоцентризм', 'Склонность к неоправданному риску']
@@ -4337,8 +4343,8 @@
         })();
     </script>
 
-    <script src="predictions.js?v=oracle-22"></script>
-    <script src="observatory.js?v=oracle-22"></script>
+    <script src="predictions.js?v=glass-23"></script>
+    <script src="observatory.js?v=glass-23"></script>
     <script>Observatory.init(window.ZM);</script>
     <script>
         /* ═══ ДВИЖОК: аудио+музыка, фон, хаб-атлас, игра ═══ */
@@ -5618,7 +5624,7 @@
                         opened = p.count >= 1;
                     return '<div role="button" tabindex="0" aria-label="' + m.name + '" class="ft-card' + (opened ? ' open' : '') + '" data-cat="' + cat + '">' +
                         '<div class="ft-flip">' +
-                        '<div class="ft-face ft-back"><span class="fg">' + m.g + '</span><b>' + m.name + '</b>' +
+                        '<div class="ft-face ft-back">' + ZM.cardArt({love:15,career:17,fin:22,health:12}[cat]) + '<span class="fg">' + m.g + '</span><b>' + m.name + '</b>' +
                         (opened ? '<span class="pr">открыто</span>' :
                             '<span class="pr">' + (ZM.save.omens > 0 ? '1 печать Оракула' : ZM.ic('i-star') + ' ' + PRED_PRICES[cat]) + '</span>') +
                         '</div>' +
@@ -6558,7 +6564,7 @@
                     cell.className = 'cell' + ((gr.type !== 'pair' && gr.type !== 'decoy') ? ' m-' + gr.type : '');
                     cell.innerHTML = '<div class="cflip"><div class="cf cf-back">' + wheelSVG(false) + '</div>' +
                         '<div class="cf cf-front" style="--hue:' + gr.hue + '">' +
-                        '<span class="fg">' + ZM.SYMS[gr.sym].g + '</span><span class="fn">' + ZM.SYMS[gr.sym].n + '</span></div></div>';
+                        ZM.cardArt(gr.sym) + '<span class="fg">' + ZM.SYMS[gr.sym].g + '</span><span class="fn">' + ZM.SYMS[gr.sym].n + '</span></div></div>';
                     cell.addEventListener('click', function() {
                         onCell(i);
                     });
@@ -6991,7 +6997,7 @@
                     fr = c.querySelector('.cf-front');
                 if (fr) {
                     fr.style.setProperty('--hue', gr.hue);
-                    fr.innerHTML = '<span class="fg">' + f.g + '</span><span class="fn">' + f.n + '</span>';
+                    fr.innerHTML = ZM.cardArt(gr.sym) + '<span class="fg">' + f.g + '</span><span class="fn">' + f.n + '</span>';
                 }
             }
 

@@ -63,7 +63,7 @@ body.mobile-ui #mobileModesContent #btnContinue { background:var(--gold);color:#
 body.mobile-ui #mobileModesContent #dailyQuest { width:100%;margin:6px 0 0;display:flex;flex-direction:column;align-items:flex-start;font-size:13px;padding:14px;border:1px solid #b09ac344;border-radius:12px; }body.mobile-ui #mobileModesContent #dailyQuest b { font-size:14px; }body.mobile-ui #mobileModesContent .ritual-prize { font-size:12px; }
 /* A compact game HUD leaves most of the viewport for cards and falling pieces. */
 body.mobile-ui #s_game.active { display:flex;flex-direction:column;height:var(--mobile-height,100dvh);padding:6px 8px max(6px,env(safe-area-inset-bottom));gap:5px;overflow:hidden;animation:none; }
-body.mobile-ui #s_game .game-head { width:100%;margin:0;gap:6px;flex-wrap:nowrap;align-items:stretch;flex:none; }
+body.mobile-ui #s_game .game-head { display:flex;width:100%;margin:0;gap:6px;flex-wrap:nowrap;align-items:stretch;flex:none; }
 body.mobile-ui #s_game .hud-l { flex:1;min-width:0;padding:7px 9px;gap:4px;position:relative; }
 body.mobile-ui #s_game .lvlname { font-size:19px;line-height:1.1;padding-right:36px; }
 body.mobile-ui #s_game .mechs { flex-wrap:nowrap;overflow:hidden; }body.mobile-ui #s_game .mechs .chip { font-size:9px;line-height:1.3;padding:3px 6px;white-space:normal; }
@@ -161,3 +161,8 @@ body.mobile-ui #gFoot #btnPower[hidden] { display:none; }
 body.mobile-ui #mobileHintHelp { order:10;flex:0 0 100%;grid-column:1 / -1;text-align:center;font-size:10px;line-height:1.3;color:#c7b9d5; }
 body.mobile-ui #gFoot #btnPower.ready { border-color:var(--gold-hi);background:#b58fdb26; }
 @media(max-height:500px) and (min-width:600px) { body.mobile-ui #s_game .game-head { flex-wrap:wrap; }body.mobile-ui #s_game .game-head .hud-l { flex-basis:120px; }body.mobile-ui #s_game .game-head #btnHome { margin-left:auto; } }
+/* Size the square board from its current viewport, including immediately after rotation. */
+@supports (width:1cqh) {
+ body.mobile-ui #s_game .board-zone { container-type:size; }
+ body.mobile-ui #s_game .board.match3-board { width:min(calc(100cqw - 8px),calc(100cqh - 8px),490px)!important;height:min(calc(100cqw - 8px),calc(100cqh - 8px),490px)!important;flex-shrink:0; }
+}

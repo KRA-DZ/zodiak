@@ -76,7 +76,7 @@ body[data-motion=minimal]::before { content:'';position:fixed;inset:0;z-index:0;
 /* Поле имеет постоянные координаты: перестановка DOM больше не перемещает фишки. */
 .board.match3-board { display:block;position:relative; }
 .match3-board > .gem { position:absolute;margin:0; }
-.gem-art { position:absolute;inset:5%;z-index:2;background-image:url('assets/alchemy-icons.webp');background-size:300% 200%;background-position:var(--icon-x) var(--icon-y);background-repeat:no-repeat;pointer-events:none;filter:drop-shadow(0 2px 3px #0009); }
+.gem-art { position:absolute;inset:5%;z-index:2;background-image:url('assets/cards-alchemy.webp');background-size:300% 200%;background-position:var(--icon-x) var(--icon-y);background-repeat:no-repeat;pointer-events:none;filter:drop-shadow(0 2px 3px #0009); }
 .gem-symbol { opacity:.12; }
 .gem-facet { display:none; }
 .gem.sealed::after { z-index:3; }

@@ -1,0 +1,22 @@
+/* Shared stained-glass faces. IDs, hit targets and flip/shuffle transforms stay unchanged. */
+.card-art { position:absolute;inset:0;border-radius:inherit;background-image:var(--card-sheet);background-size:calc(var(--card-cols) * 100%) calc(var(--card-rows) * 100%);background-position:var(--card-x) var(--card-y);background-repeat:no-repeat;pointer-events:none; }
+.cf-front .card-art { z-index:0;transition:filter .25s,opacity .3s; }
+.cf-front .fg { position:absolute;z-index:1;top:5%;left:6%;font-size:clamp(11px,2vh,19px);line-height:1.2;padding:2px 4px;border-radius:6px;background:#101326bb;color:#fff0bb;text-shadow:0 1px 3px #000; }
+.cf-front .fn { position:absolute;z-index:1;bottom:2%;left:3%;right:3%;padding:3px 1px;border-radius:5px;background:#101326da;text-align:center;color:#fff0cc;font-size:clamp(8px,1.7vh,15px);letter-spacing:0;overflow:hidden;text-overflow:ellipsis; }
+.board.oracle-preview .cell.target .card-art { filter:brightness(1.2) saturate(1.1); }
+.board.oracle-preview .cell.target .cf-front::after { z-index:2; }
+.board.oracle-preview .cell:not(.target) .card-art { filter:brightness(.65) saturate(.7); }
+/* Dark-memory modifiers and blank decoys must affect illustrations as well as labels. */
+.board.dark-lvl.faded .card-art { opacity:.07; }
+.board.dark-lvl.faded .cell.peek .card-art,.board.dark-lvl.faded .cell.open .card-art { opacity:1; }
+.cell.m-blank .card-art { opacity:.45;filter:grayscale(1); }
+.ft-back .card-art { inset:50% auto auto 8px;width:32%;aspect-ratio:3/4;max-height:calc(100% - 16px);transform:translateY(-50%);border-radius:7px;opacity:1; }
+.ft-back .fg,.ft-back b,.ft-back .pr { margin-left:35%;position:relative;z-index:1;background:#101326d9;border-radius:8px;padding:4px 7px; }
+.ft-back::after { z-index:1; }
+/* Square illustrations keep the established symbol order and all bonus/obstacle overlays. */
+.gem-art { inset:0;border-radius:inherit;background-image:url('assets/cards-alchemy.webp');filter:none; }
+.gem-symbol { opacity:0; }
+.gem[data-special=row]::after,.gem[data-special=column]::after { z-index:3; }
+.gem[data-lock]:not([data-lock=""])::after { z-index:4; }
+.gem-power { z-index:5; }
+@media(prefers-reduced-motion:reduce) { .cf-front .card-art { transition:none; } }
