@@ -1382,3 +1382,13 @@ test('uploaded level music plays in every mode, pauses with platform and mute, a
  await page.locator('#btnHome').click();await page.locator('#quitYes').click();
  assert.equal(await page.evaluate(()=>__musicNodes[0].paused),true);
 });
+
+test('oracle preview lights the whole target card and removes emphasis before the shuffle',async t=>{
+ const page=await game(t);await page.emulateMedia({reducedMotion:'no-preference'});await start(page,10);await page.clock.runFor(1400);
+ assert.equal(await page.locator('#board.oracle-preview').count(),1);
+ const target=page.locator('#board .cell.target').first();assert.equal(await target.count(),1);
+ const face=await target.locator('.cf-front').evaluate(el=>({background:getComputedStyle(el).backgroundImage,transform:getComputedStyle(el.parentElement.parentElement).transform,color:getComputedStyle(el.querySelector('.fg')).color}));
+ assert.match(face.background,/radial-gradient/);assert.notEqual(face.transform,'none');
+ await page.clock.runFor(6500);assert.equal(await page.locator('#board.oracle-preview,#board .target').count(),0);
+ await start(page,10);await page.clock.runFor(1400);await page.evaluate(()=>testGame.kill());assert.equal(await page.locator('#board.oracle-preview,#board .target').count(),0);
+});

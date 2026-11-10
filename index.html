@@ -7,9 +7,9 @@
     <title>Созвездие памяти</title>
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="assets/fonts/fonts.css">
-    <script src="i18n.js?v=music-21"></script>
-    <script src="platform.js?v=music-21"></script>
-    <script src="mobile-ui.js?v=music-21" defer></script>
+    <script src="i18n.js?v=oracle-22"></script>
+    <script src="platform.js?v=oracle-22"></script>
+    <script src="mobile-ui.js?v=oracle-22" defer></script>
     <style>
          :root {
             --bg0: #07091c;
@@ -2537,13 +2537,25 @@
             border-color: rgba(230, 200, 125, .5)
         }
         
-        .cell.target .cflip {
-            outline: 2px solid var(--gold-hi);
-            outline-offset: 3px;
+        /* The preview distinguishes whole target cards, then clears before shuffling. */
+        .board.oracle-preview .cell { transition: transform .28s ease, filter .28s ease; }
+        .board.oracle-preview .cell:not(.target) .cf-front { filter: brightness(.65) saturate(.7); }
+        .board.oracle-preview .cell.target { position:relative;z-index:8;transform:translateY(-3%) scale(1.055); }
+        .board.oracle-preview .cell.target .cflip {
+            outline: 3px solid var(--gold-hi);
+            outline-offset: 2px;
             border-radius: 12%;
-            animation: hintPulse 1s ease infinite
         }
-        
+        .board.oracle-preview .cell.target .cf-front {
+            background: radial-gradient(ellipse at 50% 35%,hsl(var(--hue) 65% 49%),hsl(var(--hue) 48% 25%));
+            border-color:var(--gold-hi);
+            box-shadow:inset 0 0 24px #fff0bd55,0 0 22px #f6ce7866;
+        }
+        .board.oracle-preview .cell.target .fg { color:#fff8dc;text-shadow:0 0 14px #fff1ad; }
+        .board.oracle-preview .cell.target .fn { color:#fff8dc;font-weight:700; }
+        .board.oracle-preview .cell.target .cf-front::after { content:'✦';position:absolute;right:6%;top:4%;color:#fff8dc;font-size:16px; }
+        @media(prefers-reduced-motion:reduce) { .board.oracle-preview .cell { transition:none; }.board.oracle-preview .cell.target { transform:none; } }
+
         .cell.m-blank .cf-front {
             filter: grayscale(1) brightness(.7)
         }
@@ -2981,15 +2993,15 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="journey.css?v=music-21">
-    <link rel="stylesheet" href="observatory.css?v=music-21"><link rel="stylesheet" href="worlds.css?v=music-21"><link rel="stylesheet" href="mobile.css?v=music-21">
+    <link rel="stylesheet" href="journey.css?v=oracle-22">
+    <link rel="stylesheet" href="observatory.css?v=oracle-22"><link rel="stylesheet" href="worlds.css?v=oracle-22"><link rel="stylesheet" href="mobile.css?v=oracle-22">
 </head>
 
 <body>
-    <script src="ad-rewards.js?v=music-21"></script><script src="level-goals.js?v=music-21"></script><script src="wardrobe-content.js?v=music-21"></script><script src="economy.js?v=music-21"></script><script src="campaign.js?v=music-21"></script><script src="journey.js?v=music-21"></script>
-    <script src="save-files.js?v=music-21"></script>
-    <script src="cloud-save.js?v=music-21"></script>
-    <script src="match3.js?v=music-21"></script><script src="level-tour.js?v=music-21"></script><script src="campaign-map.js?v=music-21"></script>
+    <script src="ad-rewards.js?v=oracle-22"></script><script src="level-goals.js?v=oracle-22"></script><script src="wardrobe-content.js?v=oracle-22"></script><script src="economy.js?v=oracle-22"></script><script src="campaign.js?v=oracle-22"></script><script src="journey.js?v=oracle-22"></script>
+    <script src="save-files.js?v=oracle-22"></script>
+    <script src="cloud-save.js?v=oracle-22"></script>
+    <script src="match3.js?v=oracle-22"></script><script src="level-tour.js?v=oracle-22"></script><script src="campaign-map.js?v=oracle-22"></script>
     <script>
         (function() {
             var shown = false;
@@ -4325,8 +4337,8 @@
         })();
     </script>
 
-    <script src="predictions.js?v=music-21"></script>
-    <script src="observatory.js?v=music-21"></script>
+    <script src="predictions.js?v=oracle-22"></script>
+    <script src="observatory.js?v=oracle-22"></script>
     <script>Observatory.init(window.ZM);</script>
     <script>
         /* ═══ ДВИЖОК: аудио+музыка, фон, хаб-атлас, игра ═══ */
@@ -6949,6 +6961,8 @@
             }
             /* ── Расклад Оракула: показ → тасовка → поиск ── */
             function removeOracleUI() {
+                document.getElementById('board').classList.remove('oracle-preview');
+                document.querySelectorAll('#board .target').forEach(function(c){c.classList.remove('target');});
                 var b = document.getElementById('oracleBanner');
                 if (b && b.parentNode) b.parentNode.removeChild(b);
                 b = document.getElementById('peekBanner');
@@ -7131,6 +7145,7 @@
                 banner.id = 'peekBanner';
                 document.body.appendChild(banner);
                 banner.textContent = 'Этап ' + (st + 1) + '/' + G.oracle.stages.length + ' · запоминайте знаки';
+                document.getElementById('board').classList.add('oracle-preview');
                 G._stopPreviewUI = removeOracleUI;
                 AE.tone(523, {
                     dur: .5,
@@ -7169,6 +7184,7 @@
                     showMs = 400 + G.oracle.targets.length * 700 + hold;
                 levelTimeout(function() {
                     if (!G || G.dead || G.sid !== s) return;
+                    document.getElementById('board').classList.remove('oracle-preview');
                     cells.forEach(function(c) {
                         c.classList.remove('peek', 'target');
                     });
