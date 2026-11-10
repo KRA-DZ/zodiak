@@ -126,7 +126,7 @@ test('leaving a reveal resets global and board effects', async t => {
     await start(page);
     await skipPreview(page);
     await page.evaluate(() => {
-        testGame.state.streak = 3;
+        testGame.state.powerCharge = 3;
         testGame.power();
         document.getElementById('board').classList.add('faded');
         testGame.kill();
@@ -1437,4 +1437,23 @@ test('illustrated card back shop shows all sixteen designs, purchases once and p
 test('new card back names and materials translate and the shop grid fits a small phone',async t=>{
  const page=await game(t,null,{phone:true});await page.setViewportSize({width:320,height:568});await page.locator('#setupGo').click();await page.clock.runFor(800);await page.evaluate(()=>ZM.modalForceClose());
  for(const lang of ['en','tr']){await page.evaluate(lang=>I18n.set(lang),lang);await page.locator('#btnShop').click();await page.clock.runFor(32);assert.deepEqual(await visibleRussian(page),[]);assert.equal(await page.locator('.modal').evaluate(el=>el.scrollWidth<=el.clientWidth),true);await page.evaluate(()=>ZM.modalForceClose());}
+});
+
+test('sign power banks charge through a miss, recharges from manual matches and can be used twice in one level',async t=>{
+ const page=await game(t);await start(page,0);await skipPreview(page);
+ async function match(){await page.evaluate(()=>{const g=testGame.state,group=g.groups.find(gr=>!gr.done&&gr.type==='pair');g.deck.forEach((c,i)=>{if(c.grp===group)testGame.click(i);});});await page.clock.runFor(900);}
+ for(let i=1;i<=3;i++){await match();assert.equal(await page.evaluate(()=>testGame.state.powerCharge),i);assert.equal(await page.locator('#powerCharge').getAttribute('value'),String(i));}
+ await page.evaluate(()=>{const g=testGame.state,groups=g.groups.filter(gr=>!gr.done&&gr.type==='pair');testGame.click(g.deck.findIndex(c=>c.grp===groups[0]));testGame.click(g.deck.findIndex(c=>c.grp===groups[1]));});await page.clock.runFor(1700);
+ assert.equal(await page.evaluate(()=>testGame.state.streak),0);assert.equal(await page.evaluate(()=>testGame.state.powerCharge),3);assert.equal(await page.locator('#btnPower').isEnabled(),true);
+ await page.locator('#btnPower').click();assert.equal(await page.evaluate(()=>testGame.state.powerCharge),0);await page.clock.runFor(2000);assert.equal(await page.evaluate(()=>testGame.state.powerCharge),0);
+ for(let i=0;i<3;i++)await match();assert.equal(await page.evaluate(()=>testGame.state.powerCharge),3);await page.locator('#btnPower').click();await page.clock.runFor(2200);assert.equal(await page.evaluate(()=>testGame.state.finished),true);
+});
+
+test('Oracle power charge survives stage rebuilds and errors, can recharge, and is not spent when no target is available',async t=>{
+ const page=await game(t);await page.evaluate(()=>{testGame.start(10,{cfg:{oracle:true,par:200,stages:Array.from({length:5},()=>({rows:3,cols:4,targets:2,swaps:1,dur:300}))}});});await page.clock.runFor(8000);
+ async function target(){await page.evaluate(()=>testGame.click(testGame.state.deck.findIndex(c=>c.grp.type==='target'&&!c.grp.done)));await page.clock.runFor(700);}
+ await target();await target();await page.clock.runFor(9000);await target();assert.equal(await page.evaluate(()=>testGame.state.powerCharge),3);
+ await page.evaluate(()=>testGame.click(testGame.state.deck.findIndex(c=>c.grp.type!=='target')));await page.clock.runFor(1700);assert.equal(await page.evaluate(()=>testGame.state.powerCharge),3);await page.locator('#btnPower').click();await page.clock.runFor(1800);assert.equal(await page.evaluate(()=>testGame.state.powerCharge),0);
+ await target();await page.clock.runFor(9000);await target();await target();await page.clock.runFor(9000);assert.equal(await page.evaluate(()=>testGame.state.powerCharge),3);assert.equal(await page.locator('#btnPower').isEnabled(),true);
+ await page.evaluate(()=>{testGame.state.oracle.targets.forEach(g=>g.done=true);testGame.power();});assert.equal(await page.evaluate(()=>testGame.state.powerCharge),3);
 });
